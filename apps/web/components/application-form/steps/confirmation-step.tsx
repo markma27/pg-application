@@ -23,7 +23,7 @@ export function ConfirmationStep() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="font-poppins text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
           Application received
         </h1>
         <p className="mt-2 text-base text-slate-500">

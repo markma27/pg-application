@@ -20,7 +20,7 @@ export function ReviewStep() {
   return (
     <>
       <div className="mb-8">
-        <h1 className="font-poppins text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
           Review and summary
         </h1>
         <p className="mt-2 text-base text-slate-500">

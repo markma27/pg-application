@@ -1,62 +1,104 @@
 "use client";
 
 import { useApplicationForm } from "@/lib/application-form";
+import { ArrowRight, FileText, RotateCcw } from "lucide-react";
 
-export function StepNav() {
-  const { state, prevStep, nextStep, restart, submit } = useApplicationForm();
+type StepNavVariant = "header" | "panel";
+
+export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVariant; showIcon?: boolean }) {
+  const {
+    state,
+    prevStep,
+    nextStep,
+    restart,
+    submit,
+    reviewStepIndex,
+    confirmationStepIndex,
+    currentStepLabel,
+    currentStepDescription,
+  } = useApplicationForm();
   const { isSubmitting, stepError } = state;
   const isFirst = state.step === 0;
-  const isReview = state.step === 2 + state.entityCount;
-  const isConfirmation = state.step >= 3 + state.entityCount;
+  const isReview = state.step === reviewStepIndex;
+  const isConfirmation = state.step >= confirmationStepIndex;
 
   if (isConfirmation) return null;
 
-  return (
-    <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 pt-6">
-      {stepError && (
-        <p className="text-sm font-medium text-red-600" role="alert">
-          {stepError}
-        </p>
-      )}
-      <div className="flex items-center justify-between gap-4">
+  const nextLabel = isReview ? (isSubmitting ? "Submitting…" : "Submit") : "Go forward";
+  const handlePrimary = isReview ? submit : nextStep;
+
+  if (variant === "header") {
+    return (
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={restart}
-          className="inline-flex h-10 items-center justify-center rounded-md bg-[#e1251b] px-6 text-sm font-medium text-white transition-colors hover:bg-[#c91d14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e1251b] disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-white/90 px-4 text-sm font-medium text-emerald-700 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+          aria-label="Restart form"
         >
+          <RotateCcw className="h-4 w-4" />
           Restart
         </button>
-        <div className="flex gap-3">
-          {!isFirst && (
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={isSubmitting}
-              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-6 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:opacity-50"
-            >
-              Back
-            </button>
-          )}
-          {isReview ? (
-            <button
-              type="button"
-              onClick={submit}
-              disabled={isSubmitting}
-              className="inline-flex h-10 items-center justify-center rounded-md bg-[#cdd1d5] px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-[#b0b5ba] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:opacity-50"
-            >
-              {isSubmitting ? "Submitting…" : "Submit"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={nextStep}
-              disabled={isSubmitting}
-              className="inline-flex h-10 items-center justify-center rounded-md bg-[#cdd1d5] px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-[#b0b5ba] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:opacity-50"
-            >
-              Next
-            </button>
-          )}
+        <button
+          type="button"
+          onClick={handlePrimary}
+          disabled={isSubmitting}
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+        >
+          {nextLabel}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {showIcon && (
+        <div className="flex justify-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 text-white">
+            <FileText className="h-7 w-7" />
+          </span>
         </div>
+      )}
+      <div className="space-y-2">
+        <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{currentStepLabel}</h2>
+        <p className="text-sm text-emerald-100">{currentStepDescription}</p>
+      </div>
+      {stepError && (
+        <p className="text-sm font-medium text-amber-200" role="alert">
+          {stepError}
+        </p>
+      )}
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={handlePrimary}
+          disabled={isSubmitting}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-white font-medium text-emerald-700 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+        >
+          {nextLabel}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+        {!isFirst && (
+          <button
+            type="button"
+            onClick={prevStep}
+            disabled={isSubmitting}
+            className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/40 bg-transparent text-sm font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+          >
+            Back
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={restart}
+          className="inline-flex h-9 items-center justify-center gap-1.5 text-sm font-medium text-white/90 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+          aria-label="Restart form"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Restart
+        </button>
       </div>
     </div>
   );

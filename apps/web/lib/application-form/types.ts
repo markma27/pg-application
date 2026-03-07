@@ -1,7 +1,7 @@
 import type { ApplicationInput, EntityInput } from "@pg/shared";
 
 export interface ApplicationFormState {
-  /** Step index: 0 = contact, 1 = entity count, 2..2+N-1 = entity details, 2+N = review, 3+N = confirmation */
+  /** Step index: 0 = contact, 1 = entity count, 2..2+3N-1 = entity details (3 sub-steps each), 2+3N = review, 3+3N = confirmation */
   step: number;
   /** Contact/group (step 0) */
   primaryContactName: string;
@@ -10,7 +10,7 @@ export interface ApplicationFormState {
   applicantRole: string;
   adviserDetails: string;
   groupName: string;
-  /** How many entities (step 1). Drives steps 2..2+N-1 */
+  /** How many entities (step 1). Drives steps 2..2+3N-1 (3 sub-steps per entity) */
   entityCount: number;
   /** Entity drafts; length must match entityCount before review */
   entities: PartialEntity[];

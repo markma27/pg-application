@@ -11,7 +11,7 @@ export function ContactStep() {
   return (
     <>
       <div className="mb-8">
-        <h1 className="font-poppins text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
           New Client Application Form
         </h1>
         <p className="mt-2 text-base text-slate-500">
@@ -72,7 +72,7 @@ export function ContactStep() {
               id="contact-role"
               value={state.applicantRole}
               onChange={(e) => setContact({ applicantRole: e.target.value })}
-              className="flex h-11 w-full rounded-lg border border-slate-300 bg-transparent px-4 py-2 text-sm text-slate-900 transition-colors focus-visible:border-emerald-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600"
+              className="flex h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 transition-colors focus-visible:border-emerald-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600"
               required
             >
               <option value="" disabled hidden>Select role</option>

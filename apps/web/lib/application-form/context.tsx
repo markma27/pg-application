@@ -42,7 +42,10 @@ const initialState: ApplicationFormState = {
 type ApplicationFormContextValue = {
   state: ApplicationFormState;
   totalSteps: number;
+  reviewStepIndex: number;
+  confirmationStepIndex: number;
   currentStepLabel: string;
+  currentStepDescription: string;
   setContact: (data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => void;
   setEntityCount: (count: number) => void;
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
@@ -58,14 +61,38 @@ const ApplicationFormContext = React.createContext<ApplicationFormContextValue |
 export function ApplicationFormProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ApplicationFormState>(initialState);
 
-  const totalSteps = 4 + state.entityCount;
+  const entityStepsStart = 2;
+  const entityStepsPerEntity = 3;
+  const totalEntitySteps = state.entityCount * entityStepsPerEntity;
+  const totalSteps = 4 + totalEntitySteps;
+  const reviewStepIndex = entityStepsStart + totalEntitySteps;
+  const confirmationStepIndex = reviewStepIndex + 1;
+
   const currentStepLabel = useMemo(() => {
     if (state.step === 0) return "Contact / group details";
     if (state.step === 1) return "Add entities";
-    if (state.step >= 2 && state.step < 2 + state.entityCount) return `Entity ${state.step - 1} details`;
-    if (state.step === 2 + state.entityCount) return "Review and summary";
+    if (state.step >= entityStepsStart && state.step < reviewStepIndex) {
+      const entityIndex = Math.floor((state.step - entityStepsStart) / entityStepsPerEntity);
+      const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
+      const labels = ["Entity type", "Portfolio & assets", "Services & commencement"];
+      return `Entity ${entityIndex + 1} – ${labels[subStep]}`;
+    }
+    if (state.step === reviewStepIndex) return "Review and summary";
     return "Confirmation";
-  }, [state.step, state.entityCount]);
+  }, [state.step, state.entityCount, reviewStepIndex]);
+
+  const currentStepDescription = useMemo(() => {
+    if (state.step === 0) return "Primary contact and optional group or adviser information.";
+    if (state.step === 1) return "How many entities (e.g. trusts, companies) are included in this application.";
+    if (state.step >= entityStepsStart && state.step < reviewStepIndex) {
+      const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
+      if (subStep === 0) return "Select the entity type for this application.";
+      if (subStep === 1) return "Portfolio status and asset counts for complexity assessment.";
+      return "Select services and preferred commencement date.";
+    }
+    if (state.step === reviewStepIndex) return "Review your details before submitting.";
+    return "Your application has been submitted.";
+  }, [state.step, state.entityCount, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
 
   const setContact = useCallback((data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => {
     setState((s) => ({ ...s, ...data, stepError: null }));
@@ -93,17 +120,27 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
   }, []);
 
   const nextStep = useCallback(() => {
+    const stepsPerEntity = 3;
+    const entityStart = 2;
     setState((s) => {
       if (s.step === 0) {
         if (!s.primaryContactName?.trim() || !s.email?.trim() || !s.phone?.trim() || !s.applicantRole?.trim())
           return { ...s, stepError: "Please complete all required contact fields." };
       }
-      if (s.step >= 2 && s.step < 2 + s.entityCount) {
-        const entity = s.entities[s.step - 2];
-        if (!entity?.entityType || !entity.entityName?.trim() || !entity.portfolioStatus || entity.serviceCodes.length === 0 || !entity.commencementDate?.trim())
-          return { ...s, stepError: "Please complete all required fields for this entity." };
+      if (s.step >= entityStart && s.step < entityStart + s.entityCount * stepsPerEntity) {
+        const entityIndex = Math.floor((s.step - entityStart) / stepsPerEntity);
+        const subStep = (s.step - entityStart) % stepsPerEntity;
+        const entity = s.entities[entityIndex];
+        if (!entity) return { ...s, stepError: "Invalid step." };
+        if (subStep === 0 && !entity.entityType)
+          return { ...s, stepError: "Please select an entity type." };
+        if (subStep === 1 && (!entity.entityName?.trim() || !entity.portfolioStatus))
+          return { ...s, stepError: "Please complete entity name and portfolio status." };
+        if (subStep === 2 && (entity.serviceCodes.length === 0 || !entity.commencementDate?.trim()))
+          return { ...s, stepError: "Please select at least one service and enter preferred commencement." };
       }
-      return { ...s, step: Math.min(s.step + 1, 4 + s.entityCount - 1), stepError: null };
+      const reviewStep = entityStart + s.entityCount * stepsPerEntity;
+      return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null };
     });
   }, []);
 
@@ -171,7 +208,10 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     () => ({
       state,
       totalSteps,
+      reviewStepIndex,
+      confirmationStepIndex,
       currentStepLabel,
+      currentStepDescription,
       setContact,
       setEntityCount,
       setEntity,
@@ -181,7 +221,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       submit,
       clearStepError,
     }),
-    [state, totalSteps, currentStepLabel, setContact, setEntityCount, setEntity, nextStep, prevStep, restart, submit, clearStepError],
+    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, nextStep, prevStep, restart, submit, clearStepError],
   );
 
   return (
