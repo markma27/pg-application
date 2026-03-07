@@ -12,12 +12,12 @@ export function ApplyShell({ children }: { children: React.ReactNode }) {
   const showNavPanel = !isConfirmation;
 
   return (
-    <main className="min-h-screen bg-[#fafafa]">
+    <main className="min-h-screen bg-slate-100">
       {/* Full-width header bar */}
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <a href="/" className="flex shrink-0 items-center">
-            <div className="relative h-10 w-32 sm:h-12 sm:w-40">
+            <div className="relative h-[4.2rem] w-[13.44rem] sm:h-[5.04rem] sm:w-[16.8rem]">
               <Image
                 src="/PortfolioGuardian_OriginalLogo.svg"
                 alt="PortfolioGuardian"
@@ -37,7 +37,7 @@ export function ApplyShell({ children }: { children: React.ReactNode }) {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {showNavPanel && (
-          <div className="space-y-2 pb-6 sm:pb-8">
+          <div className="space-y-2 pt-6 pb-6 sm:pt-8 sm:pb-8">
             <p className="text-sm font-medium text-slate-500">
               Step {state.step + 1} of {totalSteps} ({progressPercent}%)
             </p>
@@ -52,7 +52,7 @@ export function ApplyShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-6 py-6 sm:py-8 lg:flex-row lg:gap-0 lg:pt-0">
         {/* Left: form content in grey card */}
         <div className="min-w-0 flex-1 lg:max-w-[65%]">
-          <div className="h-full rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-slate-100/90 to-slate-200/60 p-6 shadow-sm sm:p-8 lg:p-10 lg:rounded-r-none lg:border-r-0">
+          <div className="h-full rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-sm sm:p-8 lg:p-10 lg:rounded-r-none">
             {children}
           </div>
         </div>

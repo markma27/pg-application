@@ -38,7 +38,7 @@ export function EntityCountStep() {
                   type="button"
                   onClick={() => setEntityCount(n)}
                   className={cn(
-                    "flex h-14 items-center justify-center rounded-xl border text-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600",
+                    "flex h-14 cursor-pointer items-center justify-center rounded-xl border text-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600",
                     isSelected
                       ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
                       : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
