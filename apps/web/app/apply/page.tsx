@@ -7,6 +7,7 @@ import { EntityCountStep } from "@/components/application-form/steps/entity-coun
 import { EntityDetailStepType } from "@/components/application-form/steps/entity-detail-step-type";
 import { EntityDetailStepBasics } from "@/components/application-form/steps/entity-detail-step-basics";
 import { EntityDetailStepServices } from "@/components/application-form/steps/entity-detail-step-services";
+import { IndividualDetailsStep } from "@/components/application-form/steps/individual-details-step";
 import { AdviserDetailsStep } from "@/components/application-form/steps/adviser-details-step";
 import { ReviewStep } from "@/components/application-form/steps/review-step";
 import { ConfirmationStep } from "@/components/application-form/steps/confirmation-step";
@@ -15,8 +16,9 @@ const ENTITY_STEPS_START = 2;
 const ENTITY_STEPS_PER_ENTITY = 3;
 
 function ApplyFormContent() {
-  const { state, reviewStepIndex, confirmationStepIndex, adviserDetailsStepIndex } = useApplicationForm();
-  const isEntityStep = state.step >= ENTITY_STEPS_START && state.step < adviserDetailsStepIndex;
+  const { state, reviewStepIndex, confirmationStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex } =
+    useApplicationForm();
+  const isEntityStep = state.step >= ENTITY_STEPS_START && state.step < individualDetailsStepIndex;
   const entityIndex = isEntityStep ? Math.floor((state.step - ENTITY_STEPS_START) / ENTITY_STEPS_PER_ENTITY) : 0;
   const entitySubStep = isEntityStep ? (state.step - ENTITY_STEPS_START) % ENTITY_STEPS_PER_ENTITY : 0;
 
@@ -27,6 +29,7 @@ function ApplyFormContent() {
       {isEntityStep && entitySubStep === 0 && <EntityDetailStepType entityIndex={entityIndex} />}
       {isEntityStep && entitySubStep === 1 && <EntityDetailStepBasics entityIndex={entityIndex} />}
       {isEntityStep && entitySubStep === 2 && <EntityDetailStepServices entityIndex={entityIndex} />}
+      {state.step === individualDetailsStepIndex && <IndividualDetailsStep />}
       {state.step === adviserDetailsStepIndex && <AdviserDetailsStep />}
       {state.step === reviewStepIndex && <ReviewStep />}
       {state.step >= confirmationStepIndex && <ConfirmationStep />}

@@ -2,9 +2,29 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { applicationInputSchema } from "@pg/shared";
-import type { ApplicationFormState, PartialEntity, SubmitResult } from "./types";
+import type { ApplicationFormState, PartialEntity, PartialIndividual, SubmitResult } from "./types";
 import { formStateToPayload } from "./types";
-import { MIN_ENTITIES, MAX_ENTITIES } from "./constants";
+import { MIN_ENTITIES, MAX_ENTITIES, MIN_INDIVIDUALS, MAX_INDIVIDUALS } from "./constants";
+
+function createEmptyIndividual(id: string): PartialIndividual {
+  return {
+    id,
+    relationshipRoles: [],
+    title: "",
+    givenName: "",
+    middleName: "",
+    surname: "",
+    streetAddress: "",
+    streetAddressLine2: "",
+    taxFileNumber: "",
+    dateOfBirth: "",
+    countryOfBirth: "",
+    city: "",
+    occupation: "",
+    employer: "",
+    email: "",
+  };
+}
 
 function createEmptyEntity(id: string): PartialEntity {
   return {
@@ -38,6 +58,8 @@ const initialState: ApplicationFormState = {
   groupName: "",
   entityCount: 1,
   entities: [createEmptyEntity(crypto.randomUUID())],
+  individualCount: 1,
+  individuals: [createEmptyIndividual(crypto.randomUUID())],
   adviserName: "",
   adviserCompany: "",
   adviserAddress: "",
@@ -66,7 +88,10 @@ type ApplicationFormContextValue = {
   setContact: (data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => void;
   setEntityCount: (count: number) => void;
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
+  setIndividual: (index: number, data: Partial<PartialIndividual>) => void;
+  setIndividualCount: (count: number) => void;
   setAdviser: (data: Partial<Pick<ApplicationFormState, "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => void;
+  individualDetailsStepIndex: number;
   adviserDetailsStepIndex: number;
   nextStep: () => void;
   prevStep: () => void;
@@ -83,38 +108,41 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
   const entityStepsStart = 2;
   const entityStepsPerEntity = 3;
   const totalEntitySteps = state.entityCount * entityStepsPerEntity;
-  const adviserDetailsStepIndex = entityStepsStart + totalEntitySteps;
+  const individualDetailsStepIndex = entityStepsStart + totalEntitySteps;
+  const adviserDetailsStepIndex = individualDetailsStepIndex + 1;
   const reviewStepIndex = adviserDetailsStepIndex + 1;
   const confirmationStepIndex = reviewStepIndex + 1;
-  const totalSteps = 5 + totalEntitySteps;
+  const totalSteps = 6 + totalEntitySteps;
 
   const currentStepLabel = useMemo(() => {
     if (state.step === 0) return "Contact / group details";
     if (state.step === 1) return "Add entities";
-    if (state.step >= entityStepsStart && state.step < adviserDetailsStepIndex) {
+    if (state.step >= entityStepsStart && state.step < individualDetailsStepIndex) {
       const entityIndex = Math.floor((state.step - entityStepsStart) / entityStepsPerEntity);
       const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
       const labels = ["Entity type", "Portfolio & assets", "Services & commencement"];
       return `Entity ${entityIndex + 1} – ${labels[subStep]}`;
     }
+    if (state.step === individualDetailsStepIndex) return "Individual details";
     if (state.step === adviserDetailsStepIndex) return "Adviser & administration";
     if (state.step === reviewStepIndex) return "Review and summary";
     return "Confirmation";
-  }, [state.step, state.entityCount, adviserDetailsStepIndex, reviewStepIndex]);
+  }, [state.step, state.entityCount, individualDetailsStepIndex, adviserDetailsStepIndex, reviewStepIndex]);
 
   const currentStepDescription = useMemo(() => {
     if (state.step === 0) return "Primary contact and optional group or adviser information.";
     if (state.step === 1) return "How many entities (e.g. trusts, companies) are included in this application.";
-    if (state.step >= entityStepsStart && state.step < adviserDetailsStepIndex) {
+    if (state.step >= entityStepsStart && state.step < individualDetailsStepIndex) {
       const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
       if (subStep === 0) return "Select the entity type for this application.";
       if (subStep === 1) return "Portfolio status and asset counts for complexity assessment.";
       return "Select services and preferred commencement date.";
     }
+    if (state.step === individualDetailsStepIndex) return "Personal details for individuals associated with the application.";
     if (state.step === adviserDetailsStepIndex) return "Investment adviser, administration and dividend preferences.";
     if (state.step === reviewStepIndex) return "Review your details before submitting.";
     return "Your application has been submitted.";
-  }, [state.step, state.entityCount, adviserDetailsStepIndex, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
+  }, [state.step, state.entityCount, individualDetailsStepIndex, adviserDetailsStepIndex, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
 
   const setContact = useCallback((data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => {
     setState((s) => ({ ...s, ...data, stepError: null }));
@@ -138,6 +166,31 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         entities[index] = { ...next, id: next.id ?? existing.id } as PartialEntity;
       }
       return { ...s, entities, stepError: null };
+    });
+  }, []);
+
+  const setIndividualCount = useCallback((count: number) => {
+    const n = Math.max(MIN_INDIVIDUALS, Math.min(MAX_INDIVIDUALS, count));
+    setState((s) => {
+      const individuals = [...s.individuals];
+      while (individuals.length < n) individuals.push(createEmptyIndividual(crypto.randomUUID()));
+      return { ...s, individualCount: n, individuals: individuals.slice(0, n), stepError: null };
+    });
+  }, []);
+
+  const setIndividual = useCallback((index: number, data: Partial<PartialIndividual>) => {
+    setState((s) => {
+      const individuals = [...s.individuals];
+      const existing = index >= 0 && index < individuals.length ? individuals[index] : undefined;
+      if (existing) {
+        const next = { ...existing, ...data };
+        if (Array.isArray(next.relationshipRoles)) {
+          // ensure no duplicates
+          next.relationshipRoles = [...new Set(next.relationshipRoles)];
+        }
+        individuals[index] = { ...next, id: next.id ?? existing.id } as PartialIndividual;
+      }
+      return { ...s, individuals, stepError: null };
     });
   }, []);
 
@@ -165,7 +218,13 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         if (subStep === 2 && (entity.serviceCodes.length === 0 || !entity.commencementDate?.trim()))
           return { ...s, stepError: "Please select at least one service and enter preferred commencement." };
       }
-      const reviewStep = entityStart + s.entityCount * stepsPerEntity + 1;
+      const individualStep = entityStart + s.entityCount * stepsPerEntity;
+      if (s.step === individualStep) {
+        const first = s.individuals[0];
+        if (!first?.givenName?.trim() || !first?.surname?.trim())
+          return { ...s, stepError: "Please complete at least Given name and Surname for Individual 1." };
+      }
+      const reviewStep = individualStep + 2;
       return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null };
     });
   }, []);
@@ -178,6 +237,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     setState({
       ...initialState,
       entities: [createEmptyEntity(crypto.randomUUID())],
+      individuals: [createEmptyIndividual(crypto.randomUUID())],
     } as ApplicationFormState);
   }, []);
 
@@ -241,7 +301,10 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       setContact,
       setEntityCount,
       setEntity,
+      setIndividual,
+      setIndividualCount,
       setAdviser,
+      individualDetailsStepIndex,
       adviserDetailsStepIndex,
       nextStep,
       prevStep,
@@ -249,7 +312,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       submit,
       clearStepError,
     }),
-    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, setAdviser, adviserDetailsStepIndex, nextStep, prevStep, restart, submit, clearStepError],
+    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, setIndividual, setIndividualCount, setAdviser, individualDetailsStepIndex, adviserDetailsStepIndex, nextStep, prevStep, restart, submit, clearStepError],
   );
 
   return (

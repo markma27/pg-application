@@ -17,6 +17,9 @@ export interface ApplicationFormState {
   entityCount: number;
   /** Entity drafts; length must match entityCount before review */
   entities: PartialEntity[];
+  /** Individual details (step before adviser): 1–4 individuals */
+  individualCount: number;
+  individuals: PartialIndividual[];
   /** Adviser & admin details (step before review) */
   adviserName: string;
   adviserCompany: string;
@@ -37,6 +40,27 @@ export interface ApplicationFormState {
   isSubmitting: boolean;
   /** Validation error for current step */
   stepError: string | null;
+}
+
+/** Relationship to account (multiple allowed per individual) */
+export type IndividualRelationshipRole = "individual" | "trustee" | "director" | "company_secretary" | "primary_contact";
+
+export interface PartialIndividual {
+  id: string;
+  relationshipRoles: IndividualRelationshipRole[];
+  title: string;
+  givenName: string;
+  middleName: string;
+  surname: string;
+  streetAddress: string;
+  streetAddressLine2: string;
+  taxFileNumber: string;
+  dateOfBirth: string;
+  countryOfBirth: string;
+  city: string;
+  occupation: string;
+  employer: string;
+  email: string;
 }
 
 export interface PartialEntity {

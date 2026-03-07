@@ -65,6 +65,45 @@ export function ReviewStep() {
           </CardContent>
         </Card>
 
+        {state.individuals.slice(0, state.individualCount).map((ind, i) => (
+          <Card key={ind.id} className="rounded-xl border border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 rounded-t-xl border-b border-slate-100 pb-4">
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Individual {i + 1}: {[ind.title, ind.givenName, ind.middleName, ind.surname].filter(Boolean).join(" ") || "—"}
+              </CardTitle>
+              {ind.relationshipRoles?.length > 0 && (
+                <CardDescription className="mt-1">
+                  {ind.relationshipRoles.map((r) => r.replace(/_/g, " ")).join(", ")}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-2 pt-4 text-sm text-slate-700">
+              {(ind.streetAddress || ind.email) && (
+                <>
+                  {ind.streetAddress && (
+                    <div className="grid grid-cols-[1fr_2fr] gap-4 py-1">
+                      <span className="font-medium text-slate-900">Address</span>
+                      <span>{[ind.streetAddress, ind.streetAddressLine2].filter(Boolean).join(", ")}</span>
+                    </div>
+                  )}
+                  {ind.dateOfBirth && (
+                    <div className="grid grid-cols-[1fr_2fr] gap-4 py-1">
+                      <span className="font-medium text-slate-900">Date of birth</span>
+                      <span>{ind.dateOfBirth}</span>
+                    </div>
+                  )}
+                  {ind.email && (
+                    <div className="grid grid-cols-[1fr_2fr] gap-4 py-1">
+                      <span className="font-medium text-slate-900">Email</span>
+                      <span>{ind.email}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+
         {state.entities.slice(0, state.entityCount).map((entity, i) => (
           <Card key={entity.id} className="rounded-xl border border-slate-200 shadow-sm">
             <CardHeader className="bg-slate-50/50 rounded-t-xl border-b border-slate-100 pb-4">

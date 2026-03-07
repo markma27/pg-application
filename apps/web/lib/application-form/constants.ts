@@ -47,3 +47,6 @@ export const APPLICANT_ROLE_OPTIONS = [
 
 export const MIN_ENTITIES = 1;
 export const MAX_ENTITIES = 6;
+
+export const MIN_INDIVIDUALS = 1;
+export const MAX_INDIVIDUALS = 4;
