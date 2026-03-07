@@ -14,7 +14,7 @@ export function ContactStep() {
         <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
           New Client Application Form
         </h1>
-        <p className="mt-2 text-base text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           Onboard new clients for investment portfolio administration and reporting service.
         </p>
       </div>

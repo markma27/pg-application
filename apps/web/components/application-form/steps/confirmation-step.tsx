@@ -26,7 +26,7 @@ export function ConfirmationStep() {
         <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
           Application received
         </h1>
-        <p className="mt-2 text-base text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           Thank you. Your application has been submitted successfully.
         </p>
       </div>

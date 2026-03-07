@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useApplicationForm } from "@/lib/application-form";
-import { ArrowRight, FileText, RotateCcw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, RotateCcw, AlertTriangle } from "lucide-react";
 
 type StepNavVariant = "header" | "panel";
 
@@ -99,6 +99,18 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
           <RotateCcw className="h-4 w-4" />
           Restart
         </button>
+        {state.step >= 1 && (
+          <button
+            type="button"
+            onClick={prevStep}
+            disabled={isSubmitting}
+            className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        )}
         <button
           type="button"
           onClick={handlePrimary}

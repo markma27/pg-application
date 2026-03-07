@@ -23,7 +23,7 @@ export function ReviewStep() {
         <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
           Review and summary
         </h1>
-        <p className="mt-2 text-base text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           Please confirm your details before submitting the application.
         </p>
       </div>
