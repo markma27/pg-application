@@ -23,7 +23,7 @@ export function ContactStep() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Contact and group details</h2>
           <p className="text-sm text-slate-500">
-            Primary contact and optional group or adviser information.
+            Primary contact and group information.
           </p>
         </div>
 

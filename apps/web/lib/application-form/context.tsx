@@ -129,7 +129,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
   }, [state.step, state.entityCount, individualDetailsStepIndex, adviserDetailsStepIndex, reviewStepIndex]);
 
   const currentStepDescription = useMemo(() => {
-    if (state.step === 0) return "Primary contact and optional group or adviser information.";
+    if (state.step === 0) return "Primary contact and group information.";
     if (state.step === 1) return "How many entities (e.g. trusts, companies) are included in this application.";
     if (state.step >= entityStepsStart && state.step < individualDetailsStepIndex) {
       const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
