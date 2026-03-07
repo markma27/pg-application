@@ -12,6 +12,10 @@ function createEmptyEntity(id: string): PartialEntity {
     entityName: "",
     entityType: "",
     portfolioStatus: "",
+    portfolioHin: "",
+    abn: "",
+    tfn: "",
+    registeredForGst: "",
     listedInvestmentCount: 0,
     unlistedInvestmentCount: 0,
     propertyCount: 0,
@@ -34,6 +38,19 @@ const initialState: ApplicationFormState = {
   groupName: "",
   entityCount: 1,
   entities: [createEmptyEntity(crypto.randomUUID())],
+  adviserName: "",
+  adviserCompany: "",
+  adviserAddress: "",
+  adviserTel: "",
+  adviserFax: "",
+  adviserEmail: "",
+  nominateAdviserPrimaryContact: "",
+  authoriseAdviserAccessStatements: "",
+  authoriseDealWithAdviserDirect: "",
+  annualReportSendTo: "",
+  meetingProxySendTo: "",
+  investmentOffersSendTo: "",
+  dividendPreference: "",
   submitResult: null,
   isSubmitting: false,
   stepError: null,
@@ -49,6 +66,8 @@ type ApplicationFormContextValue = {
   setContact: (data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => void;
   setEntityCount: (count: number) => void;
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
+  setAdviser: (data: Partial<Pick<ApplicationFormState, "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => void;
+  adviserDetailsStepIndex: number;
   nextStep: () => void;
   prevStep: () => void;
   restart: () => void;
@@ -64,35 +83,38 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
   const entityStepsStart = 2;
   const entityStepsPerEntity = 3;
   const totalEntitySteps = state.entityCount * entityStepsPerEntity;
-  const totalSteps = 4 + totalEntitySteps;
-  const reviewStepIndex = entityStepsStart + totalEntitySteps;
+  const adviserDetailsStepIndex = entityStepsStart + totalEntitySteps;
+  const reviewStepIndex = adviserDetailsStepIndex + 1;
   const confirmationStepIndex = reviewStepIndex + 1;
+  const totalSteps = 5 + totalEntitySteps;
 
   const currentStepLabel = useMemo(() => {
     if (state.step === 0) return "Contact / group details";
     if (state.step === 1) return "Add entities";
-    if (state.step >= entityStepsStart && state.step < reviewStepIndex) {
+    if (state.step >= entityStepsStart && state.step < adviserDetailsStepIndex) {
       const entityIndex = Math.floor((state.step - entityStepsStart) / entityStepsPerEntity);
       const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
       const labels = ["Entity type", "Portfolio & assets", "Services & commencement"];
       return `Entity ${entityIndex + 1} – ${labels[subStep]}`;
     }
+    if (state.step === adviserDetailsStepIndex) return "Adviser & administration";
     if (state.step === reviewStepIndex) return "Review and summary";
     return "Confirmation";
-  }, [state.step, state.entityCount, reviewStepIndex]);
+  }, [state.step, state.entityCount, adviserDetailsStepIndex, reviewStepIndex]);
 
   const currentStepDescription = useMemo(() => {
     if (state.step === 0) return "Primary contact and optional group or adviser information.";
     if (state.step === 1) return "How many entities (e.g. trusts, companies) are included in this application.";
-    if (state.step >= entityStepsStart && state.step < reviewStepIndex) {
+    if (state.step >= entityStepsStart && state.step < adviserDetailsStepIndex) {
       const subStep = (state.step - entityStepsStart) % entityStepsPerEntity;
       if (subStep === 0) return "Select the entity type for this application.";
       if (subStep === 1) return "Portfolio status and asset counts for complexity assessment.";
       return "Select services and preferred commencement date.";
     }
+    if (state.step === adviserDetailsStepIndex) return "Investment adviser, administration and dividend preferences.";
     if (state.step === reviewStepIndex) return "Review your details before submitting.";
     return "Your application has been submitted.";
-  }, [state.step, state.entityCount, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
+  }, [state.step, state.entityCount, adviserDetailsStepIndex, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
 
   const setContact = useCallback((data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => {
     setState((s) => ({ ...s, ...data, stepError: null }));
@@ -119,6 +141,10 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     });
   }, []);
 
+  const setAdviser = useCallback((data: Partial<Pick<ApplicationFormState, "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => {
+    setState((s) => ({ ...s, ...data, stepError: null }));
+  }, []);
+
   const nextStep = useCallback(() => {
     const stepsPerEntity = 3;
     const entityStart = 2;
@@ -139,7 +165,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         if (subStep === 2 && (entity.serviceCodes.length === 0 || !entity.commencementDate?.trim()))
           return { ...s, stepError: "Please select at least one service and enter preferred commencement." };
       }
-      const reviewStep = entityStart + s.entityCount * stepsPerEntity;
+      const reviewStep = entityStart + s.entityCount * stepsPerEntity + 1;
       return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null };
     });
   }, []);
@@ -152,7 +178,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     setState({
       ...initialState,
       entities: [createEmptyEntity(crypto.randomUUID())],
-    });
+    } as ApplicationFormState);
   }, []);
 
   const clearStepError = useCallback(() => {
@@ -215,13 +241,15 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       setContact,
       setEntityCount,
       setEntity,
+      setAdviser,
+      adviserDetailsStepIndex,
       nextStep,
       prevStep,
       restart,
       submit,
       clearStepError,
     }),
-    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, nextStep, prevStep, restart, submit, clearStepError],
+    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, setAdviser, adviserDetailsStepIndex, nextStep, prevStep, restart, submit, clearStepError],
   );
 
   return (

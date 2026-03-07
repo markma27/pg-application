@@ -40,6 +40,61 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
             />
           </div>
 
+          <div className="space-y-2 sm:col-span-2">
+            <Label className="text-slate-700">Portfolio HIN (optional)</Label>
+            <Input
+              value={entity.portfolioHin ?? ""}
+              onChange={(e) => update({ portfolioHin: e.target.value })}
+              placeholder="e.g. XXXXXXXXX"
+              className="h-11 rounded-lg border-slate-300 px-4"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-700">ABN (optional)</Label>
+            <Input
+              value={entity.abn ?? ""}
+              onChange={(e) => update({ abn: e.target.value })}
+              placeholder="e.g. 12 345 678 901"
+              className="h-11 rounded-lg border-slate-300 px-4"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-700">TFN (optional)</Label>
+            <Input
+              value={entity.tfn ?? ""}
+              onChange={(e) => update({ tfn: e.target.value })}
+              placeholder="e.g. XXX XXX XXX"
+              className="h-11 rounded-lg border-slate-300 px-4"
+            />
+          </div>
+          {entity.abn?.trim() !== "" && (
+            <div className="space-y-3 sm:col-span-2">
+              <Label className="text-slate-700">Registered for GST?</Label>
+              <div className="flex gap-3">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name={`registered-for-gst-${entityIndex}`}
+                    checked={entity.registeredForGst === true}
+                    onChange={() => update({ registeredForGst: true })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">Yes</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name={`registered-for-gst-${entityIndex}`}
+                    checked={entity.registeredForGst === false}
+                    onChange={() => update({ registeredForGst: false })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">No</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4 sm:col-span-2">
             <div>
               <Label className="text-base font-semibold text-slate-900">

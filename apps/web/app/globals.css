@@ -161,6 +161,12 @@ a {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Google Places Autocomplete dropdown must appear above form cards */
+.pac-container {
+  z-index: 10000 !important;
+  font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

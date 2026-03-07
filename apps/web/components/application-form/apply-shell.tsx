@@ -1,10 +1,16 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import { useApplicationForm } from "@/lib/application-form";
 import { StepNav } from "@/components/application-form/step-nav";
+import { loadGooglePlacesScript } from "@/components/ui/address-autocomplete";
 
 export function ApplyShell({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    if (apiKey) loadGooglePlacesScript(apiKey).catch(() => {});
+  }, []);
   const { state, totalSteps, currentStepLabel, currentStepDescription, reviewStepIndex, confirmationStepIndex } =
     useApplicationForm();
   const progressPercent = totalSteps > 0 ? Math.round(((state.step + 1) / totalSteps) * 100) : 0;

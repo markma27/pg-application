@@ -1,7 +1,10 @@
 import type { ApplicationInput, EntityInput } from "@pg/shared";
 
+/** Where to send a document type */
+export type DocumentSendTo = "trustee" | "adviser" | "not_required";
+
 export interface ApplicationFormState {
-  /** Step index: 0 = contact, 1 = entity count, 2..2+3N-1 = entity details (3 sub-steps each), 2+3N = review, 3+3N = confirmation */
+  /** Step index: 0 = contact, 1 = entity count, 2..2+3N-1 = entity details, 2+3N = adviser details, 3+3N = review, 4+3N = confirmation */
   step: number;
   /** Contact/group (step 0) */
   primaryContactName: string;
@@ -14,6 +17,20 @@ export interface ApplicationFormState {
   entityCount: number;
   /** Entity drafts; length must match entityCount before review */
   entities: PartialEntity[];
+  /** Adviser & admin details (step before review) */
+  adviserName: string;
+  adviserCompany: string;
+  adviserAddress: string;
+  adviserTel: string;
+  adviserFax: string;
+  adviserEmail: string;
+  nominateAdviserPrimaryContact: boolean | "";
+  authoriseAdviserAccessStatements: boolean | "";
+  authoriseDealWithAdviserDirect: boolean | "";
+  annualReportSendTo: DocumentSendTo | "";
+  meetingProxySendTo: DocumentSendTo | "";
+  investmentOffersSendTo: DocumentSendTo | "";
+  dividendPreference: "cash" | "reinvest" | "";
   /** Set after successful submit */
   submitResult: SubmitResult | null;
   /** Submitting in progress */
@@ -27,6 +44,10 @@ export interface PartialEntity {
   entityName: string;
   entityType: EntityInput["entityType"] | "";
   portfolioStatus: EntityInput["portfolioStatus"] | "";
+  portfolioHin: string;
+  abn: string;
+  tfn: string;
+  registeredForGst: boolean | "";
   listedInvestmentCount: number;
   unlistedInvestmentCount: number;
   propertyCount: number;
@@ -59,6 +80,10 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
       entityName: e.entityName || "Unnamed",
       entityType: e.entityType,
       portfolioStatus: e.portfolioStatus,
+      portfolioHin: e.portfolioHin ?? "",
+      abn: e.abn ?? "",
+      tfn: e.tfn ?? "",
+      registeredForGst: e.registeredForGst === "" ? undefined : e.registeredForGst,
       listedInvestmentCount: e.listedInvestmentCount ?? 0,
       unlistedInvestmentCount: e.unlistedInvestmentCount ?? 0,
       propertyCount: e.propertyCount ?? 0,
