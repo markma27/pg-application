@@ -28,7 +28,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             {navItems.map(({ label, icon: Icon }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
               >
                 <Icon className="h-4 w-4" />
                 <span>{label}</span>

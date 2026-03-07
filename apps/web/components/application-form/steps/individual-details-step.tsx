@@ -173,7 +173,7 @@ export function IndividualDetailsStep() {
                   <button
                     type="button"
                     onClick={() => setIndividualCount(count - 1)}
-                    className="text-sm font-medium text-slate-600 underline hover:text-slate-800"
+                    className="cursor-pointer text-sm font-medium text-slate-600 underline hover:text-slate-800"
                   >
                     Remove this individual
                   </button>
@@ -189,7 +189,7 @@ export function IndividualDetailsStep() {
               type="button"
               onClick={() => setIndividualCount(count + 1)}
               className={cn(
-                "rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600",
+                "cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600",
                 "hover:border-emerald-400 hover:bg-emerald-50/50 hover:text-emerald-700"
               )}
             >

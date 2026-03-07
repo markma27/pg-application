@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Poppins, Montserrat } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { PageTransition } from "@/components/page-transition";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -26,8 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn(poppins.variable, montserrat.variable)}>
-      <body className="antialiased">{children}</body>
+    <html lang="en" className={cn(poppins.variable, montserrat.variable, "bg-slate-100")}>
+      <body className="min-h-screen bg-slate-100 antialiased">
+        <PageTransition>{children}</PageTransition>
+      </body>
     </html>
   );
 }

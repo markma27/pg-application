@@ -7,22 +7,35 @@ import { StepNav } from "@/components/application-form/step-nav";
 import { loadGooglePlacesScript } from "@/components/ui/address-autocomplete";
 
 export function ApplyShell({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-    if (apiKey) loadGooglePlacesScript(apiKey).catch(() => {});
-  }, []);
   const { state, totalSteps, currentStepLabel, currentStepDescription, reviewStepIndex, confirmationStepIndex } =
     useApplicationForm();
   const progressPercent = totalSteps > 0 ? Math.round(((state.step + 1) / totalSteps) * 100) : 0;
   const isConfirmation = state.step >= confirmationStepIndex;
   const showNavPanel = !isConfirmation;
+  const hasProgress = state.step > 0 && state.step < confirmationStepIndex;
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    if (apiKey) loadGooglePlacesScript(apiKey).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasProgress) {
+        e.preventDefault();
+        (e as { returnValue: string }).returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasProgress]);
 
   return (
     <main className="min-h-screen bg-slate-100">
       {/* Full-width header bar */}
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <a href="/" className="flex shrink-0 items-center">
+          <a href="/" className="flex shrink-0 cursor-pointer items-center">
             <div className="relative h-[4.2rem] w-[13.44rem] sm:h-[5.04rem] sm:w-[16.8rem]">
               <Image
                 src="/PortfolioGuardian_OriginalLogo.svg"
@@ -59,7 +72,9 @@ export function ApplyShell({ children }: { children: React.ReactNode }) {
         {/* Left: form content in grey card */}
         <div className="min-w-0 flex-1 lg:max-w-[65%]">
           <div className="h-full rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-sm sm:p-8 lg:p-10 lg:rounded-r-none">
-            {children}
+            <div key={state.step} className="animate-fade-in">
+              {children}
+            </div>
           </div>
         </div>
 

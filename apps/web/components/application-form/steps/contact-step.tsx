@@ -84,18 +84,7 @@ export function ContactStep() {
             </select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contact-adviser" className="text-slate-700">Adviser / representative details <span className="text-slate-400 font-normal">(optional)</span></Label>
-            <Input
-              id="contact-adviser"
-              value={state.adviserDetails}
-              onChange={(e) => setContact({ adviserDetails: e.target.value })}
-              placeholder="If applicable"
-              className="h-11 rounded-lg border-slate-300 px-4"
-            />
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="contact-group" className="text-slate-700">Family or group name <span className="text-slate-400 font-normal">(optional)</span></Label>
             <Input
               id="contact-group"

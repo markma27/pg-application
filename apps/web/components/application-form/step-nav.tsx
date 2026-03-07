@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApplicationForm } from "@/lib/application-form";
 import { ArrowLeft, ArrowRight, FileText, RotateCcw, AlertTriangle } from "lucide-react";
 
 type StepNavVariant = "header" | "panel";
 
-const RESTART_MESSAGE = "Are you sure you want to restart? All progress will be lost and you'll return to step 1.";
+const RESTART_MESSAGE = "Are you sure you want to restart? All progress will be lost and you'll return to the landing page.";
 
 export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVariant; showIcon?: boolean }) {
+  const router = useRouter();
   const {
     state,
     prevStep,
@@ -35,6 +37,7 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
   const confirmRestart = () => {
     restart();
     closeRestartConfirm();
+    router.push("/");
   };
 
   const restartConfirmModal = showRestartConfirm && (
@@ -126,8 +129,6 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
   }
 
   return (
-    <>
-      {restartConfirmModal}
     <div className="flex flex-col gap-6 text-center">
       {showIcon && (
         <div className="flex justify-center">
@@ -165,17 +166,7 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
             Back
           </button>
         )}
-        <button
-          type="button"
-          onClick={openRestartConfirm}
-          className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 text-sm font-medium text-white/90 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
-          aria-label="Restart form"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Restart
-        </button>
       </div>
     </div>
-    </>
   );
 }

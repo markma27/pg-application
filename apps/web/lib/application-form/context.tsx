@@ -93,6 +93,7 @@ type ApplicationFormContextValue = {
   adviserDetailsStepIndex: number;
   nextStep: () => void;
   prevStep: () => void;
+  goToStep: (step: number) => void;
   restart: () => void;
   submit: () => Promise<void>;
   clearStepError: () => void;
@@ -246,6 +247,19 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     setState((s) => ({ ...s, step: Math.max(0, s.step - 1), stepError: null }));
   }, []);
 
+  const goToStep = useCallback((step: number) => {
+    setState((s) => {
+      const entityStepsStart = 2;
+      const totalEntitySteps = s.entityCount * 3;
+      const individualStep = entityStepsStart + totalEntitySteps;
+      const adviserStep = individualStep + 1;
+      const reviewStep = adviserStep + 1;
+      const maxStep = reviewStep - 1;
+      const clamped = Math.max(0, Math.min(step, maxStep));
+      return { ...s, step: clamped, stepError: null };
+    });
+  }, []);
+
   const restart = useCallback(() => {
     setState({
       ...initialState,
@@ -321,11 +335,12 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       adviserDetailsStepIndex,
       nextStep,
       prevStep,
+      goToStep,
       restart,
       submit,
       clearStepError,
     }),
-    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, setIndividual, setIndividualCount, setAdviser, individualDetailsStepIndex, adviserDetailsStepIndex, nextStep, prevStep, restart, submit, clearStepError],
+    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setEntityCount, setEntity, setIndividual, setIndividualCount, setAdviser, individualDetailsStepIndex, adviserDetailsStepIndex, nextStep, prevStep, goToStep, restart, submit, clearStepError],
   );
 
   return (

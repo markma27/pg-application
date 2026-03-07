@@ -1,99 +1,72 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LandingCtaForm } from "@/components/landing-cta-form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Info } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-12 md:py-16">
-      {/* Logo and hero */}
-      <header className="flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="relative h-12 w-full max-w-[280px] md:h-14 md:max-w-[320px]">
-          <Image
-            src="/PortfolioGuardian_OriginalLogo.svg"
-            alt="PortfolioGuardian"
-            fill
-            className="object-contain object-left"
-            priority
-          />
+    <main className="min-h-screen bg-slate-100">
+      <div className="mx-auto mt-10 max-w-2xl rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-sm sm:p-8 md:mt-14 lg:p-10">
+        {/* Logo */}
+        <Link href="/" className="mx-auto flex cursor-pointer justify-center">
+          <div className="relative h-[6.3rem] w-[20.16rem] sm:h-[7.56rem] sm:w-[25.2rem]">
+            <Image
+              src="/PortfolioGuardian_OriginalLogo.svg"
+              alt="PortfolioGuardian"
+              fill
+              className="object-contain object-center"
+              priority
+            />
+          </div>
+        </Link>
+        {/* Main title */}
+        <h1 className="mt-8 text-center text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
+          Let&apos;s get started
+        </h1>
+
+        {/* Intro */}
+        <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+          Welcome to PortfolioGuardian&apos;s application portal. Use this form to tell us about your
+          investment entities—trusts, companies, SMSFs, individuals—and the services you need. We
+          assess each entity for fit and give indicative pricing where we can; anything that needs
+          tailored or compliance-heavy work is referred to our partners at Jaquillard Minns.
+        </p>
+        <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+          Have the following information ready before you begin:
+        </p>
+
+        {/* Pre-application checklist */}
+        <ul className="mt-4 list-inside list-disc space-y-1 text-xs leading-snug text-slate-600">
+          <li>Your contact details (name, email, phone)</li>
+          <li>How many entities you want to include and their types (e.g. trust, company, SMSF)</li>
+          <li>For each entity: name, portfolio status (new or existing), and basic asset and service details</li>
+          <li>Personal details for each individual (e.g. trustees, directors) linked to the application</li>
+          <li>Your investment adviser&apos;s details, if you have one</li>
+        </ul>
+
+        {/* Security box */}
+        <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50/80 p-4">
+          <div className="flex gap-3">
+            <Info className="h-5 w-5 shrink-0 text-blue-600" aria-hidden />
+            <div>
+              <h2 className="text-xs font-semibold text-blue-900">Enterprise-level security</h2>
+              <p className="mt-1 text-xs text-slate-700 leading-relaxed">
+                Your information is protected with enterprise-level encryption and strict privacy
+                compliance. Data is secure, confidential, and handled in line with Australian
+                financial services and privacy regulations.
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3">
+
+        {/* Main CTA */}
+        <div className="mt-10 text-center">
           <Link
             href="/apply"
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="inline-flex h-12 w-full max-w-sm cursor-pointer items-center justify-center rounded-lg bg-emerald-700 px-6 text-sm font-medium !text-white shadow-sm transition-colors hover:bg-emerald-800 hover:!text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
           >
             Start application
           </Link>
-          <Link
-            href="/admin"
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            Admin portal
-          </Link>
-        </div>
-      </header>
-
-      <div className="mt-12 grid gap-10 md:mt-16 md:grid-cols-[1.2fr_0.8fr] md:gap-12">
-        <section className="space-y-6">
-          <div className="space-y-4">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Standardised portfolio administration starts with clear triage.
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-muted-foreground">
-              One application can capture multiple entities. Each is assessed
-              separately for fit and indicative pricing. PG handles standard
-              administration and reporting; tailored or compliance-heavy work
-              is routed to Jaquillard Minns.
-            </p>
-          </div>
-          <ul className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-            <li>One application, one or many entities</li>
-            <li>Per-entity indicative pricing where eligible</li>
-            <li>Clear PG vs JM routing</li>
-            <li>Guided multi-step form</li>
-          </ul>
-        </section>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>PRD-aligned scope</CardTitle>
-              <CardDescription>
-                What stays in PortfolioGuardian and what is referred to JM.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>PG: standard investment administration and reporting.</p>
-              <p>JM: PAF/PuAF, customised reporting, broader compliance and accounting.</p>
-            </CardContent>
-            <CardFooter>
-              <Link
-                href="/apply"
-                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-secondary px-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                Begin application
-              </Link>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Get in touch</CardTitle>
-              <CardDescription>
-                Questions before you apply? We’ll get back to you.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LandingCtaForm />
-            </CardContent>
-          </Card>
+          <p className="mt-3 text-xs text-slate-500">Typical completion time: 10–15 minutes</p>
         </div>
       </div>
     </main>

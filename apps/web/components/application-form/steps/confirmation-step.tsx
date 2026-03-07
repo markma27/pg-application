@@ -64,7 +64,7 @@ export function ConfirmationStep() {
         <div className="mt-8 flex justify-center">
           <Link
             href="/"
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            className="inline-flex h-11 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
           >
             Return to home
           </Link>
