@@ -1,0 +1,15 @@
+import { Router } from "express";
+import { applicationInputSchema } from "@pg/shared";
+import { submitApplication } from "../../services/submission.service";
+
+export const publicApplicationsRouter = Router();
+
+publicApplicationsRouter.post("/", async (req, res, next) => {
+  try {
+    const payload = applicationInputSchema.parse(req.body);
+    const result = await submitApplication(payload);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
