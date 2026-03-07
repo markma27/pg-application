@@ -11,9 +11,7 @@ function createEmptyIndividual(id: string): PartialIndividual {
     id,
     relationshipRoles: [],
     title: "",
-    givenName: "",
-    middleName: "",
-    surname: "",
+    fullName: "",
     streetAddress: "",
     streetAddressLine2: "",
     taxFileNumber: "",
@@ -220,9 +218,24 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       }
       const individualStep = entityStart + s.entityCount * stepsPerEntity;
       if (s.step === individualStep) {
-        const first = s.individuals[0];
-        if (!first?.givenName?.trim() || !first?.surname?.trim())
-          return { ...s, stepError: "Please complete at least Given name and Surname for Individual 1." };
+        const individuals = s.individuals.slice(0, s.individualCount);
+        for (let i = 0; i < individuals.length; i++) {
+          const ind = individuals[i];
+          const n = i + 1;
+          if (!ind) continue;
+          if (!ind.relationshipRoles?.length)
+            return { ...s, stepError: `Individual ${n}: please select at least one Relationship to Account.` };
+          if (!ind.title?.trim()) return { ...s, stepError: `Individual ${n}: Title is required.` };
+          if (!ind.fullName?.trim()) return { ...s, stepError: `Individual ${n}: Full name is required.` };
+          if (!ind.streetAddress?.trim()) return { ...s, stepError: `Individual ${n}: Street address is required.` };
+          if (!ind.taxFileNumber?.trim()) return { ...s, stepError: `Individual ${n}: Tax File Number is required.` };
+          if (!ind.dateOfBirth?.trim()) return { ...s, stepError: `Individual ${n}: Date of birth is required.` };
+          if (!ind.countryOfBirth?.trim()) return { ...s, stepError: `Individual ${n}: Country of birth is required.` };
+          if (!ind.city?.trim()) return { ...s, stepError: `Individual ${n}: City of birth is required.` };
+          if (!ind.occupation?.trim()) return { ...s, stepError: `Individual ${n}: Occupation is required.` };
+          if (!ind.employer?.trim()) return { ...s, stepError: `Individual ${n}: Employer is required.` };
+          if (!ind.email?.trim()) return { ...s, stepError: `Individual ${n}: Email is required.` };
+        }
       }
       const reviewStep = individualStep + 2;
       return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null };

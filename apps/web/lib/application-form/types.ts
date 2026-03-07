@@ -43,15 +43,13 @@ export interface ApplicationFormState {
 }
 
 /** Relationship to account (multiple allowed per individual) */
-export type IndividualRelationshipRole = "individual" | "trustee" | "director" | "company_secretary" | "primary_contact";
+export type IndividualRelationshipRole = "individual" | "trustee" | "director" | "company_secretary";
 
 export interface PartialIndividual {
   id: string;
   relationshipRoles: IndividualRelationshipRole[];
   title: string;
-  givenName: string;
-  middleName: string;
-  surname: string;
+  fullName: string;
   streetAddress: string;
   streetAddressLine2: string;
   taxFileNumber: string;

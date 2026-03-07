@@ -69,7 +69,7 @@ export function ReviewStep() {
           <Card key={ind.id} className="rounded-xl border border-slate-200 shadow-sm">
             <CardHeader className="bg-slate-50/50 rounded-t-xl border-b border-slate-100 pb-4">
               <CardTitle className="text-lg font-semibold text-slate-900">
-                Individual {i + 1}: {[ind.title, ind.givenName, ind.middleName, ind.surname].filter(Boolean).join(" ") || "—"}
+                Individual {i + 1}: {[ind.title, ind.fullName].filter(Boolean).join(" ") || "—"}
               </CardTitle>
               {ind.relationshipRoles?.length > 0 && (
                 <CardDescription className="mt-1">

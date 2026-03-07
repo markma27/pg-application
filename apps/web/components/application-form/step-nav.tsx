@@ -128,7 +128,7 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
   return (
     <>
       {restartConfirmModal}
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 text-center">
       {showIcon && (
         <div className="flex justify-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 text-white">

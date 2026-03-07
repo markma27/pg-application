@@ -13,7 +13,6 @@ const RELATIONSHIP_OPTIONS: { value: IndividualRelationshipRole; label: string }
   { value: "trustee", label: "Trustee" },
   { value: "director", label: "Director" },
   { value: "company_secretary", label: "Company Secretary" },
-  { value: "primary_contact", label: "Primary Contact" },
 ];
 
 function toggleRole(roles: IndividualRelationshipRole[], role: IndividualRelationshipRole): IndividualRelationshipRole[] {
@@ -50,7 +49,7 @@ export function IndividualDetailsStep() {
             </h2>
             <div className="space-y-6 p-4 sm:p-6">
               <div className="space-y-3">
-                <Label className="text-slate-700">Relationship to Account</Label>
+                <Label className="text-slate-700">Relationship to Account <span className="text-red-600">*</span></Label>
                 <div className="flex flex-wrap gap-x-6 gap-y-2">
                   {RELATIONSHIP_OPTIONS.map((opt) => (
                     <label key={opt.value} className="flex cursor-pointer items-center gap-2">
@@ -71,47 +70,29 @@ export function IndividualDetailsStep() {
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-slate-700">Title</Label>
-                  <Input
-                    value={ind.title}
-                    onChange={(e) => setIndividual(index, { title: e.target.value })}
-                    placeholder="e.g. Mr, Ms"
-                    className="h-11 rounded-lg border-slate-300 px-4"
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2 sm:grid sm:grid-cols-3 sm:gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-700">Given Name</Label>
+                <div className="flex items-end gap-4 sm:col-span-2 sm:flex-nowrap">
+                  <div className="shrink-0 space-y-2 w-20">
+                    <Label className="text-slate-700">Title <span className="text-red-600">*</span></Label>
                     <Input
-                      value={ind.givenName}
-                      onChange={(e) => setIndividual(index, { givenName: e.target.value })}
-                      placeholder="Given name"
+                      value={ind.title}
+                      onChange={(e) => setIndividual(index, { title: e.target.value })}
+                      placeholder="e.g. Mr, Ms"
                       className="h-11 rounded-lg border-slate-300 px-4"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-700">Middle Name</Label>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Label className="text-slate-700">Full Name <span className="text-red-600">*</span></Label>
                     <Input
-                      value={ind.middleName}
-                      onChange={(e) => setIndividual(index, { middleName: e.target.value })}
-                      placeholder="Middle name"
-                      className="h-11 rounded-lg border-slate-300 px-4"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-700">Surname</Label>
-                    <Input
-                      value={ind.surname}
-                      onChange={(e) => setIndividual(index, { surname: e.target.value })}
-                      placeholder="Surname"
-                      className="h-11 rounded-lg border-slate-300 px-4"
+                      value={ind.fullName}
+                      onChange={(e) => setIndividual(index, { fullName: e.target.value })}
+                      placeholder="Full name"
+                      className="h-11 w-full rounded-lg border-slate-300 px-4"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-700">Street Address</Label>
+                  <Label className="text-slate-700">Street Address <span className="text-red-600">*</span></Label>
                   <AddressAutocomplete
                     value={ind.streetAddress}
                     onChange={(v) => setIndividual(index, { streetAddress: v })}
@@ -119,27 +100,18 @@ export function IndividualDetailsStep() {
                     className="h-11 rounded-lg border-slate-300 px-4"
                   />
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-700">Address line 2 (optional)</Label>
-                  <Input
-                    value={ind.streetAddressLine2}
-                    onChange={(e) => setIndividual(index, { streetAddressLine2: e.target.value })}
-                    placeholder="Unit, building, etc."
-                    className="h-11 rounded-lg border-slate-300 px-4"
-                  />
-                </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-700">Tax File Number</Label>
+                  <Label className="text-slate-700">Tax File Number <span className="text-red-600">*</span></Label>
                   <Input
                     value={ind.taxFileNumber}
                     onChange={(e) => setIndividual(index, { taxFileNumber: e.target.value })}
-                    placeholder="TFN (optional)"
+                    placeholder="TFN"
                     className="h-11 rounded-lg border-slate-300 px-4"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-700">Date of Birth</Label>
+                  <Label className="text-slate-700">Date of Birth <span className="text-red-600">*</span></Label>
                   <Input
                     type="date"
                     value={ind.dateOfBirth}
@@ -148,7 +120,7 @@ export function IndividualDetailsStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-700">Country of Birth</Label>
+                  <Label className="text-slate-700">Country of Birth <span className="text-red-600">*</span></Label>
                   <Input
                     value={ind.countryOfBirth}
                     onChange={(e) => setIndividual(index, { countryOfBirth: e.target.value })}
@@ -157,7 +129,7 @@ export function IndividualDetailsStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-700">City</Label>
+                  <Label className="text-slate-700">City of Birth <span className="text-red-600">*</span></Label>
                   <Input
                     value={ind.city}
                     onChange={(e) => setIndividual(index, { city: e.target.value })}
@@ -167,7 +139,7 @@ export function IndividualDetailsStep() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-700">Occupation</Label>
+                  <Label className="text-slate-700">Occupation <span className="text-red-600">*</span></Label>
                   <Input
                     value={ind.occupation}
                     onChange={(e) => setIndividual(index, { occupation: e.target.value })}
@@ -176,7 +148,7 @@ export function IndividualDetailsStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-700">Employer</Label>
+                  <Label className="text-slate-700">Employer <span className="text-red-600">*</span></Label>
                   <Input
                     value={ind.employer}
                     onChange={(e) => setIndividual(index, { employer: e.target.value })}
@@ -185,7 +157,7 @@ export function IndividualDetailsStep() {
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-700">Email</Label>
+                  <Label className="text-slate-700">Email <span className="text-red-600">*</span></Label>
                   <Input
                     type="email"
                     value={ind.email}
