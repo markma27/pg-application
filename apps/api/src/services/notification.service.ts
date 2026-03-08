@@ -1,4 +1,7 @@
-import type { ApplicationAssessment, ApplicationInput } from "@pg/shared";
+import type {
+  ApplicationAssessment,
+  ApplicationInput,
+} from "../../../../packages/shared/src/index.js";
 import { env } from "../lib/env.js";
 import { resend } from "../lib/resend.js";
 

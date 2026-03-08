@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { assessApplication, type ApplicationInput } from "@pg/shared";
+import {
+  assessApplication,
+  type ApplicationInput,
+} from "../../../../packages/shared/src/index.js";
 import { sendApplicationNotification } from "./notification.service.js";
 
 export async function submitApplication(payload: ApplicationInput) {
