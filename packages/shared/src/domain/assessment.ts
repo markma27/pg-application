@@ -6,7 +6,7 @@ import {
   ONBOARDING_FEES,
   OTHER_ADD_ONS,
   REPORTING_ADD_ONS,
-} from "../constants/pricing";
+} from "../constants/pricing.js";
 import type {
   ApplicationAssessment,
   ApplicationInput,
@@ -14,7 +14,7 @@ import type {
   EntityInput,
   PricingStatus,
   RoutingOutcome,
-} from "../schemas/application";
+} from "../schemas/application.js";
 
 function calculateComplexityPoints(entity: EntityInput) {
   return (
