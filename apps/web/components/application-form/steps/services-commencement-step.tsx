@@ -1,21 +1,25 @@
 "use client";
 
+import type { EntityInput } from "@pg/shared";
 import { useApplicationForm } from "@/lib/application-form";
 import { SERVICE_OPTIONS } from "@/lib/application-form/constants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+type ServiceCode = EntityInput["serviceCodes"][number];
 
 export function ServicesCommencementStep() {
   const { state, setEntity, setGroupServices } = useApplicationForm();
   const entities = state.entities.slice(0, Math.min(state.entityCount, 6));
   const commencementDate = state.groupCommencementDate ?? "";
 
-  const toggleService = (entityIndex: number, serviceValue: string, checked: boolean) => {
+  const toggleService = (entityIndex: number, serviceValue: ServiceCode, checked: boolean) => {
     const entity = state.entities[entityIndex];
     if (!entity) return;
-    const next = checked
-      ? [...(entity.serviceCodes || []), serviceValue]
-      : (entity.serviceCodes || []).filter((c) => c !== serviceValue);
+    const existing = (entity.serviceCodes || []) as ServiceCode[];
+    const next: ServiceCode[] = checked
+      ? [...existing, serviceValue]
+      : existing.filter((c) => c !== serviceValue);
     setEntity(entityIndex, { serviceCodes: next });
   };
 
