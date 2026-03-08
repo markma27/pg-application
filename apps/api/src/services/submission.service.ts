@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { assessApplication, type ApplicationInput } from "@pg/shared";
-import { sendApplicationNotification } from "./notification.service";
+import { sendApplicationNotification } from "./notification.service.js";
 
 export async function submitApplication(payload: ApplicationInput) {
   const applicationId = randomUUID();

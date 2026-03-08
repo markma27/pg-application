@@ -1,8 +1,8 @@
 import cors from "cors";
 import express from "express";
 import { ZodError } from "zod";
-import { publicApplicationsRouter } from "./routes/public/applications";
-import { adminApplicationsRouter } from "./routes/admin/applications";
+import { publicApplicationsRouter } from "./routes/public/applications.js";
+import { adminApplicationsRouter } from "./routes/admin/applications.js";
 
 export function createApp() {
   const app = express();

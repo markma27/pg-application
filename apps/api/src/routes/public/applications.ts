@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { applicationInputSchema } from "@pg/shared";
-import { submitApplication } from "../../services/submission.service";
+import { submitApplication } from "../../services/submission.service.js";
 
 export const publicApplicationsRouter = Router();
 
