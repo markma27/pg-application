@@ -19,11 +19,11 @@ Users only ever see the **landing page and the form** on your main domain. The f
 - **Vercel project**: One project for your main site (e.g. “pg-application”).
 - **Root Directory**: `apps/web`
 - **Framework**: Next.js (auto-detected)
-- **Build Command** (from repo root so workspaces work):
+- **Build Command** — override and set to (builds shared package first, then web):
   ```bash
-  cd ../.. && npm ci && npm run build -w @pg/web
+  cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/web
   ```
-  Or enable **“Include source files outside of the Root Directory”** and use: `npm run build`
+  Requires **“Include source files outside of the Root Directory”** to be **on**. Install runs from repo root; if install runs from `apps/web` only, use instead: `cd ../.. && npm ci && npm run build:web`.
 - **Environment variables** (Production, Preview, Development):
   - **`API_URL`** = backend base URL **with no trailing slash**  
     Example: `https://api.your-domain.vercel.app` or your API project’s default Vercel URL.  
