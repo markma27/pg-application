@@ -33,3 +33,6 @@ export function createApp() {
 
   return app;
 }
+
+// Default export for Vercel serverless: platform invokes this per request.
+export default createApp();
