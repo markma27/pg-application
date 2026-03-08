@@ -284,9 +284,8 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       return;
     }
     setState((s) => ({ ...s, isSubmitting: true, stepError: null }));
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
     try {
-      const res = await fetch(`${apiUrl}/applications`, {
+      const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),

@@ -1,59 +1,61 @@
-# Vercel deployment: Option B — main site + API subdomain
+# Publish the application form to Vercel
 
-One **main project** serves the landing page and form at your primary domain. A second project serves the **API on a subdomain** (e.g. `api.pg-application-theta.vercel.app`).
+Users only ever see the **landing page and the form** on your main domain. The form submits to your own site (`/api/applications`); the backend that processes submissions is not shown or linked anywhere.
 
 ---
 
-## 1. Main project (web app) — your primary domain
+## What you deploy
 
-Visitors see the landing page and application form at your main URL (e.g. `pg-application-theta.vercel.app`).
+1. **Web project (your main site)** — Root Directory: `apps/web`  
+   This is the only URL you give to users. It serves the landing page and the application form. Submissions go to your domain, then the server forwards them to the backend.
 
-- **Vercel project**: Create or use the project that will own your main domain.
-- **Git repository**: Connect the same repo for both projects.
+2. **Backend project (subdomain, optional to expose)** — Root Directory: `apps/api`  
+   This runs the logic that saves and processes applications. Users do not visit this URL; only your web server calls it. You can put it on a subdomain (e.g. `api.your-domain.vercel.app`) or use Vercel’s default URL.
+
+---
+
+## Step 1: Deploy the web app (the form)
+
+- **Vercel project**: One project for your main site (e.g. “pg-application”).
 - **Root Directory**: `apps/web`
-- **Framework Preset**: Next.js (auto-detected)
-- **Build Command** (run from repo root so workspaces resolve):
+- **Framework**: Next.js (auto-detected)
+- **Build Command** (from repo root so workspaces work):
   ```bash
   cd ../.. && npm ci && npm run build -w @pg/web
   ```
-  Alternatively: enable **“Include source files outside of the Root Directory”** and use Build: `npm run build`.
-- **Output Directory**: leave default (Next.js uses `.next` inside `apps/web`).
+  Or enable **“Include source files outside of the Root Directory”** and use: `npm run build`
 - **Environment variables** (Production, Preview, Development):
-  - **`NEXT_PUBLIC_API_URL`** = your API base URL **with no trailing slash**, e.g.  
-    `https://api.pg-application-theta.vercel.app`
-  - Any others the web app needs (e.g. `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`).
-- **Domain**: Attach your main domain (e.g. `pg-application-theta.vercel.app`) to **this** project.
+  - **`API_URL`** = backend base URL **with no trailing slash**  
+    Example: `https://api.your-domain.vercel.app` or your API project’s default Vercel URL.  
+    Used only on the server to forward form submissions; **not** visible to users.
+  - **`NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`** = your key (if you use address autocomplete).
+- **Domain**: Attach your main domain to **this** project.
 
-After deploy, the main domain serves the Next.js app (landing page and form). The form will call the API using `NEXT_PUBLIC_API_URL`.
+After deploy, your main URL shows the landing page and form. The form posts to your site; no API URL is shown to users.
 
 ---
 
-## 2. API project — subdomain
+## Step 2: Deploy the backend (for form processing)
 
-The Express API runs on a **subdomain** of the same (or another) Vercel project/team.
-
-- **Vercel project**: Create a **second** project (e.g. “pg-application-api”) from the same repo.
+- **Vercel project**: A second project (e.g. “pg-application-api”) from the same repo.
 - **Root Directory**: `apps/api`
-- **Build Command** (from repo root so shared code is available):
+- **Build Command**:
   ```bash
   cd ../.. && npm ci && npm run build -w @pg/shared && npm run build -w @pg/api
   ```
 - **Environment variables**: Whatever the API needs (Resend, Supabase, etc.).
-- **Subdomain**: In this project’s **Settings → Domains**, add a subdomain of your main domain, e.g.:
-  - `api.pg-application-theta.vercel.app`  
-  Vercel will assign a default URL like `pg-application-api-xxx.vercel.app`; you can use that for `NEXT_PUBLIC_API_URL` or the custom subdomain once it’s set.
+- **Domain** (optional): Add a subdomain like `api.your-domain.vercel.app` in this project’s **Settings → Domains**. You can also use the default `*.vercel.app` URL.
 
-Use this project’s **final API URL** (subdomain or default) as `NEXT_PUBLIC_API_URL` in the web project (step 1).
+Copy this project’s URL (subdomain or default) and set it as **`API_URL`** in the web project (Step 1).
 
 ---
 
-## 3. Summary (Option B)
+## Summary
 
-| Project      | Root Directory | URL example                          | Serves              |
-|-------------|----------------|--------------------------------------|---------------------|
-| **Web (main)** | `apps/web`     | `pg-application-theta.vercel.app`    | Landing page, form  |
-| **API**       | `apps/api`     | `api.pg-application-theta.vercel.app`| Express API         |
+| Project   | Root Directory | Users see it? | Purpose                    |
+|----------|----------------|---------------|----------------------------|
+| **Web**  | `apps/web`     | Yes           | Landing page and form      |
+| **Backend** | `apps/api`   | No            | Processes form submissions |
 
-1. Deploy both projects from the same repo.
-2. Set the **web** project’s `NEXT_PUBLIC_API_URL` to the **API** project’s URL (subdomain or default).
-3. Attach your main domain to the **web** project so the root URL shows the landing page.
+- Users only open the **web** URL. They never see or need the backend URL.
+- The form always submits to **your domain** (`/api/applications`). The server proxies to the backend using `API_URL`.
