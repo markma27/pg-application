@@ -29,6 +29,10 @@
   --font-poppins: var(--font-poppins), ui-sans-serif, sans-serif;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 :root {
   color-scheme: light;
   --background: oklch(1 0 0);
@@ -84,11 +88,9 @@ a {
 @keyframes pageFadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
