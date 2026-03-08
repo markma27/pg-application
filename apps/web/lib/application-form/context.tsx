@@ -56,7 +56,6 @@ const initialState: ApplicationFormState = {
   groupName: "",
   entityCount: 1,
   entities: [createEmptyEntity(crypto.randomUUID())],
-  groupServiceCodes: [],
   groupCommencementDate: "",
   individualCount: 1,
   individuals: [createEmptyIndividual(crypto.randomUUID())],
@@ -86,7 +85,7 @@ type ApplicationFormContextValue = {
   currentStepLabel: string;
   currentStepDescription: string;
   setContact: (data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => void;
-  setGroupServices: (data: Partial<Pick<ApplicationFormState, "groupServiceCodes" | "groupCommencementDate">>) => void;
+  setGroupServices: (data: Partial<Pick<ApplicationFormState, "groupCommencementDate">>) => void;
   setEntityCount: (count: number) => void;
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
   setIndividual: (index: number, data: Partial<PartialIndividual>) => void;
@@ -153,7 +152,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     setState((s) => ({ ...s, ...data, stepError: null }));
   }, []);
 
-  const setGroupServices = useCallback((data: Partial<Pick<ApplicationFormState, "groupServiceCodes" | "groupCommencementDate">>) => {
+  const setGroupServices = useCallback((data: Partial<Pick<ApplicationFormState, "groupCommencementDate">>) => {
     setState((s) => ({ ...s, ...data, stepError: null }));
   }, []);
 
@@ -227,8 +226,14 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       }
       const servicesStep = entityStart + s.entityCount * stepsPerEntity;
       if (s.step === servicesStep) {
-        if (s.groupServiceCodes.length === 0 || !s.groupCommencementDate?.trim())
-          return { ...s, stepError: "Please select at least one service and enter preferred commencement." };
+        if (!s.groupCommencementDate?.trim())
+          return { ...s, stepError: "Please enter preferred commencement date." };
+        const entities = s.entities.slice(0, s.entityCount);
+        for (let i = 0; i < entities.length; i++) {
+          const entity = entities[i];
+          if (!entity?.serviceCodes?.length)
+            return { ...s, stepError: `Entity ${i + 1}: please select at least one service.` };
+        }
       }
       const individualStep = servicesStep + 1;
       if (s.step === individualStep) {

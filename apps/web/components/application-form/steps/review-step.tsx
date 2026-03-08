@@ -156,31 +156,31 @@ export function ReviewStep() {
                       : undefined
                   }
                 />
+                <ReviewRow
+                  label="Services"
+                  value={
+                    entity.serviceCodes?.length
+                      ? entity.serviceCodes.map(serviceLabel).join(", ")
+                      : undefined
+                  }
+                />
               </CardContent>
             </Card>
           );
         })}
 
-        {/* Services & commencement (client group) */}
+        {/* Commencement (client group) */}
         <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 pl-6 pr-6 py-4">
             <SectionHeader
               title="Services & commencement"
-              subtitle="Applies to all entities in this application"
+              subtitle="Preferred commencement applies to all entities"
               onEdit={() => goToStep(servicesStepIndex)}
               editStepLabel="Edit services & commencement"
             />
           </CardHeader>
           <CardContent className="divide-y divide-slate-100 px-6 py-4">
-            <ReviewRow
-              label="Services"
-              value={
-                state.groupServiceCodes?.length
-                  ? state.groupServiceCodes.map(serviceLabel).join(", ")
-                  : undefined
-              }
-            />
-            <ReviewRow label="Commencement date" value={state.groupCommencementDate || undefined} />
+            <ReviewRow label="Preferred commencement" value={state.groupCommencementDate || undefined} />
           </CardContent>
         </Card>
 

@@ -20,8 +20,7 @@ export interface ApplicationFormState {
   /** Individual details (step before adviser): 1–4 individuals */
   individualCount: number;
   individuals: PartialIndividual[];
-  /** Services & commencement (apply to entire client group) */
-  groupServiceCodes: EntityInput["serviceCodes"][number][];
+  /** Preferred commencement (apply to entire client group) */
   groupCommencementDate: string;
   /** Adviser & admin details (step before review) */
   adviserName: string;
@@ -99,9 +98,9 @@ export interface SubmitResult {
 
 export function formStateToPayload(state: ApplicationFormState): ApplicationInput | null {
   if (state.entityCount < 1 || state.entities.length !== state.entityCount) return null;
-  if (state.groupServiceCodes.length === 0 || !state.groupCommencementDate?.trim()) return null;
+  if (!state.groupCommencementDate?.trim()) return null;
   const raw = state.entities.slice(0, state.entityCount).map((e) => {
-    if (!e.entityType || !e.portfolioStatus) return null;
+    if (!e.entityType || !e.portfolioStatus || !e.serviceCodes?.length) return null;
     return {
       id: e.id,
       entityName: e.entityName || "Unnamed",
@@ -118,7 +117,7 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
       otherAssetsText: e.otherAssetsText ?? "",
       hasCrypto: e.hasCrypto ?? false,
       hasForeignInvestments: e.hasForeignInvestments ?? false,
-      serviceCodes: state.groupServiceCodes,
+      serviceCodes: e.serviceCodes,
       commencementDate: state.groupCommencementDate,
     } as EntityInput;
   });
