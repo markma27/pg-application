@@ -7,15 +7,19 @@ import { cn } from "@/lib/utils";
 // See: https://developers.google.com/maps/documentation/javascript/load-maps-js-api
 const BOOTSTRAP_SCRIPT_ID = "google-maps-bootstrap";
 
+type MapsWithLoader = { importLibrary?: (name: string) => Promise<unknown> };
+
 function loadMapsBootstrap(apiKey: string): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("Window undefined"));
 
   const existing = document.getElementById(BOOTSTRAP_SCRIPT_ID);
   if (existing) {
-    if (window.google?.maps?.importLibrary) return Promise.resolve();
+    const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
+    if (maps?.importLibrary) return Promise.resolve();
     return new Promise((resolve) => {
       const check = () => {
-        if (window.google?.maps?.importLibrary) resolve();
+        const m = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
+        if (m?.importLibrary) resolve();
         else requestAnimationFrame(check);
       };
       check();
@@ -44,8 +48,9 @@ export interface AddressAutocompleteProps {
 /** @deprecated Use loadMapsBootstrap + importLibrary('places') for Places API (New). */
 export function loadGooglePlacesScript(apiKey: string): Promise<void> {
   return loadMapsBootstrap(apiKey).then(() => {
-    if (!window.google?.maps?.importLibrary) throw new Error("importLibrary not available");
-    return window.google.maps.importLibrary("places") as Promise<unknown>;
+    const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
+    if (!maps?.importLibrary) throw new Error("importLibrary not available");
+    return maps.importLibrary("places") as Promise<unknown>;
   }).then(() => undefined);
 }
 
@@ -180,7 +185,8 @@ export function AddressAutocomplete({
             setSuggestions((prev) => {
               if (suggestionRequestIdRef.current !== requestId || !prev[index]) return prev;
               const next = [...prev];
-              next[index] = { ...next[index], text: textWithPostcode };
+              const current = next[index]!;
+              next[index] = { placeId: current.placeId, text: textWithPostcode };
               return next;
             });
           } catch {
@@ -277,8 +283,9 @@ export function AddressAutocomplete({
     if (!apiKey) return;
     loadMapsBootstrap(apiKey)
       .then(() => {
-        if (!window.google?.maps?.importLibrary) throw new Error("importLibrary not available");
-        return window.google.maps.importLibrary("places") as Promise<unknown>;
+        const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
+        if (!maps?.importLibrary) throw new Error("importLibrary not available");
+        return maps.importLibrary("places") as Promise<unknown>;
       })
       .then(() => setScriptReady(true))
       .catch(() => setScriptError(true));

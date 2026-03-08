@@ -1,3 +1,3 @@
-export * from "./constants/pricing.js";
-export * from "./domain/assessment.js";
-export * from "./schemas/application.js";
+export * from "./constants/pricing";
+export * from "./domain/assessment";
+export * from "./schemas/application";
