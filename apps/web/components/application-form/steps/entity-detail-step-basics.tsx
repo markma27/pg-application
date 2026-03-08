@@ -1,11 +1,101 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useApplicationForm } from "@/lib/application-form";
 import { PORTFOLIO_STATUS_OPTIONS } from "@/lib/application-form/constants";
 import type { EntityInput } from "@pg/shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { PartialEntity } from "@/lib/application-form/types";
+
+function AnimateSectionIn({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const [runAnimation, setRunAnimation] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setRunAnimation(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div
+      className={cn(className, runAnimation && "animate-section-in")}
+      style={
+        runAnimation
+          ? undefined
+          : { opacity: 0, transform: "translateY(-8px)" }
+      }
+    >
+      {children}
+    </div>
+  );
+}
+
+function PortfolioReportSection({
+  entityIndex,
+  entity,
+  update,
+}: {
+  entityIndex: number;
+  entity: PartialEntity;
+  update: (data: Partial<PartialEntity>) => void;
+}) {
+  const [runAnimation, setRunAnimation] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setRunAnimation(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div
+      className={cn("space-y-2 sm:col-span-2", runAnimation && "animate-section-in")}
+      style={
+        runAnimation
+          ? undefined
+          : { opacity: 0, transform: "translateY(-8px)" }
+      }
+    >
+      <Label className="text-slate-700">
+        Recent investment portfolio report <span className="text-slate-400 font-normal">(optional)</span>
+      </Label>
+      <p className="text-xs text-slate-500">
+        PDF or Excel (.xlsx, .xls, .csv). Helps us understand your current holdings.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <input
+          type="file"
+          id={`portfolio-report-${entityIndex}`}
+          accept=".pdf,.xlsx,.xls,.csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+          onChange={(e) => update({ existingPortfolioReportFile: e.target.files?.[0] ?? null })}
+          className="sr-only"
+        />
+        <label
+          htmlFor={`portfolio-report-${entityIndex}`}
+          className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+        >
+          Choose file
+        </label>
+        {entity.existingPortfolioReportFile && (
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <span className="truncate">{entity.existingPortfolioReportFile.name}</span>
+            <button
+              type="button"
+              onClick={() => update({ existingPortfolioReportFile: null })}
+              className="cursor-pointer text-slate-500 underline hover:text-slate-700"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number }) {
   const { state, setEntity } = useApplicationForm();
@@ -29,32 +119,27 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="space-y-3 sm:col-span-2">
             <Label className="text-base font-semibold text-slate-900">
-              Entity name <span className="text-red-500">*</span>
+              Entity {entityIndex + 1} name <span className="text-red-500">*</span>
             </Label>
             <Input
               value={entity.entityName}
               onChange={(e) => update({ entityName: e.target.value })}
-              placeholder="e.g. Smith Family Trust"
+              placeholder="Your full entity name"
               required
               className="h-11 rounded-lg border-slate-300 px-4"
             />
           </div>
 
-          <div className="space-y-2 sm:col-span-2">
-            <Label className="text-slate-700">Portfolio HIN (optional)</Label>
-            <Input
-              value={entity.portfolioHin ?? ""}
-              onChange={(e) => update({ portfolioHin: e.target.value })}
-              placeholder="e.g. XXXXXXXXX"
-              className="h-11 rounded-lg border-slate-300 px-4"
-            />
-          </div>
           <div className="space-y-2">
             <Label className="text-slate-700">ABN (optional)</Label>
             <Input
               value={entity.abn ?? ""}
-              onChange={(e) => update({ abn: e.target.value })}
-              placeholder="e.g. 12 345 678 901"
+              onChange={(e) =>
+                update({ abn: e.target.value.replace(/\D/g, "").slice(0, 11) })
+              }
+              placeholder="11 digits"
+              inputMode="numeric"
+              maxLength={11}
               className="h-11 rounded-lg border-slate-300 px-4"
             />
           </div>
@@ -62,13 +147,17 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
             <Label className="text-slate-700">TFN (optional)</Label>
             <Input
               value={entity.tfn ?? ""}
-              onChange={(e) => update({ tfn: e.target.value })}
-              placeholder="e.g. XXX XXX XXX"
+              onChange={(e) =>
+                update({ tfn: e.target.value.replace(/\D/g, "").slice(0, 9) })
+              }
+              placeholder="8 - 9 digits"
+              inputMode="numeric"
+              maxLength={9}
               className="h-11 rounded-lg border-slate-300 px-4"
             />
           </div>
           {entity.abn?.trim() !== "" && (
-            <div className="space-y-3 sm:col-span-2">
+            <AnimateSectionIn className="space-y-3 sm:col-span-2">
               <Label className="text-slate-700">Registered for GST?</Label>
               <div className="flex gap-3">
                 <label className="flex cursor-pointer items-center gap-2">
@@ -92,8 +181,17 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                   <span className="text-sm text-slate-700">No</span>
                 </label>
               </div>
-            </div>
+            </AnimateSectionIn>
           )}
+          <div className="space-y-2 sm:col-span-2">
+            <Label className="text-slate-700">Portfolio HIN (optional)</Label>
+            <Input
+              value={entity.portfolioHin ?? ""}
+              onChange={(e) => update({ portfolioHin: e.target.value })}
+              placeholder="e.g. X123456789"
+              className="h-11 rounded-lg border-slate-300 px-4"
+            />
+          </div>
 
           <div className="space-y-4 sm:col-span-2">
             <div>
@@ -116,19 +214,32 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors border-slate-300">
                       {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-emerald-600" />}
                     </div>
-                    <span className="text-sm font-medium text-slate-900">{opt.label}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-slate-900">{opt.label}</span>
+                      {opt.footnote && (
+                        <span className="mt-0.5 block text-xs text-slate-400">{opt.footnote}</span>
+                      )}
+                    </div>
                     <input
                       type="radio"
                       name={`portfolio-status-${entityIndex}`}
                       value={opt.value}
                       checked={isSelected}
-                      onChange={() => update({ portfolioStatus: opt.value as EntityInput["portfolioStatus"] })}
+                      onChange={() =>
+                      update({
+                        portfolioStatus: opt.value as EntityInput["portfolioStatus"],
+                        ...(opt.value !== "existing_clean" ? { existingPortfolioReportFile: null } : {}),
+                      })
+                    }
                       className="sr-only"
                     />
                   </label>
                 );
               })}
             </div>
+            {entity.portfolioStatus === "existing_clean" && (
+              <PortfolioReportSection entityIndex={entityIndex} entity={entity} update={update} />
+            )}
           </div>
         </div>
 
@@ -183,35 +294,15 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
               />
             </div>
           </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4">
             <div className="space-y-2">
-              <Label className="text-slate-700">Other assets (e.g. crypto) – optional</Label>
+              <Label className="text-slate-700">Other Assets (e.g. crypto, gold, etc.)</Label>
               <Input
                 value={entity.otherAssetsText}
                 onChange={(e) => update({ otherAssetsText: e.target.value })}
                 placeholder="Brief description"
                 className="h-11 rounded-lg border-slate-300"
               />
-            </div>
-            <div className="flex flex-col justify-end space-y-3 pb-2">
-              <label className="flex cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={entity.hasCrypto}
-                  onChange={(e) => update({ hasCrypto: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">Crypto or alternative assets present</span>
-              </label>
-              <label className="flex cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={entity.hasForeignInvestments}
-                  onChange={(e) => update({ hasForeignInvestments: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">Foreign investments present</span>
-              </label>
             </div>
           </div>
         </div>

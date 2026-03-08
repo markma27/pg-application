@@ -10,15 +10,17 @@ export const ENTITY_TYPE_OPTIONS: {
   { value: "trust", label: "Trust", description: "Family trust or unit trust", letter: "B" },
   { value: "company", label: "Company", description: "Corporate entity", letter: "C" },
   { value: "smsf", label: "SMSF", description: "Self-managed super fund", letter: "D" },
-  { value: "paf", label: "PAF", description: "Private ancillary fund (JM)", letter: "E" },
-  { value: "puaf", label: "PuAF", description: "Public ancillary fund (JM)", letter: "F" },
+  { value: "paf", label: "PAF", description: "Private ancillary fund", letter: "E" },
+  { value: "puaf", label: "PuAF", description: "Public ancillary fund", letter: "F" },
 ];
 
-export const PORTFOLIO_STATUS_OPTIONS: { value: EntityInput["portfolioStatus"]; label: string }[] = [
-  { value: "new", label: "New portfolio" },
-  { value: "existing_clean", label: "Existing clean portfolio" },
-  { value: "existing_reconciliation", label: "Existing with reconciliation" },
-  { value: "complex_cleanup", label: "Complex cleanup (manual review)" },
+export const PORTFOLIO_STATUS_OPTIONS: {
+  value: EntityInput["portfolioStatus"];
+  label: string;
+  footnote?: string;
+}[] = [
+  { value: "new", label: "New portfolio", footnote: "To be established" },
+  { value: "existing_clean", label: "Existing portfolio", footnote: "Portfolio already in place" },
 ];
 
 export const SERVICE_OPTIONS: { value: EntityInput["serviceCodes"][number]; label: string; jmOnly?: boolean }[] = [

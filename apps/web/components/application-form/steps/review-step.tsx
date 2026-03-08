@@ -13,7 +13,7 @@ import {
 import { Pencil } from "lucide-react";
 
 const ENTITY_STEPS_START = 2;
-const ENTITY_STEPS_PER_ENTITY = 3;
+const ENTITY_STEPS_PER_ENTITY = 2;
 
 const DOCUMENT_SEND_LABELS: Record<DocumentSendTo, string> = {
   trustee: "Trustee",
@@ -64,7 +64,7 @@ function SectionHeader({
 }
 
 export function ReviewStep() {
-  const { state, goToStep, individualDetailsStepIndex, adviserDetailsStepIndex } = useApplicationForm();
+  const { state, goToStep, servicesStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex } = useApplicationForm();
 
   const entityTypeLabel = (value: string) => ENTITY_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
   const portfolioLabel = (value: string) => PORTFOLIO_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -156,19 +156,33 @@ export function ReviewStep() {
                       : undefined
                   }
                 />
-                <ReviewRow
-                  label="Services"
-                  value={
-                    entity.serviceCodes?.length
-                      ? entity.serviceCodes.map(serviceLabel).join(", ")
-                      : undefined
-                  }
-                />
-                <ReviewRow label="Commencement date" value={entity.commencementDate || undefined} />
               </CardContent>
             </Card>
           );
         })}
+
+        {/* Services & commencement (client group) */}
+        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+          <CardHeader className="border-b border-slate-100 bg-slate-50/60 pl-6 pr-6 py-4">
+            <SectionHeader
+              title="Services & commencement"
+              subtitle="Applies to all entities in this application"
+              onEdit={() => goToStep(servicesStepIndex)}
+              editStepLabel="Edit services & commencement"
+            />
+          </CardHeader>
+          <CardContent className="divide-y divide-slate-100 px-6 py-4">
+            <ReviewRow
+              label="Services"
+              value={
+                state.groupServiceCodes?.length
+                  ? state.groupServiceCodes.map(serviceLabel).join(", ")
+                  : undefined
+              }
+            />
+            <ReviewRow label="Commencement date" value={state.groupCommencementDate || undefined} />
+          </CardContent>
+        </Card>
 
         {/* Individuals */}
         {state.individuals.slice(0, state.individualCount).map((ind, i) => (

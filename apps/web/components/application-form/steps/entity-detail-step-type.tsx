@@ -11,7 +11,6 @@ export function EntityDetailStepType({ entityIndex }: { entityIndex: number }) {
   const entity = state.entities[entityIndex];
   if (!entity) return null;
 
-  const isPafOrPuaf = entity.entityType === "paf" || entity.entityType === "puaf";
   const update = (data: Partial<typeof entity>) => setEntity(entityIndex, data);
 
   return (
@@ -65,11 +64,6 @@ export function EntityDetailStepType({ entityIndex }: { entityIndex: number }) {
               );
             })}
           </div>
-          {isPafOrPuaf && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              PAF and PuAF services are provided by Jaquillard Minns. We will collect details and a separate quote will follow.
-            </div>
-          )}
         </div>
       </div>
     </>

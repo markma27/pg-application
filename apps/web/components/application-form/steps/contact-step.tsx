@@ -4,6 +4,7 @@ import { useApplicationForm } from "@/lib/application-form";
 import { APPLICANT_ROLE_OPTIONS } from "@/lib/application-form/constants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChevronDown } from "lucide-react";
 
 export function ContactStep() {
   const { state, setContact } = useApplicationForm();
@@ -47,7 +48,7 @@ export function ContactStep() {
               type="email"
               value={state.email}
               onChange={(e) => setContact({ email: e.target.value })}
-              placeholder="you@example.com"
+              placeholder="your.email@email.com"
               required
               className="h-11 rounded-lg border-slate-300 px-4"
             />
@@ -68,20 +69,26 @@ export function ContactStep() {
 
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="contact-role" className="text-slate-700">Role / relationship to client <span className="text-red-500">*</span></Label>
-            <select
-              id="contact-role"
-              value={state.applicantRole}
-              onChange={(e) => setContact({ applicantRole: e.target.value })}
-              className="flex h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 transition-colors focus-visible:border-emerald-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600"
-              required
-            >
-              <option value="" disabled hidden>Select role</option>
-              {APPLICANT_ROLE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="contact-role"
+                value={state.applicantRole}
+                onChange={(e) => setContact({ applicantRole: e.target.value })}
+                className="flex h-11 w-full appearance-none rounded-lg border border-slate-300 bg-white pl-4 pr-10 py-2 text-sm text-slate-900 transition-colors focus-visible:border-emerald-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 [&::-ms-expand]:hidden"
+                required
+              >
+                <option value="" disabled hidden>Select role</option>
+                {APPLICANT_ROLE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+              />
+            </div>
           </div>
 
           <div className="space-y-2 sm:col-span-2">

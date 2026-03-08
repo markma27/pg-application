@@ -20,7 +20,7 @@ export default function HomePage() {
         </Link>
         {/* Main title */}
         <h1 className="mt-8 text-center text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
-          Let&apos;s get started
+          Client Application Form
         </h1>
 
         {/* Intro */}

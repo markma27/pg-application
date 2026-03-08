@@ -6,31 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-export function EntityDetailStepServices({
-  entityIndex,
-  showPageHeader = true,
-}: {
-  entityIndex: number;
-  showPageHeader?: boolean;
-}) {
-  const { state, setEntity } = useApplicationForm();
-  const entity = state.entities[entityIndex];
-  if (!entity) return null;
-
-  const update = (data: Partial<typeof entity>) => setEntity(entityIndex, data);
+export function ServicesCommencementStep() {
+  const { state, setGroupServices } = useApplicationForm();
+  const serviceCodes = state.groupServiceCodes;
+  const commencementDate = state.groupCommencementDate ?? "";
 
   return (
     <>
-      {showPageHeader && (
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
-            New Client Application Form
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Onboard new clients for investment portfolio administration and reporting service.
-          </p>
-        </div>
-      )}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-emerald-600 sm:text-3xl">
+          New Client Application Form
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Select services and preferred commencement date for the entire client group.
+        </p>
+      </div>
 
       <div className="space-y-10">
         <div className="grid gap-8 sm:grid-cols-2">
@@ -39,11 +29,11 @@ export function EntityDetailStepServices({
               <Label className="text-base font-semibold text-slate-900">
                 Services required <span className="text-red-500">*</span>
               </Label>
-              <p className="text-sm text-slate-500">Select at least one service.</p>
+              <p className="text-sm text-slate-500">Select at least one service. Applies to all entities in this application.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {SERVICE_OPTIONS.map((opt) => {
-                const isSelected = entity.serviceCodes.includes(opt.value);
+                const isSelected = serviceCodes.includes(opt.value);
                 return (
                   <label
                     key={opt.value}
@@ -57,9 +47,9 @@ export function EntityDetailStepServices({
                       checked={isSelected}
                       onChange={(e) => {
                         const next = e.target.checked
-                          ? [...entity.serviceCodes, opt.value]
-                          : entity.serviceCodes.filter((c) => c !== opt.value);
-                        update({ serviceCodes: next });
+                          ? [...serviceCodes, opt.value]
+                          : serviceCodes.filter((c) => c !== opt.value);
+                        setGroupServices({ groupServiceCodes: next });
                       }}
                       className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
                     />
@@ -81,10 +71,10 @@ export function EntityDetailStepServices({
             <Label className="text-base font-semibold text-slate-900">
               Preferred commencement <span className="text-red-500">*</span>
             </Label>
-            <p className="text-sm text-slate-500 mb-2">Financial year or date.</p>
+            <p className="mb-2 text-sm text-slate-500">Financial year or date. Applies to all entities.</p>
             <Input
-              value={entity.commencementDate}
-              onChange={(e) => update({ commencementDate: e.target.value })}
+              value={commencementDate}
+              onChange={(e) => setGroupServices({ groupCommencementDate: e.target.value })}
               placeholder="e.g. 2025 or 1 July 2025"
               required
               className="h-11 rounded-lg border-slate-300 px-4"

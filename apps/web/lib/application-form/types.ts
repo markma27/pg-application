@@ -20,6 +20,9 @@ export interface ApplicationFormState {
   /** Individual details (step before adviser): 1–4 individuals */
   individualCount: number;
   individuals: PartialIndividual[];
+  /** Services & commencement (apply to entire client group) */
+  groupServiceCodes: EntityInput["serviceCodes"][number][];
+  groupCommencementDate: string;
   /** Adviser & admin details (step before review) */
   adviserName: string;
   adviserCompany: string;
@@ -66,6 +69,8 @@ export interface PartialEntity {
   entityName: string;
   entityType: EntityInput["entityType"] | "";
   portfolioStatus: EntityInput["portfolioStatus"] | "";
+  /** Optional file when portfolio status is existing (not sent in JSON payload; for future multipart upload) */
+  existingPortfolioReportFile?: File | null;
   portfolioHin: string;
   abn: string;
   tfn: string;
@@ -94,9 +99,9 @@ export interface SubmitResult {
 
 export function formStateToPayload(state: ApplicationFormState): ApplicationInput | null {
   if (state.entityCount < 1 || state.entities.length !== state.entityCount) return null;
+  if (state.groupServiceCodes.length === 0 || !state.groupCommencementDate?.trim()) return null;
   const raw = state.entities.slice(0, state.entityCount).map((e) => {
-    if (!e.entityType || !e.portfolioStatus || e.serviceCodes.length === 0 || !e.commencementDate)
-      return null;
+    if (!e.entityType || !e.portfolioStatus) return null;
     return {
       id: e.id,
       entityName: e.entityName || "Unnamed",
@@ -113,8 +118,8 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
       otherAssetsText: e.otherAssetsText ?? "",
       hasCrypto: e.hasCrypto ?? false,
       hasForeignInvestments: e.hasForeignInvestments ?? false,
-      serviceCodes: e.serviceCodes,
-      commencementDate: e.commencementDate,
+      serviceCodes: state.groupServiceCodes,
+      commencementDate: state.groupCommencementDate,
     } as EntityInput;
   });
   const entities = raw.filter((e): e is EntityInput => e !== null);
