@@ -3,9 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@pg/shared": ["../../packages/shared/dist/index.d.ts"],
-      "@pg/shared/*": ["../../packages/shared/dist/*"]
+      "@/*": ["./*"]
     },
     "plugins": [{ "name": "next" }],
     "types": ["node"]
