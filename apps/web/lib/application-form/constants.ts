@@ -8,20 +8,20 @@ export const STANDARD_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
 ];
 
 /** Add-on services (Jaquillard Minns) – included when selected */
-export const ADD_ON_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
+export const ADD_ON_SERVICE_CODES = [
   "monthly_reporting",
   "quarterly_reporting",
   "asic_agent",
   "bas",
-];
+] as const satisfies readonly EntityInput["serviceCodes"][number][];
 
 /** PAF & PuAF services (Jaquillard Minns) – included when selected */
-export const PAF_PUAF_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
+export const PAF_PUAF_SERVICE_CODES = [
   "acnc_ais",
   "responsible_person",
   "franking_credit_refund_support",
   "sub_fund_monthly_statements",
-];
+] as const satisfies readonly EntityInput["serviceCodes"][number][];
 
 /** Labels for add-on services (for review step) */
 export const ADD_ON_SERVICE_LABELS: Record<(typeof ADD_ON_SERVICE_CODES)[number], string> = {
