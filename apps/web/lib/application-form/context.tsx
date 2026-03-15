@@ -57,6 +57,15 @@ const initialState: ApplicationFormState = {
   entityCount: 1,
   entities: [createEmptyEntity(crypto.randomUUID())],
   groupCommencementDate: "",
+  selectedAddOnServiceCodes: [],
+  pafPuafServiceToggles: {
+    annualFinancialStatements: false,
+    annualInformationStatement: false,
+    frankingCreditRefundApplication: false,
+    pafResponsiblePersonServices: false,
+    puafSubFundMonthlyStatements: false,
+  },
+  servicesComments: "",
   individualCount: 1,
   individuals: [createEmptyIndividual(crypto.randomUUID())],
   adviserName: "",
@@ -75,6 +84,7 @@ const initialState: ApplicationFormState = {
   submitResult: null,
   isSubmitting: false,
   stepError: null,
+  stepErrorField: null,
 };
 
 type ApplicationFormContextValue = {
@@ -85,7 +95,7 @@ type ApplicationFormContextValue = {
   currentStepLabel: string;
   currentStepDescription: string;
   setContact: (data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => void;
-  setGroupServices: (data: Partial<Pick<ApplicationFormState, "groupCommencementDate">>) => void;
+  setGroupServices: (data: Partial<Pick<ApplicationFormState, "groupCommencementDate" | "selectedAddOnServiceCodes" | "pafPuafServiceToggles" | "servicesComments">>) => void;
   setEntityCount: (count: number) => void;
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
   setIndividual: (index: number, data: Partial<PartialIndividual>) => void;
@@ -141,7 +151,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       if (subStep === 0) return "Select the entity type for this application.";
       if (subStep === 1) return "Portfolio status and asset counts for complexity assessment.";
     }
-    if (state.step === servicesStepIndex) return "Select services and preferred commencement date for each entity.";
+    if (state.step === servicesStepIndex) return "Select services and preferred commencement date for the client group.";
     if (state.step === individualDetailsStepIndex) return "Personal details for individuals associated with the application.";
     if (state.step === adviserDetailsStepIndex) return "Investment adviser, administration and dividend preferences.";
     if (state.step === reviewStepIndex) return "Review your details before submitting.";
@@ -149,11 +159,19 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
   }, [state.step, state.entityCount, servicesStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
 
   const setContact = useCallback((data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => {
-    setState((s) => ({ ...s, ...data, stepError: null }));
+    setState((s) => ({ ...s, ...data, stepError: null, stepErrorField: null }));
   }, []);
 
-  const setGroupServices = useCallback((data: Partial<Pick<ApplicationFormState, "groupCommencementDate">>) => {
-    setState((s) => ({ ...s, ...data, stepError: null }));
+  const setGroupServices = useCallback((data: Partial<Pick<ApplicationFormState, "groupCommencementDate" | "selectedAddOnServiceCodes" | "pafPuafServiceToggles" | "servicesComments">>) => {
+    setState((s) => ({
+      ...s,
+      ...data,
+      ...(data.pafPuafServiceToggles != null && {
+        pafPuafServiceToggles: { ...s.pafPuafServiceToggles, ...data.pafPuafServiceToggles },
+      }),
+      stepError: null,
+      stepErrorField: null,
+    }));
   }, []);
 
   const setEntityCount = useCallback((count: number) => {
@@ -161,7 +179,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     setState((s) => {
       const entities = [...s.entities];
       while (entities.length < n) entities.push(createEmptyEntity(crypto.randomUUID()));
-      return { ...s, entityCount: n, entities: entities.slice(0, n), stepError: null };
+      return { ...s, entityCount: n, entities: entities.slice(0, n), stepError: null, stepErrorField: null };
     });
   }, []);
 
@@ -173,7 +191,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         const next = { ...existing, ...data };
         entities[index] = { ...next, id: next.id ?? existing.id } as PartialEntity;
       }
-      return { ...s, entities, stepError: null };
+      return { ...s, entities, stepError: null, stepErrorField: null };
     });
   }, []);
 
@@ -182,7 +200,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     setState((s) => {
       const individuals = [...s.individuals];
       while (individuals.length < n) individuals.push(createEmptyIndividual(crypto.randomUUID()));
-      return { ...s, individualCount: n, individuals: individuals.slice(0, n), stepError: null };
+      return { ...s, individualCount: n, individuals: individuals.slice(0, n), stepError: null, stepErrorField: null };
     });
   }, []);
 
@@ -198,71 +216,101 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         }
         individuals[index] = { ...next, id: next.id ?? existing.id } as PartialIndividual;
       }
-      return { ...s, individuals, stepError: null };
+      return { ...s, individuals, stepError: null, stepErrorField: null };
     });
   }, []);
 
   const setAdviser = useCallback((data: Partial<Pick<ApplicationFormState, "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => {
-    setState((s) => ({ ...s, ...data, stepError: null }));
+    setState((s) => ({ ...s, ...data, stepError: null, stepErrorField: null }));
   }, []);
 
   const nextStep = useCallback(() => {
     const stepsPerEntity = 2;
     const entityStart = 2;
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setState((s) => {
       if (s.step === 0) {
-        if (!s.primaryContactName?.trim() || !s.email?.trim() || !s.phone?.trim() || !s.applicantRole?.trim())
-          return { ...s, stepError: "Please complete all required contact fields." };
+        if (!s.primaryContactName?.trim())
+          return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "primaryContactName" };
+        if (!s.email?.trim())
+          return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "email" };
+        if (!s.phone?.trim())
+          return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "phone" };
+        if (!s.applicantRole?.trim())
+          return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "applicantRole" };
+        if (!EMAIL_RE.test(s.email.trim()))
+          return { ...s, stepError: "Please enter a valid email address.", stepErrorField: "email" };
+        if (!/^\d{8,15}$/.test(s.phone))
+          return { ...s, stepError: "Phone number must be 8–15 digits.", stepErrorField: "phone" };
       }
       if (s.step >= entityStart && s.step < entityStart + s.entityCount * stepsPerEntity) {
         const entityIndex = Math.floor((s.step - entityStart) / stepsPerEntity);
         const subStep = (s.step - entityStart) % stepsPerEntity;
         const entity = s.entities[entityIndex];
-        if (!entity) return { ...s, stepError: "Invalid step." };
+        const entityField = (f: string) => `entity_${entityIndex}_${f}`;
+        if (!entity) return { ...s, stepError: "Invalid step.", stepErrorField: null };
         if (subStep === 0 && !entity.entityType)
-          return { ...s, stepError: "Please select an entity type." };
-        if (subStep === 1 && (!entity.entityName?.trim() || !entity.portfolioStatus))
-          return { ...s, stepError: "Please complete entity name and portfolio status." };
+          return { ...s, stepError: "Please select an entity type.", stepErrorField: entityField("entityType") };
+        if (subStep === 1) {
+          if (!entity.entityName?.trim())
+            return { ...s, stepError: "Please complete entity name, TFN, and portfolio status.", stepErrorField: entityField("entityName") };
+          if (!entity.portfolioStatus)
+            return { ...s, stepError: "Please complete entity name, TFN, and portfolio status.", stepErrorField: entityField("portfolioStatus") };
+          if (!entity.tfn?.trim())
+            return { ...s, stepError: "Please complete entity name, TFN, and portfolio status.", stepErrorField: entityField("tfn") };
+          if (!/^\d{8,9}$/.test(entity.tfn))
+            return { ...s, stepError: "TFN must be 8 or 9 digits.", stepErrorField: entityField("tfn") };
+          if (entity.abn?.trim() && !/^\d{11}$/.test(entity.abn))
+            return { ...s, stepError: "ABN must be exactly 11 digits.", stepErrorField: entityField("abn") };
+        }
       }
       const servicesStep = entityStart + s.entityCount * stepsPerEntity;
       if (s.step === servicesStep) {
         if (!s.groupCommencementDate?.trim())
-          return { ...s, stepError: "Please enter preferred commencement date." };
-        const entities = s.entities.slice(0, s.entityCount);
-        for (let i = 0; i < entities.length; i++) {
-          const entity = entities[i];
-          if (!entity?.serviceCodes?.length)
-            return { ...s, stepError: `Entity ${i + 1}: please select at least one service.` };
-        }
+          return { ...s, stepError: "Please enter preferred commencement date.", stepErrorField: "groupCommencementDate" };
       }
       const individualStep = servicesStep + 1;
       if (s.step === individualStep) {
         const individuals = s.individuals.slice(0, s.individualCount);
+        const indField = (i: number, f: string) => `individual_${i}_${f}`;
         for (let i = 0; i < individuals.length; i++) {
           const ind = individuals[i];
           const n = i + 1;
           if (!ind) continue;
           if (!ind.relationshipRoles?.length)
-            return { ...s, stepError: `Individual ${n}: please select at least one Relationship to Account.` };
-          if (!ind.title?.trim()) return { ...s, stepError: `Individual ${n}: Title is required.` };
-          if (!ind.fullName?.trim()) return { ...s, stepError: `Individual ${n}: Full name is required.` };
-          if (!ind.streetAddress?.trim()) return { ...s, stepError: `Individual ${n}: Street address is required.` };
-          if (!ind.taxFileNumber?.trim()) return { ...s, stepError: `Individual ${n}: Tax File Number is required.` };
-          if (!ind.dateOfBirth?.trim()) return { ...s, stepError: `Individual ${n}: Date of birth is required.` };
-          if (!ind.countryOfBirth?.trim()) return { ...s, stepError: `Individual ${n}: Country of birth is required.` };
-          if (!ind.city?.trim()) return { ...s, stepError: `Individual ${n}: City of birth is required.` };
-          if (!ind.occupation?.trim()) return { ...s, stepError: `Individual ${n}: Occupation is required.` };
-          if (!ind.employer?.trim()) return { ...s, stepError: `Individual ${n}: Employer is required.` };
-          if (!ind.email?.trim()) return { ...s, stepError: `Individual ${n}: Email is required.` };
+            return { ...s, stepError: `Individual ${n}: please select at least one Relationship to Account.`, stepErrorField: indField(i, "relationshipRoles") };
+          if (!ind.title?.trim()) return { ...s, stepError: `Individual ${n}: Title is required.`, stepErrorField: indField(i, "title") };
+          if (!ind.fullName?.trim()) return { ...s, stepError: `Individual ${n}: Full name is required.`, stepErrorField: indField(i, "fullName") };
+          if (!ind.streetAddress?.trim()) return { ...s, stepError: `Individual ${n}: Street address is required.`, stepErrorField: indField(i, "streetAddress") };
+          if (!ind.taxFileNumber?.trim()) return { ...s, stepError: `Individual ${n}: Tax File Number is required.`, stepErrorField: indField(i, "taxFileNumber") };
+          if (!/^\d{8,9}$/.test(ind.taxFileNumber))
+            return { ...s, stepError: `Individual ${n}: Tax File Number must be 8 or 9 digits.`, stepErrorField: indField(i, "taxFileNumber") };
+          if (!ind.dateOfBirth?.trim()) return { ...s, stepError: `Individual ${n}: Date of birth is required.`, stepErrorField: indField(i, "dateOfBirth") };
+          if (new Date(ind.dateOfBirth) > new Date())
+            return { ...s, stepError: `Individual ${n}: Date of birth cannot be in the future.`, stepErrorField: indField(i, "dateOfBirth") };
+          if (!ind.countryOfBirth?.trim()) return { ...s, stepError: `Individual ${n}: Country of birth is required.`, stepErrorField: indField(i, "countryOfBirth") };
+          if (!ind.city?.trim()) return { ...s, stepError: `Individual ${n}: City of birth is required.`, stepErrorField: indField(i, "city") };
+          if (!ind.occupation?.trim()) return { ...s, stepError: `Individual ${n}: Occupation is required.`, stepErrorField: indField(i, "occupation") };
+          if (!ind.employer?.trim()) return { ...s, stepError: `Individual ${n}: Employer is required.`, stepErrorField: indField(i, "employer") };
+          if (!ind.email?.trim()) return { ...s, stepError: `Individual ${n}: Email is required.`, stepErrorField: indField(i, "email") };
+          if (!EMAIL_RE.test(ind.email.trim()))
+            return { ...s, stepError: `Individual ${n}: Please enter a valid email address.`, stepErrorField: indField(i, "email") };
         }
       }
-      const reviewStep = individualStep + 2;
-      return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null };
+      const adviserStep = individualStep + 1;
+      if (s.step === adviserStep) {
+        if (s.adviserEmail?.trim() && !EMAIL_RE.test(s.adviserEmail.trim()))
+          return { ...s, stepError: "Adviser email format is invalid.", stepErrorField: "adviserEmail" };
+        if (s.adviserTel?.trim() && !/^\d{8,15}$/.test(s.adviserTel))
+          return { ...s, stepError: "Adviser phone must be 8–15 digits.", stepErrorField: "adviserTel" };
+      }
+      const reviewStep = adviserStep + 1;
+      return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null, stepErrorField: null };
     });
   }, []);
 
   const prevStep = useCallback(() => {
-    setState((s) => ({ ...s, step: Math.max(0, s.step - 1), stepError: null }));
+    setState((s) => ({ ...s, step: Math.max(0, s.step - 1), stepError: null, stepErrorField: null }));
   }, []);
 
   const goToStep = useCallback((step: number) => {
@@ -275,7 +323,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       const reviewStep = adviserStep + 1;
       const maxStep = reviewStep - 1;
       const clamped = Math.max(0, Math.min(step, maxStep));
-      return { ...s, step: clamped, stepError: null };
+      return { ...s, step: clamped, stepError: null, stepErrorField: null };
     });
   }, []);
 
@@ -288,7 +336,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
   }, []);
 
   const clearStepError = useCallback(() => {
-    setState((s) => ({ ...s, stepError: null }));
+    setState((s) => ({ ...s, stepError: null, stepErrorField: null }));
   }, []);
 
   const submit = useCallback(async () => {

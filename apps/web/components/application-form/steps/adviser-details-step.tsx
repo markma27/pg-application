@@ -1,20 +1,79 @@
 "use client";
 
 import { useApplicationForm } from "@/lib/application-form";
-import type { DocumentSendTo } from "@/lib/application-form/types";
+import type { DocumentSendToValue } from "@/lib/application-form/types";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-const DOCUMENT_SEND_OPTIONS: { value: DocumentSendTo; label: string }[] = [
-  { value: "trustee", label: "Trustee" },
-  { value: "adviser", label: "Adviser" },
-  { value: "not_required", label: "Not Required" },
-];
+function DocumentSendToCheckboxes({
+  value,
+  onChange,
+  name,
+}: {
+  value: DocumentSendToValue;
+  onChange: (v: DocumentSendToValue) => void;
+  name: string;
+}) {
+  const isNotRequired = value === "not_required";
+  const selected = Array.isArray(value) ? value : [];
+
+  const handleTrusteeOrAdviser = (opt: "trustee" | "adviser", checked: boolean) => {
+    if (checked) {
+      const next = [...(Array.isArray(value) ? value : []), opt];
+      onChange(next);
+    } else {
+      onChange(selected.filter((x) => x !== opt));
+    }
+  };
+
+  const handleNotRequired = (checked: boolean) => {
+    onChange(checked ? "not_required" : "");
+  };
+
+  return (
+    <div className="flex gap-6">
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          name={name}
+          checked={!isNotRequired && selected.includes("trustee")}
+          onChange={(e) => handleTrusteeOrAdviser("trustee", e.target.checked)}
+          disabled={isNotRequired}
+          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+        />
+        <span className="text-sm text-slate-700">Trustee</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          name={name}
+          checked={!isNotRequired && selected.includes("adviser")}
+          onChange={(e) => handleTrusteeOrAdviser("adviser", e.target.checked)}
+          disabled={isNotRequired}
+          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+        />
+        <span className="text-sm text-slate-700">Adviser</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          name={name}
+          checked={isNotRequired}
+          onChange={(e) => handleNotRequired(e.target.checked)}
+          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+        />
+        <span className="text-sm text-slate-700">Not Required</span>
+      </label>
+    </div>
+  );
+}
 
 export function AdviserDetailsStep() {
   const { state, setAdviser } = useApplicationForm();
   const update = (data: Parameters<typeof setAdviser>[0]) => setAdviser(data);
+  const err = (field: string) => state.stepErrorField === field;
 
   return (
     <>
@@ -63,10 +122,13 @@ export function AdviserDetailsStep() {
               <Label className="text-slate-700">Phone Number</Label>
               <Input
                 value={state.adviserTel}
-                onChange={(e) => update({ adviserTel: e.target.value })}
-                placeholder="Phone"
+                onChange={(e) => update({ adviserTel: e.target.value.replace(/\D/g, "").slice(0, 15) })}
+                placeholder="e.g. 0412345678"
                 type="tel"
-                className="h-11 rounded-lg border-slate-300 px-4"
+                inputMode="numeric"
+                maxLength={15}
+                aria-invalid={err("adviserTel")}
+                className={cn("h-11 rounded-lg border-slate-300 px-4", err("adviserTel") && "border-red-500 ring-2 ring-red-500/20")}
               />
             </div>
             <div className="space-y-2">
@@ -76,85 +138,92 @@ export function AdviserDetailsStep() {
                 onChange={(e) => update({ adviserEmail: e.target.value })}
                 placeholder="email@example.com"
                 type="email"
-                className="h-11 rounded-lg border-slate-300 px-4"
+                aria-invalid={err("adviserEmail")}
+                className={cn("h-11 rounded-lg border-slate-300 px-4", err("adviserEmail") && "border-red-500 ring-2 ring-red-500/20")}
               />
             </div>
           </div>
           <div className="space-y-4 pt-2">
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col gap-2">
               <span className="text-sm text-slate-700">
                 Do you nominate your Investment Adviser as the primary contact for your portfolio?
               </span>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="nominate-primary"
-                  checked={state.nominateAdviserPrimaryContact === true}
-                  onChange={() => update({ nominateAdviserPrimaryContact: true })}
-                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">Yes</span>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="nominate-primary"
-                  checked={state.nominateAdviserPrimaryContact === false}
-                  onChange={() => update({ nominateAdviserPrimaryContact: false })}
-                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">No</span>
-              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name="nominate-primary"
+                    checked={state.nominateAdviserPrimaryContact === true}
+                    onChange={() => update({ nominateAdviserPrimaryContact: true })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">Yes</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name="nominate-primary"
+                    checked={state.nominateAdviserPrimaryContact === false}
+                    onChange={() => update({ nominateAdviserPrimaryContact: false })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">No</span>
+                </label>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col gap-2">
               <span className="text-sm text-slate-700">
                 Do you authorise your Investment Adviser to access your financial statements online?
               </span>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="authorise-access"
-                  checked={state.authoriseAdviserAccessStatements === true}
-                  onChange={() => update({ authoriseAdviserAccessStatements: true })}
-                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">Yes</span>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="authorise-access"
-                  checked={state.authoriseAdviserAccessStatements === false}
-                  onChange={() => update({ authoriseAdviserAccessStatements: false })}
-                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">No</span>
-              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name="authorise-access"
+                    checked={state.authoriseAdviserAccessStatements === true}
+                    onChange={() => update({ authoriseAdviserAccessStatements: true })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">Yes</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name="authorise-access"
+                    checked={state.authoriseAdviserAccessStatements === false}
+                    onChange={() => update({ authoriseAdviserAccessStatements: false })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">No</span>
+                </label>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col gap-2">
               <span className="text-sm text-slate-700">
                 Do you authorise us to deal with your Investment Adviser direct?
               </span>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="authorise-deal"
-                  checked={state.authoriseDealWithAdviserDirect === true}
-                  onChange={() => update({ authoriseDealWithAdviserDirect: true })}
-                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">Yes</span>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="authorise-deal"
-                  checked={state.authoriseDealWithAdviserDirect === false}
-                  onChange={() => update({ authoriseDealWithAdviserDirect: false })}
-                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                />
-                <span className="text-sm text-slate-700">No</span>
-              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name="authorise-deal"
+                    checked={state.authoriseDealWithAdviserDirect === true}
+                    onChange={() => update({ authoriseDealWithAdviserDirect: true })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">Yes</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name="authorise-deal"
+                    checked={state.authoriseDealWithAdviserDirect === false}
+                    onChange={() => update({ authoriseDealWithAdviserDirect: false })}
+                    className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-sm text-slate-700">No</span>
+                </label>
+              </div>
             </div>
           </div>
         </section>
@@ -168,54 +237,27 @@ export function AdviserDetailsStep() {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-6">
               <span className="min-w-[140px] text-sm font-medium text-slate-700">Annual Report</span>
-              <div className="flex gap-6">
-                {DOCUMENT_SEND_OPTIONS.map((opt) => (
-                  <label key={opt.value} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="radio"
-                      name="send-to-annual"
-                      checked={state.annualReportSendTo === opt.value}
-                      onChange={() => update({ annualReportSendTo: opt.value })}
-                      className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                    />
-                    <span className="text-sm text-slate-700">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+              <DocumentSendToCheckboxes
+                name="send-to-annual"
+                value={state.annualReportSendTo ?? ""}
+                onChange={(v) => update({ annualReportSendTo: v })}
+              />
             </div>
             <div className="flex flex-wrap items-center gap-6">
               <span className="min-w-[140px] text-sm font-medium text-slate-700">Meeting Proxy</span>
-              <div className="flex gap-6">
-                {DOCUMENT_SEND_OPTIONS.map((opt) => (
-                  <label key={opt.value} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="radio"
-                      name="send-to-proxy"
-                      checked={state.meetingProxySendTo === opt.value}
-                      onChange={() => update({ meetingProxySendTo: opt.value })}
-                      className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                    />
-                    <span className="text-sm text-slate-700">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+              <DocumentSendToCheckboxes
+                name="send-to-proxy"
+                value={state.meetingProxySendTo ?? ""}
+                onChange={(v) => update({ meetingProxySendTo: v })}
+              />
             </div>
             <div className="flex flex-wrap items-center gap-6">
               <span className="min-w-[140px] text-sm font-medium text-slate-700">Investment Offers</span>
-              <div className="flex gap-6">
-                {DOCUMENT_SEND_OPTIONS.map((opt) => (
-                  <label key={opt.value} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="radio"
-                      name="send-to-offers"
-                      checked={state.investmentOffersSendTo === opt.value}
-                      onChange={() => update({ investmentOffersSendTo: opt.value })}
-                      className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                    />
-                    <span className="text-sm text-slate-700">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+              <DocumentSendToCheckboxes
+                name="send-to-offers"
+                value={state.investmentOffersSendTo ?? ""}
+                onChange={(v) => update({ investmentOffersSendTo: v })}
+              />
             </div>
           </div>
         </section>

@@ -38,8 +38,14 @@ export const entityInputSchema = z.object({
   entityType: entityTypeSchema,
   portfolioStatus: portfolioStatusSchema,
   portfolioHin: z.string().optional().default(""),
-  abn: z.string().optional().default(""),
-  tfn: z.string().optional().default(""),
+  abn: z.string().optional().default("").refine(
+    (v) => v === "" || /^\d{11}$/.test(v),
+    { message: "ABN must be exactly 11 digits" },
+  ),
+  tfn: z.string().optional().default("").refine(
+    (v) => v === "" || /^\d{8,9}$/.test(v),
+    { message: "TFN must be 8 or 9 digits" },
+  ),
   registeredForGst: z.boolean().optional(),
   listedInvestmentCount: z.number().int().min(0),
   unlistedInvestmentCount: z.number().int().min(0),
@@ -55,10 +61,12 @@ export const entityInputSchema = z.object({
 export const applicationInputSchema = z.object({
   primaryContactName: z.string().min(1, "Contact name is required"),
   email: z.email("Valid email is required"),
-  phone: z.string().min(1, "Phone is required"),
+  phone: z.string().min(1, "Phone is required").regex(/^\d{8,15}$/, "Phone must be 8–15 digits"),
   applicantRole: z.string().min(1, "Applicant role is required"),
   adviserDetails: z.string().optional().default(""),
   groupName: z.string().optional().default(""),
+  /** Optional comments or notes about services (applies to entire group) */
+  servicesComments: z.string().optional().default(""),
   entities: z.array(entityInputSchema).min(1, "At least one entity is required"),
 });
 

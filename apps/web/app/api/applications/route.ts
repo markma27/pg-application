@@ -6,9 +6,12 @@ import { NextResponse } from "next/server";
  * exposed to users.
  */
 export async function POST(request: Request) {
-  const backendUrl = process.env.API_URL?.replace(/\/$/, "");
+  const envUrl = process.env.API_URL?.replace(/\/$/, "");
+  const backendUrl =
+    envUrl ??
+    (process.env.NODE_ENV === "development" ? "http://localhost:4000" : undefined);
   if (!backendUrl) {
-    console.error("API_URL is not set");
+    console.error("API_URL is not set. Set API_URL to your backend (e.g. http://localhost:4000 or your production API).");
     return NextResponse.json(
       { message: "Form submission is not configured." },
       { status: 503 }

@@ -1,7 +1,10 @@
 import type { ApplicationInput, EntityInput } from "@pg/shared";
+import { ADD_ON_SERVICE_CODES, STANDARD_SERVICE_CODES } from "./constants";
 
-/** Where to send a document type */
+/** Single option for where to send a document type */
 export type DocumentSendTo = "trustee" | "adviser" | "not_required";
+/** Value: multiple (trustee and/or adviser) or not_required. When not_required, trustee/adviser are cleared. */
+export type DocumentSendToValue = ("trustee" | "adviser")[] | "not_required" | "";
 
 export interface ApplicationFormState {
   /** Step index: 0 = contact, 1 = entity count, 2..2+3N-1 = entity details, 2+3N = adviser details, 3+3N = review, 4+3N = confirmation */
@@ -22,6 +25,18 @@ export interface ApplicationFormState {
   individuals: PartialIndividual[];
   /** Preferred commencement (apply to entire client group) */
   groupCommencementDate: string;
+  /** Selected add-on service codes (apply to all entities) */
+  selectedAddOnServiceCodes: EntityInput["serviceCodes"][number][];
+  /** PAF & PuAF services – five independent toggles (apply to all entities) */
+  pafPuafServiceToggles: {
+    annualFinancialStatements: boolean;
+    annualInformationStatement: boolean;
+    frankingCreditRefundApplication: boolean;
+    pafResponsiblePersonServices: boolean;
+    puafSubFundMonthlyStatements: boolean;
+  };
+  /** Other comments or notes about services (applies to entire group) */
+  servicesComments: string;
   /** Adviser & admin details (step before review) */
   adviserName: string;
   adviserCompany: string;
@@ -32,9 +47,9 @@ export interface ApplicationFormState {
   nominateAdviserPrimaryContact: boolean | "";
   authoriseAdviserAccessStatements: boolean | "";
   authoriseDealWithAdviserDirect: boolean | "";
-  annualReportSendTo: DocumentSendTo | "";
-  meetingProxySendTo: DocumentSendTo | "";
-  investmentOffersSendTo: DocumentSendTo | "";
+  annualReportSendTo: DocumentSendToValue;
+  meetingProxySendTo: DocumentSendToValue;
+  investmentOffersSendTo: DocumentSendToValue;
   dividendPreference: "cash" | "reinvest" | "";
   /** Set after successful submit */
   submitResult: SubmitResult | null;
@@ -42,6 +57,8 @@ export interface ApplicationFormState {
   isSubmitting: boolean;
   /** Validation error for current step */
   stepError: string | null;
+  /** Field key that failed validation (e.g. "email", "individual_0_email") for highlighting */
+  stepErrorField: string | null;
 }
 
 /** Relationship to account (multiple allowed per individual) */
@@ -99,8 +116,26 @@ export interface SubmitResult {
 export function formStateToPayload(state: ApplicationFormState): ApplicationInput | null {
   if (state.entityCount < 1 || state.entities.length !== state.entityCount) return null;
   if (!state.groupCommencementDate?.trim()) return null;
+  const toggles = state.pafPuafServiceToggles ?? {
+    annualFinancialStatements: false,
+    annualInformationStatement: false,
+    frankingCreditRefundApplication: false,
+    pafResponsiblePersonServices: false,
+    puafSubFundMonthlyStatements: false,
+  };
+  const pafPuafCodes: EntityInput["serviceCodes"][number][] = [];
+  if (toggles.annualFinancialStatements || toggles.annualInformationStatement) pafPuafCodes.push("acnc_ais");
+  if (toggles.frankingCreditRefundApplication) pafPuafCodes.push("franking_credit_refund_support");
+  if (toggles.pafResponsiblePersonServices) pafPuafCodes.push("responsible_person");
+  if (toggles.puafSubFundMonthlyStatements) pafPuafCodes.push("sub_fund_monthly_statements");
+
+  const serviceCodes = [
+    ...STANDARD_SERVICE_CODES,
+    ...(state.selectedAddOnServiceCodes ?? []),
+    ...pafPuafCodes,
+  ];
   const raw = state.entities.slice(0, state.entityCount).map((e) => {
-    if (!e.entityType || !e.portfolioStatus || !e.serviceCodes?.length) return null;
+    if (!e.entityType || !e.portfolioStatus) return null;
     return {
       id: e.id,
       entityName: e.entityName || "Unnamed",
@@ -117,7 +152,7 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
       otherAssetsText: e.otherAssetsText ?? "",
       hasCrypto: e.hasCrypto ?? false,
       hasForeignInvestments: e.hasForeignInvestments ?? false,
-      serviceCodes: e.serviceCodes,
+      serviceCodes,
       commencementDate: state.groupCommencementDate,
     } as EntityInput;
   });
@@ -130,6 +165,7 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
     applicantRole: state.applicantRole,
     adviserDetails: state.adviserDetails ?? "",
     groupName: state.groupName ?? "",
+    servicesComments: state.servicesComments ?? "",
     entities,
   };
 }

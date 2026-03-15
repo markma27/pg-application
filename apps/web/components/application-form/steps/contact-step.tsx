@@ -5,9 +5,11 @@ import { APPLICANT_ROLE_OPTIONS } from "@/lib/application-form/constants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function ContactStep() {
   const { state, setContact } = useApplicationForm();
+  const err = (field: string) => state.stepErrorField === field;
 
   return (
     <>
@@ -37,7 +39,8 @@ export function ContactStep() {
               onChange={(e) => setContact({ primaryContactName: e.target.value })}
               placeholder="Full name"
               required
-              className="h-11 rounded-lg border-slate-300 px-4"
+              aria-invalid={err("primaryContactName")}
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("primaryContactName") && "border-red-500 ring-2 ring-red-500/20")}
             />
           </div>
           
@@ -50,7 +53,8 @@ export function ContactStep() {
               onChange={(e) => setContact({ email: e.target.value })}
               placeholder="your.email@email.com"
               required
-              className="h-11 rounded-lg border-slate-300 px-4"
+              aria-invalid={err("email")}
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("email") && "border-red-500 ring-2 ring-red-500/20")}
             />
           </div>
           
@@ -59,11 +63,14 @@ export function ContactStep() {
             <Input
               id="contact-phone"
               type="tel"
+              inputMode="numeric"
               value={state.phone}
-              onChange={(e) => setContact({ phone: e.target.value })}
-              placeholder="Phone number"
+              onChange={(e) => setContact({ phone: e.target.value.replace(/\D/g, "").slice(0, 15) })}
+              placeholder="e.g. 0412345678"
+              maxLength={15}
               required
-              className="h-11 rounded-lg border-slate-300 px-4"
+              aria-invalid={err("phone")}
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("phone") && "border-red-500 ring-2 ring-red-500/20")}
             />
           </div>
 
@@ -74,7 +81,11 @@ export function ContactStep() {
                 id="contact-role"
                 value={state.applicantRole}
                 onChange={(e) => setContact({ applicantRole: e.target.value })}
-                className="flex h-11 w-full appearance-none rounded-lg border border-slate-300 bg-white pl-4 pr-10 py-2 text-sm text-slate-900 transition-colors focus-visible:border-emerald-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 [&::-ms-expand]:hidden"
+                aria-invalid={err("applicantRole")}
+                className={cn(
+                  "flex h-11 w-full appearance-none rounded-lg border bg-white pl-4 pr-10 py-2 text-sm text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-1 [&::-ms-expand]:hidden",
+                  err("applicantRole") ? "border-red-500 ring-2 ring-red-500/20" : "border-slate-300 focus-visible:border-emerald-600 focus-visible:ring-emerald-600"
+                )}
                 required
               >
                 <option value="" disabled hidden>Select role</option>

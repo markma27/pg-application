@@ -1,8 +1,12 @@
 "use client";
 
 import { useApplicationForm } from "@/lib/application-form";
-import { ENTITY_TYPE_OPTIONS, PORTFOLIO_STATUS_OPTIONS, SERVICE_OPTIONS } from "@/lib/application-form/constants";
-import type { DocumentSendTo } from "@/lib/application-form/types";
+import {
+  ADD_ON_SERVICE_LABELS,
+  ENTITY_TYPE_OPTIONS,
+  PORTFOLIO_STATUS_OPTIONS,
+} from "@/lib/application-form/constants";
+import type { DocumentSendToValue } from "@/lib/application-form/types";
 import {
   Card,
   CardContent,
@@ -15,11 +19,12 @@ import { Pencil } from "lucide-react";
 const ENTITY_STEPS_START = 2;
 const ENTITY_STEPS_PER_ENTITY = 2;
 
-const DOCUMENT_SEND_LABELS: Record<DocumentSendTo, string> = {
-  trustee: "Trustee",
-  adviser: "Adviser",
-  not_required: "Not required",
-};
+function formatDocumentSendTo(value: DocumentSendToValue): string | undefined {
+  if (!value) return undefined;
+  if (value === "not_required") return "Not required";
+  if (Array.isArray(value) && value.length > 0) return value.map((v) => (v === "trustee" ? "Trustee" : "Adviser")).join(", ");
+  return undefined;
+}
 
 function ReviewRow({ label, value, className = "" }: { label: string; value: React.ReactNode; className?: string }) {
   if (value == null || value === "") return null;
@@ -68,7 +73,6 @@ export function ReviewStep() {
 
   const entityTypeLabel = (value: string) => ENTITY_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
   const portfolioLabel = (value: string) => PORTFOLIO_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? value;
-  const serviceLabel = (value: string) => SERVICE_OPTIONS.find((o) => o.value === value)?.label ?? value;
   const relationshipLabel = (r: string) => r.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
@@ -156,30 +160,51 @@ export function ReviewStep() {
                       : undefined
                   }
                 />
-                <ReviewRow
-                  label="Services"
-                  value={
-                    entity.serviceCodes?.length
-                      ? entity.serviceCodes.map(serviceLabel).join(", ")
-                      : undefined
-                  }
-                />
               </CardContent>
             </Card>
           );
         })}
 
-        {/* Commencement (client group) */}
+        {/* Services & commencement (client group) */}
         <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 pl-6 pr-6 py-4">
             <SectionHeader
               title="Services & commencement"
-              subtitle="Preferred commencement applies to all entities"
+              subtitle="Services and preferred commencement apply to the entire group"
               onEdit={() => goToStep(servicesStepIndex)}
               editStepLabel="Edit services & commencement"
             />
           </CardHeader>
           <CardContent className="divide-y divide-slate-100 px-6 py-4">
+            <ReviewRow label="Portfolio standard services" value="Included" />
+            <ReviewRow
+              label="Portfolio add-on services (Jaquillard Minns)"
+              value={
+                state.selectedAddOnServiceCodes?.length
+                  ? state.selectedAddOnServiceCodes
+                      .map((c) => ADD_ON_SERVICE_LABELS[c as keyof typeof ADD_ON_SERVICE_LABELS])
+                      .filter(Boolean)
+                      .join(", ")
+                  : "None"
+              }
+            />
+            <ReviewRow
+              label="PAF & PuAF services (Jaquillard Minns)"
+              value={
+                (() => {
+                  const t = state.pafPuafServiceToggles;
+                  if (!t) return "None";
+                  const labels: string[] = [];
+                  if (t.annualFinancialStatements) labels.push("Annual financial statements");
+                  if (t.annualInformationStatement) labels.push("Annual information statement");
+                  if (t.frankingCreditRefundApplication) labels.push("Franking credit refund application");
+                  if (t.pafResponsiblePersonServices) labels.push("PAF responsible person services");
+                  if (t.puafSubFundMonthlyStatements) labels.push("PuAF sub-fund monthly statements");
+                  return labels.length ? labels.join(", ") : "None";
+                })()
+              }
+            />
+            <ReviewRow label="Other comments or notes" value={state.servicesComments?.trim() || undefined} />
             <ReviewRow label="Preferred commencement" value={state.groupCommencementDate || undefined} />
           </CardContent>
         </Card>
@@ -271,15 +296,15 @@ export function ReviewStep() {
             />
             <ReviewRow
               label="Annual report send to"
-              value={state.annualReportSendTo ? DOCUMENT_SEND_LABELS[state.annualReportSendTo] : undefined}
+              value={formatDocumentSendTo(state.annualReportSendTo)}
             />
             <ReviewRow
               label="Meeting proxy send to"
-              value={state.meetingProxySendTo ? DOCUMENT_SEND_LABELS[state.meetingProxySendTo] : undefined}
+              value={formatDocumentSendTo(state.meetingProxySendTo)}
             />
             <ReviewRow
               label="Investment offers send to"
-              value={state.investmentOffersSendTo ? DOCUMENT_SEND_LABELS[state.investmentOffersSendTo] : undefined}
+              value={formatDocumentSendTo(state.investmentOffersSendTo)}
             />
             <ReviewRow
               label="Dividend preference"

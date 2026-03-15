@@ -103,6 +103,7 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
   if (!entity) return null;
 
   const update = (data: Partial<typeof entity>) => setEntity(entityIndex, data);
+  const err = (field: string) => state.stepErrorField === `entity_${entityIndex}_${field}`;
 
   return (
     <>
@@ -126,7 +127,8 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
               onChange={(e) => update({ entityName: e.target.value })}
               placeholder="Your full entity name"
               required
-              className="h-11 rounded-lg border-slate-300 px-4"
+              aria-invalid={err("entityName")}
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("entityName") && "border-red-500 ring-2 ring-red-500/20")}
             />
           </div>
 
@@ -137,23 +139,28 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
               onChange={(e) =>
                 update({ abn: e.target.value.replace(/\D/g, "").slice(0, 11) })
               }
-              placeholder="11 digits"
+              placeholder="Australian Business Number"
               inputMode="numeric"
               maxLength={11}
-              className="h-11 rounded-lg border-slate-300 px-4"
+              aria-invalid={err("abn")}
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("abn") && "border-red-500 ring-2 ring-red-500/20")}
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-700">TFN (optional)</Label>
+            <Label className="text-slate-700">
+              TFN <span className="text-red-500">*</span>
+            </Label>
             <Input
               value={entity.tfn ?? ""}
               onChange={(e) =>
                 update({ tfn: e.target.value.replace(/\D/g, "").slice(0, 9) })
               }
-              placeholder="8 - 9 digits"
+              placeholder="Tax File Number"
               inputMode="numeric"
               maxLength={9}
-              className="h-11 rounded-lg border-slate-300 px-4"
+              required
+              aria-invalid={err("tfn")}
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("tfn") && "border-red-500 ring-2 ring-red-500/20")}
             />
           </div>
           {entity.abn?.trim() !== "" && (
@@ -188,12 +195,12 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
             <Input
               value={entity.portfolioHin ?? ""}
               onChange={(e) => update({ portfolioHin: e.target.value })}
-              placeholder="e.g. X123456789"
+              placeholder="Holder Identification Number. e.g. X1234567890"
               className="h-11 rounded-lg border-slate-300 px-4"
             />
           </div>
 
-          <div className="space-y-4 sm:col-span-2">
+          <div className={cn("space-y-4 sm:col-span-2", err("portfolioStatus") && "rounded-lg border-2 border-red-500 bg-red-50/30 p-4")}>
             <div>
               <Label className="text-base font-semibold text-slate-900">
                 Portfolio status <span className="text-red-500">*</span>
@@ -246,7 +253,9 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
         <div className="space-y-4">
           <div>
             <Label className="text-base font-semibold text-slate-900">Asset counts (estimates)</Label>
-            <p className="text-sm text-slate-500">Approximate numbers for complexity assessment.</p>
+            <p className="text-sm text-slate-500">
+              Please provide your best estimate of the number of investments in each category. Approximate figures are sufficient and will be used for complexity assessment.
+            </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
@@ -296,12 +305,13 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
           </div>
           <div className="mt-4">
             <div className="space-y-2">
-              <Label className="text-slate-700">Other Assets (e.g. crypto, gold, etc.)</Label>
-              <Input
+              <Label className="text-slate-700">Other Details & Notes</Label>
+              <textarea
                 value={entity.otherAssetsText}
                 onChange={(e) => update({ otherAssetsText: e.target.value })}
-                placeholder="Brief description"
-                className="h-11 rounded-lg border-slate-300"
+                placeholder="e.g. other assets such as crypto, gold, etc. or asset type, platform or wrap, approximate value, or any other notes…"
+                rows={4}
+                className="w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white px-4 py-3 text-base transition-colors outline-none placeholder:text-slate-400 focus:border-emerald-600 focus:ring-3 focus:ring-emerald-600/30"
               />
             </div>
           </div>

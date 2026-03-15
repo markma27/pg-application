@@ -12,6 +12,7 @@ export function EntityDetailStepType({ entityIndex }: { entityIndex: number }) {
   if (!entity) return null;
 
   const update = (data: Partial<typeof entity>) => setEntity(entityIndex, data);
+  const entityTypeError = state.stepErrorField === `entity_${entityIndex}_entityType`;
 
   return (
     <>
@@ -25,7 +26,7 @@ export function EntityDetailStepType({ entityIndex }: { entityIndex: number }) {
       </div>
 
       <div className="space-y-10">
-        <div className="space-y-4">
+        <div className={cn("space-y-4", entityTypeError && "rounded-xl border-2 border-red-500 bg-red-50/30 p-4")}>
           <Label className="text-lg font-semibold text-slate-900">
             Select the entity type for the application <span className="text-red-500">*</span>
           </Label>

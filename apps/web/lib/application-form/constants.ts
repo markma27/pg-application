@@ -1,5 +1,44 @@
 import type { EntityInput } from "@pg/shared";
 
+/** Service codes always included for all entities (portfolio standard) */
+export const STANDARD_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
+  "standard_investment_administration",
+  "standard_investment_reporting",
+  "annual_reporting",
+];
+
+/** Add-on services (Jaquillard Minns) – included when selected */
+export const ADD_ON_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
+  "monthly_reporting",
+  "quarterly_reporting",
+  "asic_agent",
+  "bas",
+];
+
+/** PAF & PuAF services (Jaquillard Minns) – included when selected */
+export const PAF_PUAF_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
+  "acnc_ais",
+  "responsible_person",
+  "franking_credit_refund_support",
+  "sub_fund_monthly_statements",
+];
+
+/** Labels for add-on services (for review step) */
+export const ADD_ON_SERVICE_LABELS: Record<(typeof ADD_ON_SERVICE_CODES)[number], string> = {
+  monthly_reporting: "Monthly investment reporting",
+  quarterly_reporting: "Quarterly investment reporting",
+  asic_agent: "ASIC agent for companies",
+  bas: "Business activity statement",
+};
+
+/** Labels for PAF & PuAF services (for review step) */
+export const PAF_PUAF_SERVICE_LABELS: Record<(typeof PAF_PUAF_SERVICE_CODES)[number], string> = {
+  acnc_ais: "Annual financial statements / Annual information statement",
+  responsible_person: "PAF responsible person services",
+  franking_credit_refund_support: "Franking credit refund application",
+  sub_fund_monthly_statements: "PuAF sub-fund monthly statements",
+};
+
 export const ENTITY_TYPE_OPTIONS: {
   value: EntityInput["entityType"];
   label: string;

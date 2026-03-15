@@ -26,6 +26,7 @@ export function IndividualDetailsStep() {
   const { state, setIndividual, setIndividualCount } = useApplicationForm();
   const count = state.individualCount;
   const individuals = state.individuals.slice(0, count);
+  const err = (index: number, field: string) => state.stepErrorField === `individual_${index}_${field}`;
 
   return (
     <>
@@ -48,7 +49,7 @@ export function IndividualDetailsStep() {
               Individual {index + 1}
             </h2>
             <div className="space-y-6 p-4 sm:p-6">
-              <div className="space-y-3">
+              <div className={cn("space-y-3", err(index, "relationshipRoles") && "rounded-lg border-2 border-red-500 bg-red-50/30 p-3")}>
                 <Label className="text-slate-700">Relationship to Account <span className="text-red-600">*</span></Label>
                 <div className="flex flex-wrap gap-x-6 gap-y-2">
                   {RELATIONSHIP_OPTIONS.map((opt) => (
@@ -77,7 +78,8 @@ export function IndividualDetailsStep() {
                       value={ind.title}
                       onChange={(e) => setIndividual(index, { title: e.target.value })}
                       placeholder="e.g. Mr, Ms"
-                      className="h-11 rounded-lg border-slate-300 px-4"
+                      aria-invalid={err(index, "title")}
+                      className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "title") && "border-red-500 ring-2 ring-red-500/20")}
                     />
                   </div>
                   <div className="min-w-0 flex-1 space-y-2">
@@ -86,7 +88,8 @@ export function IndividualDetailsStep() {
                       value={ind.fullName}
                       onChange={(e) => setIndividual(index, { fullName: e.target.value })}
                       placeholder="Full name"
-                      className="h-11 w-full rounded-lg border-slate-300 px-4"
+                      aria-invalid={err(index, "fullName")}
+                      className={cn("h-11 w-full rounded-lg border-slate-300 px-4", err(index, "fullName") && "border-red-500 ring-2 ring-red-500/20")}
                     />
                   </div>
                 </div>
@@ -97,16 +100,19 @@ export function IndividualDetailsStep() {
                     value={ind.streetAddress}
                     onChange={(v) => setIndividual(index, { streetAddress: v })}
                     placeholder="Type or select an address in Australia"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "streetAddress") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-slate-700">Tax File Number <span className="text-red-600">*</span></Label>
                   <Input
                     value={ind.taxFileNumber}
-                    onChange={(e) => setIndividual(index, { taxFileNumber: e.target.value })}
-                    placeholder="TFN"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    onChange={(e) => setIndividual(index, { taxFileNumber: e.target.value.replace(/\D/g, "").slice(0, 9) })}
+                    placeholder="8 or 9 digits"
+                    inputMode="numeric"
+                    maxLength={9}
+                    aria-invalid={err(index, "taxFileNumber")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "taxFileNumber") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
 
@@ -116,7 +122,9 @@ export function IndividualDetailsStep() {
                     type="date"
                     value={ind.dateOfBirth}
                     onChange={(e) => setIndividual(index, { dateOfBirth: e.target.value })}
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    max={new Date().toISOString().split("T")[0]}
+                    aria-invalid={err(index, "dateOfBirth")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "dateOfBirth") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -125,7 +133,8 @@ export function IndividualDetailsStep() {
                     value={ind.countryOfBirth}
                     onChange={(e) => setIndividual(index, { countryOfBirth: e.target.value })}
                     placeholder="e.g. Australia"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    aria-invalid={err(index, "countryOfBirth")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "countryOfBirth") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -134,7 +143,8 @@ export function IndividualDetailsStep() {
                     value={ind.city}
                     onChange={(e) => setIndividual(index, { city: e.target.value })}
                     placeholder="City"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    aria-invalid={err(index, "city")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "city") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
 
@@ -144,7 +154,8 @@ export function IndividualDetailsStep() {
                     value={ind.occupation}
                     onChange={(e) => setIndividual(index, { occupation: e.target.value })}
                     placeholder="Occupation"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    aria-invalid={err(index, "occupation")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "occupation") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -153,7 +164,8 @@ export function IndividualDetailsStep() {
                     value={ind.employer}
                     onChange={(e) => setIndividual(index, { employer: e.target.value })}
                     placeholder="Employer"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    aria-invalid={err(index, "employer")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "employer") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
@@ -163,7 +175,8 @@ export function IndividualDetailsStep() {
                     value={ind.email}
                     onChange={(e) => setIndividual(index, { email: e.target.value })}
                     placeholder="email@example.com"
-                    className="h-11 rounded-lg border-slate-300 px-4"
+                    aria-invalid={err(index, "email")}
+                    className={cn("h-11 rounded-lg border-slate-300 px-4", err(index, "email") && "border-red-500 ring-2 ring-red-500/20")}
                   />
                 </div>
               </div>

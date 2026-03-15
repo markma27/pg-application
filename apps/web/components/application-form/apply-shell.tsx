@@ -32,27 +32,29 @@ export function ApplyShell({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="min-h-screen bg-slate-100">
-      {/* Full-width header bar */}
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <a href="/" className="flex shrink-0 cursor-pointer items-center">
-            <div className="relative h-[4.2rem] w-[13.44rem] sm:h-[5.04rem] sm:w-[16.8rem]">
-              <Image
-                src="/PortfolioGuardian_OriginalLogo.svg"
-                alt="PortfolioGuardian"
-                fill
-                className="object-contain object-left"
-                priority
-              />
-            </div>
-          </a>
-          {showNavPanel && (
-            <div className="flex items-center gap-2">
-              <StepNav variant="header" />
-            </div>
-          )}
-        </div>
-      </header>
+      {/* Full-width header bar (hidden on confirmation page) */}
+      {!isConfirmation && (
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+            <a href="/" className="flex shrink-0 cursor-pointer items-center">
+              <div className="relative h-[4.2rem] w-[13.44rem] sm:h-[5.04rem] sm:w-[16.8rem]">
+                <Image
+                  src="/PortfolioGuardian_OriginalLogo.svg"
+                  alt="PortfolioGuardian"
+                  fill
+                  className="object-contain object-left"
+                  priority
+                />
+              </div>
+            </a>
+            {showNavPanel && (
+              <div className="flex items-center gap-2">
+                <StepNav variant="header" />
+              </div>
+            )}
+          </div>
+        </header>
+      )}
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {showNavPanel && (
@@ -68,10 +70,28 @@ export function ApplyShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         )}
-        <div className="flex flex-col gap-6 py-6 sm:py-8 lg:flex-row lg:gap-0 lg:pt-0">
-        {/* Left: form content in grey card */}
-        <div className="min-w-0 flex-1 lg:max-w-[65%]">
-          <div className="h-full rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-sm sm:p-8 lg:p-10 lg:rounded-r-none">
+        <div
+          className={
+            isConfirmation
+              ? "flex flex-col gap-6 py-6 sm:py-8"
+              : "flex flex-col gap-6 py-6 sm:py-8 lg:flex-row lg:gap-0 lg:pt-0"
+          }
+        >
+        {/* Form content: centred when confirmation, else left column */}
+        <div
+          className={
+            isConfirmation
+              ? "flex w-full justify-center"
+              : "min-w-0 flex-1 lg:max-w-[65%]"
+          }
+        >
+          <div
+            className={
+              isConfirmation
+                ? "h-full w-full max-w-3xl rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100 px-5 py-6 shadow-sm sm:px-6 sm:py-8 lg:px-8 lg:py-10"
+                : "h-full rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-sm sm:p-8 lg:p-10 lg:rounded-r-none"
+            }
+          >
             <div key={state.step} className="animate-fade-in">
               {children}
             </div>
