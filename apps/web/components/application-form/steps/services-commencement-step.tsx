@@ -80,7 +80,7 @@ export function ServicesCommencementStep() {
   };
 
   const togglePafPuaf = (key: PafPuafToggleKey, checked: boolean) => {
-    setGroupServices({ pafPuafServiceToggles: { [key]: checked } });
+    setGroupServices({ pafPuafServiceToggles: { ...pafPuafToggles, [key]: checked } });
   };
 
   return (
