@@ -18,15 +18,15 @@ Users only ever see the **landing page and the form** on your main domain. The f
 
 - **Root Directory**: `apps/web`
 - **Framework**: Next.js (auto-detected)
-- **Build Command** — override and set to (builds shared packages first, then web):
+- **Build Command**: leave the default **`npm run build`** (or **`npm run build`** at the Vercel project root for `apps/web`). The `@pg/web` **`build`** script compiles `@pg/shared` and `@pg/submission`, then runs **`next build`**.
 
-  ```bash
-  cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build -w @pg/web
-  ```
+- **`apps/web/vercel.json`** sets **`installCommand`** to **`cd ../.. && npm ci`** so install uses the **repository root** `package-lock.json` and workspace layout (fixes **`Can't resolve '@pg/submission'`** when Vercel only installed under `apps/web`).
 
-  Requires **“Include source files outside of the Root Directory”** to be **on**. If install runs from `apps/web` only, use instead: `cd ../.. && npm ci && npm run build:web`.
+- **`apps/web/package.json`** lists **`@pg/shared`** and **`@pg/submission`** as **`file:../../packages/...`** so those packages resolve from the cloned repo even when the installer cwd is `apps/web`.
 
-  Locally, if `next dev` cannot resolve `@pg/submission`, run once: `npm run build -w @pg/shared && npm run build -w @pg/submission` (or `npm run build:web`).
+- Requires **“Include source files outside of the Root Directory”** to be **on**.
+
+- Locally, if `next dev` cannot resolve `@pg/submission`, run once: `npm run build -w @pg/shared && npm run build -w @pg/submission` (or `npm run build:web` from the repo root).
 
 - **Environment variables** (Production, Preview, Development):
   - **`NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`** = your key (if you use address autocomplete).

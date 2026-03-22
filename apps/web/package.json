@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm exec -w @pg/web -- next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json"
@@ -12,8 +12,8 @@
   "dependencies": {
     "@base-ui/react": "^1.2.0",
     "@hookform/resolvers": "latest",
-    "@pg/shared": "0.1.0",
-    "@pg/submission": "0.1.0",
+    "@pg/shared": "file:../../packages/shared",
+    "@pg/submission": "file:../../packages/submission",
     "@radix-ui/react-slot": "latest",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "latest",
