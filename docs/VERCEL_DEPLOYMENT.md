@@ -26,6 +26,8 @@ Users only ever see the **landing page and the form** on your main domain. The f
 
 - Requires **“Include source files outside of the Root Directory”** to be **on**.
 
+- If a deploy fails after a successful compile with **`ENOENT ... .next/lock`**, that is addressed in **`apps/web/next.config.ts`** via **`experimental.lockDistDir: false`** and **`outputFileTracingRoot`** (Next 16 + monorepo + Vercel tracing). No extra Vercel toggle is required beyond the items above.
+
 - Locally, if `next dev` cannot resolve `@pg/submission`, run once: `npm run build -w @pg/shared && npm run build -w @pg/submission` (or `npm run build:web` from the repo root).
 
 - **Environment variables** (Production, Preview, Development):

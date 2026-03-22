@@ -55,6 +55,16 @@ if (existsSync(path.join(monorepoRoot, ".env.local"))) {
  */
 const nextConfig: NextConfig = {
   transpilePackages: ["@pg/shared", "@pg/submission"],
+  /** Monorepo root so server traces include `packages/*` correctly on Vercel. */
+  outputFileTracingRoot: path.join(__dirname, "..", ".."),
+  /**
+   * Next 16+ defaults `lockDistDir` to true (writes `.next/lock` during build). The lock is
+   * removed after the build; Vercel's trace step can still try to `lstat` it and fail with ENOENT.
+   * Safe to disable on single-threaded CI (e.g. Vercel).
+   */
+  experimental: {
+    lockDistDir: false,
+  },
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
