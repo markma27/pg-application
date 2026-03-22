@@ -38,8 +38,10 @@ export function AdminLoginForm({ errorKey }: Props) {
       }
       router.push("/admin");
       router.refresh();
-    } catch {
-      setFormError("Sign-in failed. Check that Supabase environment variables are set.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Sign-in failed. Check that Supabase environment variables are set.";
+      setFormError(message);
     } finally {
       setLoading(false);
     }
