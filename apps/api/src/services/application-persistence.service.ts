@@ -1,4 +1,8 @@
-import type { ApplicationAssessment, ApplicationInput } from "../../../../packages/shared/src/index.js";
+import type {
+  ApplicationAssessment,
+  ApplicationInput,
+  FullApplicationSubmission,
+} from "../../../../packages/shared/src/index.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 
 function serviceLabel(code: string): string {
@@ -8,9 +12,23 @@ function serviceLabel(code: string): string {
     .join(" ");
 }
 
+/** Persist document-routing fields as JSONB (array, "not_required", or omit when unset). */
+function documentSendToJson(
+  v: FullApplicationSubmission["annualReportSendTo"],
+): unknown | null {
+  if (v === "" || v == null) return null;
+  return v;
+}
+
+function triStateBool(v: boolean | "" | undefined): boolean | null {
+  if (v === true) return true;
+  if (v === false) return false;
+  return null;
+}
+
 export async function persistApplicationToSupabase(params: {
   applicationId: string;
-  payload: ApplicationInput;
+  payload: FullApplicationSubmission;
   assessment: ApplicationAssessment;
 }): Promise<{ reference: string | null }> {
   if (!supabaseAdmin) {
@@ -18,6 +36,17 @@ export async function persistApplicationToSupabase(params: {
   }
 
   const { applicationId, payload, assessment } = params;
+
+  const core: ApplicationInput = {
+    primaryContactName: payload.primaryContactName,
+    email: payload.email,
+    phone: payload.phone,
+    applicantRole: payload.applicantRole,
+    adviserDetails: payload.adviserDetails,
+    groupName: payload.groupName,
+    servicesComments: payload.servicesComments,
+    entities: payload.entities,
+  };
 
   const { data: appRow, error: appError } = await supabaseAdmin
     .from("applications")
@@ -30,8 +59,25 @@ export async function persistApplicationToSupabase(params: {
       adviser_details: payload.adviserDetails,
       group_name: payload.groupName,
       services_comments: payload.servicesComments,
-      status: "New",
+      status: "pending",
       overall_outcome: assessment.overallOutcome,
+      form_submission: payload as unknown as Record<string, unknown>,
+      adviser_name: payload.adviserName?.trim() || null,
+      adviser_company: payload.adviserCompany?.trim() || null,
+      adviser_address: payload.adviserAddress?.trim() || null,
+      adviser_tel: payload.adviserTel?.trim() || null,
+      adviser_fax: payload.adviserFax?.trim() || null,
+      adviser_email: payload.adviserEmail?.trim() || null,
+      nominate_adviser_primary_contact: triStateBool(payload.nominateAdviserPrimaryContact),
+      authorise_adviser_access_statements: triStateBool(payload.authoriseAdviserAccessStatements),
+      authorise_deal_with_adviser_direct: triStateBool(payload.authoriseDealWithAdviserDirect),
+      annual_report_send_to: documentSendToJson(payload.annualReportSendTo),
+      meeting_proxy_send_to: documentSendToJson(payload.meetingProxySendTo),
+      investment_offers_send_to: documentSendToJson(payload.investmentOffersSendTo),
+      dividend_preference:
+        payload.dividendPreference === "cash" || payload.dividendPreference === "reinvest"
+          ? payload.dividendPreference
+          : null,
     })
     .select("reference")
     .single();
@@ -60,7 +106,33 @@ export async function persistApplicationToSupabase(params: {
     throw new Error(pricingError.message);
   }
 
-  for (const entity of payload.entities) {
+  const individualRows = payload.individuals.map((ind, sortOrder) => ({
+    application_id: applicationId,
+    sort_order: sortOrder,
+    form_individual_id: ind.id,
+    relationship_roles: ind.relationshipRoles,
+    title: ind.title,
+    full_name: ind.fullName,
+    street_address: ind.streetAddress,
+    street_address_line2: ind.streetAddressLine2?.trim() || null,
+    tax_file_number: ind.taxFileNumber,
+    date_of_birth: ind.dateOfBirth,
+    country_of_birth: ind.countryOfBirth,
+    city: ind.city,
+    occupation: ind.occupation,
+    employer: ind.employer,
+    email: ind.email,
+  }));
+
+  if (individualRows.length > 0) {
+    const { error: indError } = await supabaseAdmin.from("application_individuals").insert(individualRows);
+    if (indError) {
+      console.error("Supabase application_individuals insert failed.", indError);
+      throw new Error(indError.message);
+    }
+  }
+
+  for (const entity of core.entities) {
     const ea = assessment.entityAssessments.find((x) => x.entityId === entity.id);
     if (!ea) {
       throw new Error(`Missing assessment for entity ${entity.id}`);
@@ -114,6 +186,18 @@ export async function persistApplicationToSupabase(params: {
         throw new Error(svcError.message);
       }
     }
+  }
+
+  const applicantLabel = `${payload.primaryContactName.trim()} (${payload.email.trim()})`;
+  const { error: auditErr } = await supabaseAdmin.from("application_audit_events").insert({
+    application_id: applicationId,
+    event_type: "form_submitted",
+    actor_type: "applicant",
+    actor_label: applicantLabel,
+    detail: { source: "public_application_form" },
+  });
+  if (auditErr) {
+    console.warn("Could not record application_audit_events row.", auditErr);
   }
 
   return { reference };

@@ -1,0 +1,330 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Layers } from "lucide-react";
+import { fullApplicationSubmissionSchema } from "@pg/shared";
+import { AdminFormSubmissionDetails } from "@/components/admin-form-submission-details";
+import {
+  AdminLegacyApplicationDetails,
+  type AdviserRelationalFields,
+  type IndividualDbRow,
+} from "@/components/admin-legacy-application-details";
+import {
+  AdminReviewFieldGrid,
+  AdminSectionHeader,
+  ReviewRow,
+  ReviewRowAlways,
+} from "@/components/admin-application-review-layout";
+import {
+  AdminApplicationAuditSection,
+  type ApplicationAuditEventRow,
+} from "@/components/admin-application-audit-section";
+import { AdminApplicationStatusFlow } from "@/components/admin-application-status-flow";
+import { createClient } from "@/lib/supabase/server";
+import { updateApplicationWorkflowStatus } from "./actions";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+type EntityServiceRow = {
+  id: string;
+  service_code: string;
+  service_label: string;
+};
+
+type EntityRow = {
+  id: string;
+  entity_name: string;
+  entity_type: string;
+  portfolio_status: string;
+  portfolio_hin: string | null;
+  abn: string | null;
+  tfn: string | null;
+  registered_for_gst: boolean | null;
+  listed_investment_count: number;
+  unlisted_investment_count: number;
+  property_count: number;
+  wrap_count: number;
+  other_assets_text: string | null;
+  has_crypto: boolean;
+  has_foreign_investments: boolean;
+  routing_outcome: string;
+  service_start_date: string;
+  complexity_points: number;
+  indicative_annual_fee: string | number | null;
+  indicative_onboarding_fee: string | number | null;
+  pricing_status: string;
+  entity_services: EntityServiceRow[] | null;
+};
+
+function outcomeLabel(outcome: string) {
+  switch (outcome) {
+    case "pg_fit":
+      return "PG fit";
+    case "jm_fit":
+      return "JM referral";
+    case "manual_review":
+      return "Manual review";
+    default:
+      return outcome;
+  }
+}
+
+function formatMoney(v: string | number | null | undefined) {
+  if (v == null || v === "") return "—";
+  const n = typeof v === "string" ? parseFloat(v) : v;
+  if (Number.isNaN(n)) return "—";
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export default async function AdminApplicationDetailPage({
+  params,
+}: Readonly<{
+  params: Promise<{ id: string }>;
+}>) {
+  const { id } = await params;
+  const supabase = await createClient();
+  if (!supabase) {
+    return (
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-sm text-emerald-950">
+        Configure Supabase to view application details.
+      </div>
+    );
+  }
+
+  const { data: app, error: appError } = await supabase.from("applications").select("*").eq("id", id).maybeSingle();
+
+  if (appError || !app) {
+    notFound();
+  }
+
+  const submission = fullApplicationSubmissionSchema.safeParse(app.form_submission);
+
+  const { data: entities } = await supabase
+    .from("application_entities")
+    .select(
+      `
+      id,
+      entity_name,
+      entity_type,
+      portfolio_status,
+      portfolio_hin,
+      abn,
+      tfn,
+      registered_for_gst,
+      listed_investment_count,
+      unlisted_investment_count,
+      property_count,
+      wrap_count,
+      other_assets_text,
+      has_crypto,
+      has_foreign_investments,
+      routing_outcome,
+      service_start_date,
+      complexity_points,
+      indicative_annual_fee,
+      indicative_onboarding_fee,
+      pricing_status,
+      entity_services ( id, service_code, service_label )
+    `,
+    )
+    .eq("application_id", id)
+    .order("entity_name");
+
+  const { data: pricing } = await supabase
+    .from("application_pricing_summary")
+    .select("*")
+    .eq("application_id", id)
+    .maybeSingle();
+
+  const { data: kycRows } = await supabase
+    .from("application_individuals")
+    .select("*")
+    .eq("application_id", id)
+    .order("sort_order", { ascending: true });
+
+  const auditQuery = await supabase
+    .from("application_audit_events")
+    .select("id, created_at, event_type, actor_type, actor_label, detail")
+    .eq("application_id", id)
+    .order("created_at", { ascending: true });
+
+  const auditEvents: ApplicationAuditEventRow[] = auditQuery.error
+    ? []
+    : ((auditQuery.data ?? []) as ApplicationAuditEventRow[]);
+
+  const entityRows = (entities ?? []) as unknown as EntityRow[];
+
+  const appRel = app as typeof app & Partial<AdviserRelationalFields>;
+  const adviserRelational: AdviserRelationalFields = {
+    adviser_name: appRel.adviser_name ?? null,
+    adviser_company: appRel.adviser_company ?? null,
+    adviser_address: appRel.adviser_address ?? null,
+    adviser_tel: appRel.adviser_tel ?? null,
+    adviser_fax: appRel.adviser_fax ?? null,
+    adviser_email: appRel.adviser_email ?? null,
+    nominate_adviser_primary_contact: appRel.nominate_adviser_primary_contact ?? null,
+    authorise_adviser_access_statements: appRel.authorise_adviser_access_statements ?? null,
+    authorise_deal_with_adviser_direct: appRel.authorise_deal_with_adviser_direct ?? null,
+    annual_report_send_to: appRel.annual_report_send_to ?? null,
+    meeting_proxy_send_to: appRel.meeting_proxy_send_to ?? null,
+    investment_offers_send_to: appRel.investment_offers_send_to ?? null,
+    dividend_preference: appRel.dividend_preference ?? null,
+  };
+
+  return (
+    <div className="w-full min-w-0 space-y-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <Link
+          href="/admin"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#1e4a7a] hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Back to applications
+        </Link>
+        <div className="grid gap-8 xl:grid-cols-3 xl:items-center xl:gap-6">
+          <div className="min-w-0 justify-self-start xl:max-w-md">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Application</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#0c2742]">{app.reference}</h1>
+            <p className="mt-1 text-base text-slate-700">{app.primary_contact_name}</p>
+            {app.created_at ? (
+              <p className="mt-2 text-sm text-slate-500">
+                Date submitted:{" "}
+                {new Date(app.created_at).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </p>
+            ) : null}
+            {app.deleted_at ? (
+              <p className="mt-3">
+                <span className="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-900">
+                  Deleted
+                </span>
+              </p>
+            ) : null}
+          </div>
+          <div className="flex min-w-0 w-full max-w-none flex-col items-center justify-center justify-self-center px-0 sm:px-1">
+            <AdminApplicationStatusFlow
+              updateStatus={updateApplicationWorkflowStatus}
+              applicationId={id}
+              currentStatus={typeof app.status === "string" ? app.status : "pending"}
+              disabled={!!app.deleted_at}
+            />
+          </div>
+          <div
+            className="flex shrink-0 flex-col items-center justify-center justify-self-end rounded-xl border-2 border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-emerald-100/80 px-8 py-5 text-center shadow-sm sm:min-w-[11rem]"
+            role="status"
+            aria-label={`${entityRows.length} ${entityRows.length === 1 ? "entity" : "entities"} in this application`}
+          >
+            <div className="flex items-center gap-2 text-emerald-800/90">
+              <Layers className="h-5 w-5 shrink-0" aria-hidden />
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-900/85">Entities</span>
+            </div>
+            <p className="mt-2 text-5xl font-bold tabular-nums leading-none text-emerald-900">{entityRows.length}</p>
+            <p className="mt-2 text-xs font-medium text-emerald-800/90">
+              {entityRows.length === 1 ? "portfolio entity" : "portfolio entities"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {submission.success ? (
+        <>
+          <AdminFormSubmissionDetails data={submission.data} />
+          {entityRows.length > 0 ? (
+            <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+              <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+                <AdminSectionHeader title="Entity routing (system)" />
+              </CardHeader>
+              <CardContent className="px-6 py-4">
+                <AdminReviewFieldGrid>
+                  {entityRows.map((e) => (
+                    <ReviewRow
+                      key={e.id}
+                      label={e.entity_name}
+                      value={outcomeLabel(e.routing_outcome)}
+                    />
+                  ))}
+                </AdminReviewFieldGrid>
+              </CardContent>
+            </Card>
+          ) : null}
+        </>
+      ) : (
+        <AdminLegacyApplicationDetails
+          primaryContactName={app.primary_contact_name}
+          email={app.email}
+          phone={app.phone}
+          applicantRole={app.applicant_role}
+          groupName={app.group_name}
+          adviserDetails={app.adviser_details}
+          servicesComments={app.services_comments}
+          entities={entityRows}
+          outcomeLabel={outcomeLabel}
+          kycIndividuals={(kycRows ?? []) as IndividualDbRow[]}
+          adviserRelational={adviserRelational}
+        />
+      )}
+
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+          <AdminSectionHeader
+            title="Indicative pricing"
+            subtitle="GST exclusive · from assessment at submission"
+          />
+        </CardHeader>
+        <CardContent className="px-6 py-4">
+          {pricing ? (
+            <AdminReviewFieldGrid>
+              <ReviewRowAlways label="Annual subtotal" value={formatMoney(pricing.pg_annual_subtotal)} />
+              <ReviewRowAlways label="Onboarding subtotal" value={formatMoney(pricing.pg_onboarding_subtotal)} />
+              <ReviewRowAlways label="Group discount" value={formatMoney(pricing.group_discount_amount)} />
+              <ReviewRowAlways label="Total estimate" value={formatMoney(pricing.pg_total_estimate)} />
+              <ReviewRowAlways
+                label="Contains JM entities"
+                value={pricing.contains_jm_entities ? "Yes" : "No"}
+              />
+              <ReviewRowAlways
+                label="Manual review required"
+                value={pricing.manual_review_required ? "Yes" : "No"}
+              />
+            </AdminReviewFieldGrid>
+          ) : (
+            <p className="py-2 text-sm text-slate-500">No pricing summary stored for this application.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+          <AdminSectionHeader title="Notifications" subtitle="Email confirmation to operations" />
+        </CardHeader>
+        <CardContent className="px-6 py-4">
+          <AdminReviewFieldGrid>
+            <ReviewRowAlways label="Email sent" value={app.notification_email_sent ? "Yes" : "No"} />
+            {app.notification_email_sent_at ? (
+              <ReviewRow
+                label="Sent at"
+                value={new Date(app.notification_email_sent_at).toLocaleString()}
+              />
+            ) : null}
+            {app.notification_email_error ? (
+              <ReviewRowAlways label="Error" value={app.notification_email_error} />
+            ) : null}
+          </AdminReviewFieldGrid>
+        </CardContent>
+      </Card>
+
+      <AdminApplicationAuditSection
+        events={auditEvents}
+        legacySubmission={
+          app.created_at
+            ? {
+                applicationId: id,
+                created_at: app.created_at,
+                actor_label: `${app.primary_contact_name} (${app.email})`,
+              }
+            : null
+        }
+      />
+    </div>
+  );
+}

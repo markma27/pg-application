@@ -1,4 +1,4 @@
-import type { ApplicationInput, EntityInput } from "@pg/shared";
+import type { EntityInput, FullApplicationSubmission } from "@pg/shared";
 import { ADD_ON_SERVICE_CODES, STANDARD_SERVICE_CODES } from "./constants";
 
 /** Single option for where to send a document type */
@@ -104,6 +104,8 @@ export interface PartialEntity {
 
 export interface SubmitResult {
   applicationId: string;
+  /** Human-readable reference from Supabase (e.g. PG-100001). */
+  reference: string | null;
   submissionSuccess: boolean;
   overallOutcome: string;
   indicativePricingAvailable: boolean;
@@ -113,7 +115,7 @@ export interface SubmitResult {
   entityAssessments?: { entityName: string; routingOutcome: string; annualFeeEstimate: number | null; onboardingFeeEstimate: number | null }[];
 }
 
-export function formStateToPayload(state: ApplicationFormState): ApplicationInput | null {
+export function formStateToPayload(state: ApplicationFormState): FullApplicationSubmission | null {
   if (state.entityCount < 1 || state.entities.length !== state.entityCount) return null;
   if (!state.groupCommencementDate?.trim()) return null;
   const toggles = state.pafPuafServiceToggles ?? {
@@ -158,6 +160,24 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
   });
   const entities = raw.filter((e): e is EntityInput => e !== null);
   if (entities.length !== state.entityCount) return null;
+
+  const individualsRaw = state.individuals.slice(0, state.individualCount);
+  const individuals = individualsRaw.map((ind) => ({
+    id: ind.id,
+    relationshipRoles: ind.relationshipRoles ?? [],
+    title: ind.title ?? "",
+    fullName: ind.fullName ?? "",
+    streetAddress: ind.streetAddress ?? "",
+    streetAddressLine2: ind.streetAddressLine2 ?? "",
+    taxFileNumber: ind.taxFileNumber ?? "",
+    dateOfBirth: ind.dateOfBirth ?? "",
+    countryOfBirth: ind.countryOfBirth ?? "",
+    city: ind.city ?? "",
+    occupation: ind.occupation ?? "",
+    employer: ind.employer ?? "",
+    email: ind.email ?? "",
+  }));
+
   return {
     primaryContactName: state.primaryContactName,
     email: state.email,
@@ -167,5 +187,19 @@ export function formStateToPayload(state: ApplicationFormState): ApplicationInpu
     groupName: state.groupName ?? "",
     servicesComments: state.servicesComments ?? "",
     entities,
+    individuals,
+    adviserName: state.adviserName ?? "",
+    adviserCompany: state.adviserCompany ?? "",
+    adviserAddress: state.adviserAddress ?? "",
+    adviserTel: state.adviserTel ?? "",
+    adviserFax: state.adviserFax ?? "",
+    adviserEmail: state.adviserEmail ?? "",
+    nominateAdviserPrimaryContact: state.nominateAdviserPrimaryContact,
+    authoriseAdviserAccessStatements: state.authoriseAdviserAccessStatements,
+    authoriseDealWithAdviserDirect: state.authoriseDealWithAdviserDirect,
+    annualReportSendTo: state.annualReportSendTo === "" ? "" : state.annualReportSendTo,
+    meetingProxySendTo: state.meetingProxySendTo === "" ? "" : state.meetingProxySendTo,
+    investmentOffersSendTo: state.investmentOffersSendTo === "" ? "" : state.investmentOffersSendTo,
+    dividendPreference: state.dividendPreference,
   };
 }

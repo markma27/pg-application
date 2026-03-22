@@ -70,8 +70,75 @@ export const applicationInputSchema = z.object({
   entities: z.array(entityInputSchema).min(1, "At least one entity is required"),
 });
 
+/** Individuals step — matches public form validation. */
+export const individualRelationshipRoleSchema = z.enum([
+  "individual",
+  "trustee",
+  "director",
+  "company_secretary",
+]);
+
+export const individualInputSchema = z.object({
+  id: z.string().min(1),
+  relationshipRoles: z.array(individualRelationshipRoleSchema).min(1, "At least one relationship role"),
+  title: z.string().min(1),
+  fullName: z.string().min(1),
+  streetAddress: z.string().min(1),
+  streetAddressLine2: z.string().optional().default(""),
+  taxFileNumber: z.string().regex(/^\d{8,9}$/, "TFN must be 8 or 9 digits"),
+  dateOfBirth: z.string().min(1),
+  countryOfBirth: z.string().min(1),
+  city: z.string().min(1),
+  occupation: z.string().min(1),
+  employer: z.string().min(1),
+  email: z.email("Valid email is required"),
+});
+
+/** Document routing checkboxes: trustee/adviser, not required, or unset. */
+export const documentSendToValueSchema = z.union([
+  z.array(z.enum(["trustee", "adviser"])),
+  z.literal("not_required"),
+  z.literal(""),
+]);
+
+/**
+ * Full public form POST body: core pricing/entities plus individuals, adviser, and admin preferences.
+ */
+export const fullApplicationSubmissionSchema = applicationInputSchema.extend({
+  individuals: z.array(individualInputSchema).min(1).max(4),
+  adviserName: z.string().optional().default(""),
+  adviserCompany: z.string().optional().default(""),
+  adviserAddress: z.string().optional().default(""),
+  adviserTel: z.string().optional().default(""),
+  adviserFax: z.string().optional().default(""),
+  adviserEmail: z.string().optional().default(""),
+  nominateAdviserPrimaryContact: z.union([z.boolean(), z.literal("")]).optional(),
+  authoriseAdviserAccessStatements: z.union([z.boolean(), z.literal("")]).optional(),
+  authoriseDealWithAdviserDirect: z.union([z.boolean(), z.literal("")]).optional(),
+  annualReportSendTo: documentSendToValueSchema.optional().default(""),
+  meetingProxySendTo: documentSendToValueSchema.optional().default(""),
+  investmentOffersSendTo: documentSendToValueSchema.optional().default(""),
+  dividendPreference: z.union([z.literal("cash"), z.literal("reinvest"), z.literal("")]).optional().default(""),
+});
+
 export type EntityInput = z.infer<typeof entityInputSchema>;
 export type ApplicationInput = z.infer<typeof applicationInputSchema>;
+export type IndividualInput = z.infer<typeof individualInputSchema>;
+export type FullApplicationSubmission = z.infer<typeof fullApplicationSubmissionSchema>;
+
+/** Strip extended fields for pricing / assessment (unchanged behaviour). */
+export function toApplicationInput(full: FullApplicationSubmission): ApplicationInput {
+  return {
+    primaryContactName: full.primaryContactName,
+    email: full.email,
+    phone: full.phone,
+    applicantRole: full.applicantRole,
+    adviserDetails: full.adviserDetails,
+    groupName: full.groupName,
+    servicesComments: full.servicesComments,
+    entities: full.entities,
+  };
+}
 
 export type RoutingOutcome = "pg_fit" | "jm_fit" | "manual_review";
 export type PricingStatus = "indicative" | "review_required" | "manual_review" | "not_available";

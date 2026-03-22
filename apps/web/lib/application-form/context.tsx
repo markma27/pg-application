@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
-import { applicationInputSchema } from "@pg/shared";
+import { fullApplicationSubmissionSchema } from "@pg/shared";
 import type { ApplicationFormState, PartialEntity, PartialIndividual, SubmitResult } from "./types";
 import { formStateToPayload } from "./types";
 import { MIN_ENTITIES, MAX_ENTITIES, MIN_INDIVIDUALS, MAX_INDIVIDUALS } from "./constants";
@@ -345,7 +345,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       setState((s) => ({ ...s, stepError: "Please complete all entity details." }));
       return;
     }
-    const parsed = applicationInputSchema.safeParse(payload);
+    const parsed = fullApplicationSubmissionSchema.safeParse(payload);
     if (!parsed.success) {
       setState((s) => ({ ...s, stepError: "Validation failed. Please check all required fields." }));
       return;
@@ -365,6 +365,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         step: s.step + 1,
         submitResult: {
           applicationId: data.applicationId,
+          reference: data.reference ?? null,
           submissionSuccess: data.submissionSuccess,
           overallOutcome: data.overallOutcome,
           indicativePricingAvailable: data.indicativePricingAvailable,

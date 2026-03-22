@@ -33,11 +33,24 @@ export const ADD_ON_SERVICE_LABELS: Record<(typeof ADD_ON_SERVICE_CODES)[number]
 
 /** Labels for PAF & PuAF services (for review step) */
 export const PAF_PUAF_SERVICE_LABELS: Record<(typeof PAF_PUAF_SERVICE_CODES)[number], string> = {
+  /** Stored as one code; use {@link expandPafPuafDisplayLabels} for admin UI as two items. */
   acnc_ais: "Annual financial statements / Annual information statement",
   responsible_person: "PAF responsible person services",
   franking_credit_refund_support: "Franking credit refund application",
   sub_fund_monthly_statements: "PuAF sub-fund monthly statements",
 };
+
+/** One code (`acnc_ais`) covers two toggles — show two lines in admin summaries. */
+export function expandPafPuafDisplayLabels(
+  code: (typeof PAF_PUAF_SERVICE_CODES)[number],
+  storedLabel?: string | null,
+): string[] {
+  if (code === "acnc_ais") {
+    return ["Annual financial statements", "Annual information statement"];
+  }
+  const label = storedLabel?.trim() || PAF_PUAF_SERVICE_LABELS[code];
+  return [label];
+}
 
 export const ENTITY_TYPE_OPTIONS: {
   value: EntityInput["entityType"];

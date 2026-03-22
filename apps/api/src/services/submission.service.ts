@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   assessApplication,
-  type ApplicationInput,
+  toApplicationInput,
+  type FullApplicationSubmission,
 } from "../../../../packages/shared/src/index.js";
 import {
   markNotificationPersisted,
@@ -9,9 +10,10 @@ import {
 } from "./application-persistence.service.js";
 import { sendApplicationNotification } from "./notification.service.js";
 
-export async function submitApplication(payload: ApplicationInput) {
+export async function submitApplication(payload: FullApplicationSubmission) {
   const applicationId = randomUUID();
-  const assessment = assessApplication(payload);
+  const core = toApplicationInput(payload);
+  const assessment = assessApplication(core);
 
   const { reference } = await persistApplicationToSupabase({
     applicationId,
@@ -22,7 +24,7 @@ export async function submitApplication(payload: ApplicationInput) {
   const notification = await sendApplicationNotification({
     applicationId,
     reference,
-    payload,
+    payload: core,
     assessment,
   });
 

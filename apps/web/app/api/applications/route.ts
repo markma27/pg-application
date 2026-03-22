@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
 
+function resolveBackendUrl(): string | undefined {
+  const raw = process.env.API_URL?.trim();
+  if (raw) return raw.replace(/\/$/, "");
+  // Empty `API_URL=` in env must not block the dev default (see `??` vs empty string).
+  if (process.env.NODE_ENV === "development") return "http://localhost:4000";
+  return undefined;
+}
+
 /**
  * Proxies form submissions to the backend. The form always posts to /api/applications
  * on the same domain; this route forwards to the real backend so the API URL is never
  * exposed to users.
  */
 export async function POST(request: Request) {
-  const envUrl = process.env.API_URL?.replace(/\/$/, "");
-  const backendUrl =
-    envUrl ??
-    (process.env.NODE_ENV === "development" ? "http://localhost:4000" : undefined);
+  const backendUrl = resolveBackendUrl();
   if (!backendUrl) {
     console.error("API_URL is not set. Set API_URL to your backend (e.g. http://localhost:4000 or your production API).");
     return NextResponse.json(

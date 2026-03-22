@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useApplicationForm } from "@/lib/application-form";
 import { Mail, Phone } from "lucide-react";
 
-/** Format applicationId (UUID) as PG-000XXX style reference (numeric suffix only) */
-function formatReferenceNumber(applicationId: string): string {
+/** Fallback if the API did not return a DB reference (e.g. persistence disabled). */
+function formatReferenceFallback(applicationId: string): string {
   const hex = applicationId.replace(/-/g, "").slice(-8);
   const num = parseInt(hex, 16) % 1000000;
   const suffix = String(num).padStart(6, "0");
@@ -30,7 +30,7 @@ export function ConfirmationStep() {
     );
   }
 
-  const referenceNumber = formatReferenceNumber(result.applicationId);
+  const referenceNumber = result.reference?.trim() || formatReferenceFallback(result.applicationId);
 
   return (
     <div className="mx-auto max-w-2xl pt-8">
@@ -82,7 +82,7 @@ export function ConfirmationStep() {
             <div>
               <p className="font-medium text-slate-900">Application review</p>
               <p className="mt-0.5 text-sm text-slate-600">
-                Our PortfolioGuardian team will review your application within 2–3 business days.
+                Our PortfolioGuardian team will review your application within 2 - 3 business days.
               </p>
             </div>
           </li>
@@ -111,33 +111,8 @@ export function ConfirmationStep() {
         </ol>
       </div>
 
-      {/* Indicative pricing / JM follow-up / manual review */}
-      <div className="mb-8 space-y-4">
-        {result.indicativePricingAvailable && result.pgEstimatedTotals != null && (
-          <div className="rounded-xl border-l-4 border-emerald-500 bg-emerald-50/50 px-4 py-3">
-            <p className="font-semibold text-slate-900">Indicative total (GST exclusive)</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">${result.pgEstimatedTotals.toLocaleString()}</p>
-            <p className="mt-2 text-sm text-slate-500">A formal proposal will be sent after review.</p>
-          </div>
-        )}
-        {result.requiresJmFollowUp && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <p className="text-sm text-emerald-900">
-              Some entities will be reviewed by Jaquillard Minns. A separate proposal will be provided.
-            </p>
-          </div>
-        )}
-        {result.requiresManualReview && !result.indicativePricingAvailable && (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm text-slate-600">
-              Our team will review your application and confirm pricing or next steps shortly.
-            </p>
-          </div>
-        )}
-      </div>
-
       {/* Need help */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50/80 px-6 py-5 text-center">
+      <div className="mb-8 rounded-xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-slate-100/90 to-slate-200/50 px-6 py-5 text-center">
         <h2 className="text-lg font-bold text-slate-900">Need help?</h2>
         <p className="mt-2 text-sm text-slate-600">
           Questions about your application? Contact our friendly team:
@@ -155,7 +130,7 @@ export function ConfirmationStep() {
             className="flex items-center gap-2 text-emerald-700 hover:underline"
           >
             <Phone className="h-4 w-4 shrink-0" />
-            1300 000 000
+            1300 722 942
           </a>
         </div>
         <a
