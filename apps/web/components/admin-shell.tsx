@@ -49,9 +49,9 @@ export function AdminShell({
   return (
     <div className="min-h-screen bg-[#f4f6f9] font-[family-name:var(--font-montserrat)]">
       <div className="flex min-h-screen">
-        <aside className="flex w-[260px] shrink-0 flex-col border-r border-[#dce6f7] bg-[#eef4ff] px-4 py-6">
-          <Link href="/admin" className="mb-8 flex justify-center px-2">
-            <div className="relative h-12 w-40">
+        <aside className="flex w-[198px] shrink-0 flex-col border-r border-[#dce6f7] bg-[#eef4ff] px-2 py-5">
+          <Link href="/admin" className="mb-6 flex w-full justify-center">
+            <div className="relative h-[86px] w-full max-w-[288px]">
               <Image
                 src="/PortfolioGuardian_OriginalLogo.svg"
                 alt="PortfolioGuardian"
@@ -61,7 +61,7 @@ export function AdminShell({
               />
             </div>
           </Link>
-          <nav className="flex flex-1 flex-col gap-1">
+          <nav className="flex flex-1 flex-col gap-0.5">
             {navItems.map(({ href, label, icon: Icon }) => {
               const active =
                 href === "/admin"
@@ -72,9 +72,9 @@ export function AdminShell({
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-colors",
                     active
-                      ? "bg-white text-[#1e4a7a] shadow-sm"
+                      ? "bg-white text-[#1e4a7a]"
                       : "text-[#334155] hover:bg-white/70 hover:text-[#0c2742]",
                   )}
                 >

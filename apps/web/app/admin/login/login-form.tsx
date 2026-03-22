@@ -49,7 +49,7 @@ export function AdminLoginForm({ errorKey }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-[400px] rounded-2xl bg-white p-8 shadow-[0_12px_40px_-12px_rgba(12,39,66,0.18)]">
+      <div className="w-full max-w-[400px] rounded-2xl border border-slate-200 bg-white p-8">
         <div className="flex justify-center">
           <div className="relative h-[5.5rem] w-[17.5rem]">
             <Image
@@ -104,7 +104,7 @@ export function AdminLoginForm({ errorKey }: Props) {
           <Button
             type="submit"
             disabled={loading}
-            className="h-11 w-full rounded-lg border-0 bg-emerald-700 text-base font-semibold text-white shadow-sm transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+            className="h-11 w-full rounded-lg border-0 bg-emerald-700 text-base font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
           >
             {loading ? "Signing in…" : "Sign In"}
           </Button>

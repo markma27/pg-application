@@ -105,7 +105,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.label} className={`border-0 p-5 shadow-sm ${c.className}`}>
+          <Card key={c.label} className={`border-0 p-5 ${c.className}`}>
             <p className="text-sm font-medium text-slate-700">{c.label}</p>
             <p className="mt-3 text-3xl font-semibold tabular-nums text-[#0c2742]">{c.value}</p>
           </Card>

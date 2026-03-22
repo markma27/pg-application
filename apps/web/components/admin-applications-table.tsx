@@ -131,7 +131,7 @@ export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white">
         <table className="w-full min-w-[880px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wide text-slate-600">
