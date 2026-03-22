@@ -15,7 +15,9 @@
     "baseUrl": ".",
     "paths": {
       "@pg/shared": ["packages/shared/src/index.ts"],
-      "@pg/shared/*": ["packages/shared/src/*"]
+      "@pg/shared/*": ["packages/shared/src/*"],
+      "@pg/submission": ["packages/submission/src/index.ts"],
+      "@pg/submission/*": ["packages/submission/src/*"]
     }
   }
 }

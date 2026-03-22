@@ -3,7 +3,7 @@ import {
   assessApplication,
   toApplicationInput,
   type FullApplicationSubmission,
-} from "../../../../packages/shared/src/index.js";
+} from "@pg/shared";
 import {
   markNotificationPersisted,
   persistApplicationToSupabase,

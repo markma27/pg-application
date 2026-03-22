@@ -6,22 +6,21 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/apps/api/src/server.js",
+    "start": "tsx dist/apps/api/src/server.js",
     "lint": "tsc --noEmit -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@supabase/supabase-js": "latest",
+    "@pg/shared": "0.1.0",
+    "@pg/submission": "0.1.0",
     "cors": "latest",
-    "dotenv": "latest",
     "express": "latest",
-    "resend": "latest",
+    "tsx": "latest",
     "zod": "latest"
   },
   "devDependencies": {
     "@types/cors": "latest",
     "@types/express": "latest",
-    "tsx": "latest",
     "typescript": "latest"
   }
 }

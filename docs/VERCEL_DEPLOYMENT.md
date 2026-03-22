@@ -1,61 +1,52 @@
 # Publish the application form to Vercel
 
-Users only ever see the **landing page and the form** on your main domain. The form submits to your own site (`/api/applications`); the backend that processes submissions is not shown or linked anywhere.
+Users only ever see the **landing page and the form** on your main domain. The form submits to your own site (`/api/applications`); processing runs in the **same** Next.js deployment (no separate API URL).
 
 ---
 
 ## What you deploy
 
-1. **Web project (your main site)** — Root Directory: `apps/web`  
-   This is the only URL you give to users. It serves the landing page and the application form. Submissions go to your domain, then the server forwards them to the backend.
+**Single Vercel project (recommended)** — Root Directory: `apps/web`
 
-2. **Backend project (subdomain, optional to expose)** — Root Directory: `apps/api`  
-   This runs the logic that saves and processes applications. Users do not visit this URL; only your web server calls it. You can put it on a subdomain (e.g. `api.your-domain.vercel.app`) or use Vercel’s default URL.
+- Serves the landing page and the application form.
+- `POST /api/applications` validates the payload and runs submission logic from `@pg/submission` (Supabase persistence, email notifications).
+- Set the same **server-side** environment variables the backend needs: Supabase service role, Resend, notification email, `ADMIN_APP_URL`, etc. (see your `.env.local` / team docs).
 
 ---
 
-## Step 1: Deploy the web app (the form)
+## Build (monorepo)
 
-- **Vercel project**: One project for your main site (e.g. “pg-application”).
 - **Root Directory**: `apps/web`
 - **Framework**: Next.js (auto-detected)
-- **Build Command** — override and set to (builds shared package first, then web):
-  ```bash
-  cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/web
-  ```
-  Requires **“Include source files outside of the Root Directory”** to be **on**. Install runs from repo root; if install runs from `apps/web` only, use instead: `cd ../.. && npm ci && npm run build:web`.
-- **Environment variables** (Production, Preview, Development):
-  - **`API_URL`** = backend base URL **with no trailing slash**  
-    Example: `https://api.your-domain.vercel.app` or your API project’s default Vercel URL.  
-    Used only on the server to forward form submissions; **not** visible to users.
-  - **`NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`** = your key (if you use address autocomplete).
-- **Domain**: Attach your main domain to **this** project.
+- **Build Command** — override and set to (builds shared packages first, then web):
 
-After deploy, your main URL shows the landing page and form. The form posts to your site; no API URL is shown to users.
+  ```bash
+  cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build -w @pg/web
+  ```
+
+  Requires **“Include source files outside of the Root Directory”** to be **on**. If install runs from `apps/web` only, use instead: `cd ../.. && npm ci && npm run build:web`.
+
+  Locally, if `next dev` cannot resolve `@pg/submission`, run once: `npm run build -w @pg/shared && npm run build -w @pg/submission` (or `npm run build:web`).
+
+- **Environment variables** (Production, Preview, Development):
+  - **`NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`** = your key (if you use address autocomplete).
+  - **Supabase / Resend / admin** — mirror whatever you use locally for successful submissions (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM`, `APPLICATION_NOTIFICATION_EMAIL`, `ADMIN_APP_URL`, etc.).
+
+You do **not** need `API_URL` for the public form; that was only for proxying to a separate Express server.
 
 ---
 
-## Step 2: Deploy the backend (for form processing)
+## Optional: separate API server (`apps/api`)
 
-- **Vercel project**: A second project (e.g. “pg-application-api”) from the same repo.
-- **Root Directory**: `apps/api`
-- **Build Command**:
-  ```bash
-  cd ../.. && npm ci && npm run build -w @pg/shared && npm run build -w @pg/api
-  ```
-- **Environment variables**: Whatever the API needs (Resend, Supabase, etc.).
-- **Domain** (optional): Add a subdomain like `api.your-domain.vercel.app` in this project’s **Settings → Domains**. You can also use the default `*.vercel.app` URL.
-
-Copy this project’s URL (subdomain or default) and set it as **`API_URL`** in the web project (Step 1).
+For local `npm run dev` you can still run the Express API on port 4000; it uses the same `@pg/submission` package. You can also deploy `apps/api` as a **second** Vercel project if you want a standalone HTTP API— it is **not** required for the public form once `apps/web` is deployed with the env vars above.
 
 ---
 
 ## Summary
 
-| Project   | Root Directory | Users see it? | Purpose                    |
-|----------|----------------|---------------|----------------------------|
-| **Web**  | `apps/web`     | Yes           | Landing page and form      |
-| **Backend** | `apps/api`   | No            | Processes form submissions |
+| Deployment        | Root Directory | Purpose                                      |
+|------------------|----------------|----------------------------------------------|
+| **Web (one site)** | `apps/web`   | UI + `POST /api/applications` (full pipeline) |
 
-- Users only open the **web** URL. They never see or need the backend URL.
-- The form always submits to **your domain** (`/api/applications`). The server proxies to the backend using `API_URL`.
+- Users only open the **web** URL.
+- The form posts to **your domain** (`/api/applications`).

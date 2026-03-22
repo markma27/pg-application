@@ -1,51 +1,34 @@
+import { fullApplicationSubmissionSchema } from "@pg/shared";
+import { submitApplication } from "@pg/submission";
 import { NextResponse } from "next/server";
-
-function resolveBackendUrl(): string | undefined {
-  const raw = process.env.API_URL?.trim();
-  if (raw) return raw.replace(/\/$/, "");
-  // Empty `API_URL=` in env must not block the dev default (see `??` vs empty string).
-  if (process.env.NODE_ENV === "development") return "http://localhost:4000";
-  return undefined;
-}
+import { ZodError } from "zod";
 
 /**
- * Proxies form submissions to the backend. The form always posts to /api/applications
- * on the same domain; this route forwards to the real backend so the API URL is never
- * exposed to users.
+ * Processes form submissions on the same deployment (no separate API_URL).
+ * POST body is validated and persisted via @pg/submission (Supabase, notifications).
  */
 export async function POST(request: Request) {
-  const backendUrl = resolveBackendUrl();
-  if (!backendUrl) {
-    console.error("API_URL is not set. Set API_URL to your backend (e.g. http://localhost:4000 or your production API).");
-    return NextResponse.json(
-      { message: "Form submission is not configured." },
-      { status: 503 }
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { message: "Invalid JSON body." },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
   }
 
   try {
-    const res = await fetch(`${backendUrl}/applications`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
-  } catch (err) {
-    console.error("Applications proxy error:", err);
-    return NextResponse.json(
-      { message: "Submission failed. Please try again later." },
-      { status: 502 }
-    );
+    const payload = fullApplicationSubmissionSchema.parse(body);
+    const result = await submitApplication(payload);
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { message: "Validation failed", issues: error.flatten() },
+        { status: 400 },
+      );
+    }
+    console.error("Application submission error:", error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected server error";
+    return NextResponse.json({ message }, { status: 500 });
   }
 }

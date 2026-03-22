@@ -2,8 +2,8 @@ import type {
   ApplicationAssessment,
   ApplicationInput,
   FullApplicationSubmission,
-} from "../../../../packages/shared/src/index.js";
-import { supabaseAdmin } from "../lib/supabase.js";
+} from "@pg/shared";
+import { supabaseAdmin } from "../supabase.js";
 
 function serviceLabel(code: string): string {
   return code

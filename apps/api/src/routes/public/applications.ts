@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { fullApplicationSubmissionSchema } from "../../../../../packages/shared/src/index.js";
-import { submitApplication } from "../../services/submission.service.js";
+import { fullApplicationSubmissionSchema } from "@pg/shared";
+import { submitApplication } from "@pg/submission";
 
 export const publicApplicationsRouter = Router();
 

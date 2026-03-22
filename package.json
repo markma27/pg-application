@@ -10,9 +10,9 @@
     "dev:web": "npm run dev -w @pg/web",
     "dev:api": "npm run dev -w @pg/api",
     "dev": "concurrently -n web,api -c blue,green \"npm run dev:web\" \"npm run dev:api\"",
-    "build": "npm run build -w @pg/shared && npm run build -w @pg/api && npm run build -w @pg/web",
-    "build:web": "npm run build -w @pg/shared && npm run build -w @pg/web",
-    "typecheck": "npm run typecheck -w @pg/shared && npm run typecheck -w @pg/api && npm run typecheck -w @pg/web",
+    "build": "npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build -w @pg/api && npm run build -w @pg/web",
+    "build:web": "npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build -w @pg/web",
+    "typecheck": "npm run typecheck -w @pg/shared && npm run typecheck -w @pg/submission && npm run typecheck -w @pg/api && npm run typecheck -w @pg/web",
     "lint": "npm run lint -w @pg/api && npm run lint -w @pg/web"
   },
   "devDependencies": {

@@ -54,7 +54,7 @@ if (existsSync(path.join(monorepoRoot, ".env.local"))) {
  * Inline public env for the browser bundle (monorepo root `.env.local` is outside `apps/web`).
  */
 const nextConfig: NextConfig = {
-  transpilePackages: ["@pg/shared"],
+  transpilePackages: ["@pg/shared", "@pg/submission"],
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",

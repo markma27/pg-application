@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@pg/shared": ["../shared/dist/index.js"],
+      "@pg/shared/*": ["../shared/dist/*"],
+      "@pg/submission": ["./src/index.ts"],
+      "@pg/submission/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}
