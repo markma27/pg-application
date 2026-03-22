@@ -7,6 +7,8 @@ import { resend } from "../lib/resend.js";
 
 export async function sendApplicationNotification(params: {
   applicationId: string;
+  /** Human-readable reference from DB (e.g. PG-100001) when persisted. */
+  reference?: string | null;
   payload: ApplicationInput;
   assessment: ApplicationAssessment;
 }) {
@@ -15,15 +17,16 @@ export async function sendApplicationNotification(params: {
     return { sent: false, error: "Resend is not configured." };
   }
 
-  const { applicationId, payload, assessment } = params;
+  const { applicationId, reference, payload, assessment } = params;
+  const refLine = reference ? `Reference: ${reference}` : `Application ID: ${applicationId}`;
 
   try {
     await resend.emails.send({
       from: env.RESEND_FROM,
       to: env.APPLICATION_NOTIFICATION_EMAIL,
-      subject: `New PortfolioGuardian application ${applicationId}`,
+      subject: `New PortfolioGuardian application ${reference ?? applicationId}`,
       text: [
-        `Application ID: ${applicationId}`,
+        refLine,
         `Contact: ${payload.primaryContactName} <${payload.email}>`,
         `Entities submitted: ${payload.entities.length}`,
         `Overall outcome: ${assessment.overallOutcome}`,

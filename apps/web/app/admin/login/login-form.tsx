@@ -1,0 +1,113 @@
+"use client";
+
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+type Props = {
+  errorKey?: string;
+};
+
+const errorMessages: Record<string, string> = {
+  unauthorized: "Your account is not authorised for this portal.",
+};
+
+export function AdminLoginForm({ errorKey }: Props) {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const banner = errorKey ? errorMessages[errorKey] ?? "Unable to sign in." : null;
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setFormError(error.message);
+        return;
+      }
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setFormError("Sign-in failed. Check that Supabase environment variables are set.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[400px] rounded-2xl bg-white p-8 shadow-[0_12px_40px_-12px_rgba(12,39,66,0.18)]">
+        <div className="flex justify-center">
+          <div className="relative h-[5.5rem] w-[17.5rem]">
+            <Image
+              src="/PortfolioGuardian_OriginalLogo.svg"
+              alt="PortfolioGuardian"
+              fill
+              className="object-contain object-center"
+              priority
+            />
+          </div>
+        </div>
+        <h1 className="mt-8 text-center text-xl font-bold tracking-tight text-[#0c2742]">
+          Client Application
+        </h1>
+        <p className="mt-1 text-center text-sm text-slate-500">Admin Portal</p>
+
+        {(banner || formError) && (
+          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {formError ?? banner}
+          </p>
+        )}
+
+        <form onSubmit={onSubmit} className="mt-8 space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="admin-email" className="text-slate-700">
+              Email
+            </Label>
+            <Input
+              id="admin-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-11 border-slate-300 bg-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="admin-password" className="text-slate-700">
+              Password
+            </Label>
+            <Input
+              id="admin-password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-11 border-slate-300 bg-white"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="h-11 w-full rounded-lg border-0 bg-emerald-700 text-base font-semibold text-white shadow-sm transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+          >
+            {loading ? "Signing in…" : "Sign In"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -125,7 +125,7 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
             <Input
               value={entity.entityName}
               onChange={(e) => update({ entityName: e.target.value })}
-              placeholder="Your full entity name"
+              placeholder="Your full entity name including trustee name for trust entities"
               required
               aria-invalid={err("entityName")}
               className={cn("h-11 rounded-lg border-slate-300 px-4", err("entityName") && "border-red-500 ring-2 ring-red-500/20")}
@@ -139,7 +139,7 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
               onChange={(e) =>
                 update({ abn: e.target.value.replace(/\D/g, "").slice(0, 11) })
               }
-              placeholder="Australian Business Number"
+              placeholder="Australian Business Number (11 digits)"
               inputMode="numeric"
               maxLength={11}
               aria-invalid={err("abn")}
@@ -155,7 +155,7 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
               onChange={(e) =>
                 update({ tfn: e.target.value.replace(/\D/g, "").slice(0, 9) })
               }
-              placeholder="Tax File Number"
+              placeholder="Tax File Number (8 or 9 digits)"
               inputMode="numeric"
               maxLength={9}
               required

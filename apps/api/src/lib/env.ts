@@ -1,4 +1,7 @@
-import "dotenv/config";
+import { loadRootEnv } from "./load-root-env.js";
+
+loadRootEnv();
+
 import { z } from "zod";
 
 const envSchema = z.object({

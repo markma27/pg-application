@@ -1,9 +1,12 @@
+import { config } from "dotenv";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { loadEnvConfig } from "@next/env";
-import type { NextConfig } from "next";
 
-function resolveMonorepoRoot(): string {
+/**
+ * Resolves the monorepo root (package name `pg-application` with workspaces)
+ * so a single `.env` / `.env.local` at the repo root applies to the API.
+ */
+export function resolveMonorepoRoot(): string {
   let dir = process.cwd();
   for (let i = 0; i < 12; i++) {
     const pkgPath = path.join(dir, "package.json");
@@ -27,14 +30,9 @@ function resolveMonorepoRoot(): string {
   return path.join(process.cwd(), "../..");
 }
 
-// Single `.env` / `.env.local` at monorepo root — same file as `apps/api`
-loadEnvConfig(resolveMonorepoRoot());
-
-const nextConfig: NextConfig = {
-  transpilePackages: ["@pg/shared"],
-  turbopack: {
-    root: path.join(__dirname, "../.."),
-  },
-};
-
-export default nextConfig;
+/** Load root `.env` then `.env.local` (override). */
+export function loadRootEnv(): void {
+  const root = resolveMonorepoRoot();
+  config({ path: path.join(root, ".env") });
+  config({ path: path.join(root, ".env.local"), override: true });
+}

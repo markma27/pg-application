@@ -55,7 +55,7 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
       />
       <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
         <div className="flex flex-col items-center gap-4 text-center sm:gap-5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
             <AlertTriangle className="h-6 w-6" aria-hidden />
           </span>
           <div className="space-y-2">
@@ -142,7 +142,7 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
         <p className="text-sm text-emerald-100">{currentStepDescription}</p>
       </div>
       {stepError && (
-        <p className="text-sm font-medium text-amber-200" role="alert">
+        <p className="text-sm font-medium text-red-200" role="alert">
           {stepError}
         </p>
       )}

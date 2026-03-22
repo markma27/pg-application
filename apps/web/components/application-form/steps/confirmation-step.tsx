@@ -121,8 +121,8 @@ export function ConfirmationStep() {
           </div>
         )}
         {result.requiresJmFollowUp && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm text-amber-800">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <p className="text-sm text-emerald-900">
               Some entities will be reviewed by Jaquillard Minns. A separate proposal will be provided.
             </p>
           </div>
