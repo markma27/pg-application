@@ -241,16 +241,16 @@ export default async function AdminApplicationDetailPage({
               </p>
             ) : null}
             <div
-              className="mt-4 flex max-w-fit flex-col gap-0.5 rounded-lg border border-emerald-200/85 bg-gradient-to-br from-emerald-50 to-emerald-100/70 px-3 py-2.5 text-left shadow-sm"
+              className="mt-4 flex max-w-fit min-w-[9rem] flex-col gap-0.5 rounded-lg border border-emerald-200/85 bg-gradient-to-br from-emerald-50 to-emerald-100/70 px-3 py-2.5 shadow-sm"
               role="status"
               aria-label={`${entityRows.length} ${entityRows.length === 1 ? "entity" : "entities"} in this application`}
             >
-              <div className="flex items-center gap-1.5 text-emerald-800/90">
+              <div className="flex w-full items-center justify-center gap-1.5 text-emerald-800/90">
                 <Layers className="h-4 w-4 shrink-0" aria-hidden />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900/85">Entities</span>
               </div>
-              <p className="text-2xl font-bold tabular-nums leading-none text-emerald-900">{entityRows.length}</p>
-              <p className="text-[11px] font-medium leading-tight text-emerald-800/90">
+              <p className="w-full text-center text-2xl font-bold tabular-nums leading-none text-emerald-900">{entityRows.length}</p>
+              <p className="w-full text-center text-[11px] font-medium leading-tight text-emerald-800/90">
                 {entityRows.length === 1 ? "portfolio entity" : "portfolio entities"}
               </p>
             </div>

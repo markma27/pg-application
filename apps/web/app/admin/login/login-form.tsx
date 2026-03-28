@@ -10,20 +10,32 @@ import { Label } from "@/components/ui/label";
 
 type Props = {
   errorKey?: string;
+  errorDetail?: string;
 };
 
 const errorMessages: Record<string, string> = {
   unauthorized: "Your account is not authorised for this portal.",
+  auth: "This sign-in link is invalid or has expired. Request a new invitation or password reset.",
+  link: "The link could not be completed.",
 };
 
-export function AdminLoginForm({ errorKey }: Props) {
+export function AdminLoginForm({ errorKey, errorDetail }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const banner = errorKey ? errorMessages[errorKey] ?? "Unable to sign in." : null;
+  const banner = (() => {
+    if (!errorKey) return null;
+    const base = errorMessages[errorKey] ?? "Unable to sign in.";
+    if (!errorDetail || (errorKey !== "link" && errorKey !== "auth")) return base;
+    try {
+      return `${base} ${decodeURIComponent(errorDetail)}`;
+    } catch {
+      return `${base} ${errorDetail}`;
+    }
+  })();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -108,6 +120,14 @@ export function AdminLoginForm({ errorKey }: Props) {
           >
             {loading ? "Signing in…" : "Sign In"}
           </Button>
+          <p className="text-center text-sm">
+            <a
+              href="/admin/forgot-password"
+              className="font-medium text-[#1e4a7a] underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </a>
+          </p>
         </form>
       </div>
     </div>

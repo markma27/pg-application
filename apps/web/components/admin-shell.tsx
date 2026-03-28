@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { AdminProfileMenu } from "@/components/admin-profile-menu";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -90,23 +91,33 @@ export function AdminShell({
           <h1 className="text-lg font-semibold tracking-tight text-[#0c2742]">
             Client Application Admin Portal
           </h1>
-          <div className="relative flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e4a7a] text-xs font-semibold text-white">
-              {initials(profile.fullName)}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-slate-900">{profile.fullName}</p>
-              <p className="truncate text-xs text-slate-500">{profile.email}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="ml-1 flex items-center gap-1 rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              aria-label="Sign out"
+          <details className="group relative">
+            <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg py-1 pl-1 pr-0 marker:hidden [&::-webkit-details-marker]:hidden">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e4a7a] text-xs font-semibold text-white">
+                {initials(profile.fullName)}
+              </div>
+              <div className="min-w-0 text-left">
+                <p className="truncate text-sm font-medium text-slate-900">{profile.fullName}</p>
+                <p className="truncate text-xs text-slate-500">{profile.email}</p>
+              </div>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 group-open:rotate-180" aria-hidden />
+            </summary>
+            <div
+              className="absolute right-0 top-full z-50 mt-1 min-w-[12rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
             >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          </div>
+              <div className="border-b border-slate-100 px-1 py-1">
+                <AdminProfileMenu fullName={profile.fullName} />
+              </div>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                className="w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
+              >
+                Sign out
+              </button>
+            </div>
+          </details>
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto p-8">{children}</main>
       </div>
