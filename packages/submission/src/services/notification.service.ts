@@ -1,5 +1,5 @@
 import type { ApplicationInput } from "@pg/shared";
-import { env } from "../env.js";
+import { env, resolveAdminAppUrl } from "../env.js";
 import { resend } from "../resend.js";
 import { buildApplicationNotificationEmail } from "./application-notification-email.js";
 import { getNotificationRecipientEmail } from "./portal-settings.service.js";
@@ -32,7 +32,7 @@ export async function sendApplicationNotification(params: {
   const { html, text, attachments } = await buildApplicationNotificationEmail({
     applicationId,
     reference,
-    adminAppUrl: env.ADMIN_APP_URL,
+    adminAppUrl: resolveAdminAppUrl(),
     payload,
   });
 

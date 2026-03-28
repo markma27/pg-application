@@ -1,2 +1,2 @@
 export { submitApplication } from "./services/submission.service.js";
-export { env } from "./env.js";
+export { env, resolveAdminAppUrl, resolvePublicSiteUrl } from "./env.js";
