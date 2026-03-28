@@ -16,10 +16,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "dotenv": "latest",
     "@pg/shared": "0.1.0",
     "@supabase/supabase-js": "latest",
+    "dotenv": "latest",
     "resend": "latest",
+    "sharp": "^0.34.5",
     "zod": "latest"
   },
   "devDependencies": {

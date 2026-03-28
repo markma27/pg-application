@@ -55,6 +55,8 @@ if (existsSync(path.join(monorepoRoot, ".env.local"))) {
  */
 const nextConfig: NextConfig = {
   transpilePackages: ["@pg/shared", "@pg/submission"],
+  /** Native module used by @pg/submission to rasterize the logo for CID inline images. */
+  serverExternalPackages: ["sharp"],
   /** Monorepo root so server traces include `packages/*` correctly on Vercel. */
   outputFileTracingRoot: path.join(__dirname, "..", ".."),
   /**

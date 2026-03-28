@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm exec -w @pg/web -- next build --webpack",
     "start": "next start",
     "lint": "next lint",

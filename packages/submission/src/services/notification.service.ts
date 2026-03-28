@@ -1,37 +1,65 @@
-import type { ApplicationAssessment, ApplicationInput } from "@pg/shared";
+import type { ApplicationInput } from "@pg/shared";
 import { env } from "../env.js";
 import { resend } from "../resend.js";
+import { buildApplicationNotificationEmail } from "./application-notification-email.js";
+import { getNotificationRecipientEmail } from "./portal-settings.service.js";
+
+const DISPLAY_NAME = "PortfolioGuardian";
+
+/** Resend shows a friendly sender when using `Name <email@domain>`. */
+export function formatResendFromAddress(rawFrom: string): string {
+  const t = rawFrom.trim();
+  if (t.includes("<") && t.includes(">")) {
+    return t;
+  }
+  return `${DISPLAY_NAME} <${t}>`;
+}
 
 export async function sendApplicationNotification(params: {
   applicationId: string;
   /** Human-readable reference from DB (e.g. PG-100001) when persisted. */
   reference?: string | null;
   payload: ApplicationInput;
-  assessment: ApplicationAssessment;
 }) {
   if (!resend) {
     console.warn("Resend is not configured. Skipping notification email.");
     return { sent: false, error: "Resend is not configured." };
   }
 
-  const { applicationId, reference, payload, assessment } = params;
-  const refLine = reference ? `Reference: ${reference}` : `Application ID: ${applicationId}`;
+  const { applicationId, reference, payload } = params;
+  const to = await getNotificationRecipientEmail();
+
+  const { html, text, attachments } = await buildApplicationNotificationEmail({
+    applicationId,
+    reference,
+    adminAppUrl: env.ADMIN_APP_URL,
+    payload,
+  });
+
+  const subjectRef = reference?.trim() || applicationId;
 
   try {
-    await resend.emails.send({
-      from: env.RESEND_FROM,
-      to: env.APPLICATION_NOTIFICATION_EMAIL,
-      subject: `New PortfolioGuardian application ${reference ?? applicationId}`,
-      text: [
-        refLine,
-        `Contact: ${payload.primaryContactName} <${payload.email}>`,
-        `Entities submitted: ${payload.entities.length}`,
-        `Overall outcome: ${assessment.overallOutcome}`,
-        `Indicative pricing available: ${assessment.indicativePricingAvailable ? "Yes" : "No"}`,
-        `Estimated total: ${assessment.totalEstimate ?? "Review required"}`,
-        `Admin link: ${env.ADMIN_APP_URL}/applications/${applicationId}`,
-      ].join("\n"),
+    const { data, error } = await resend.emails.send({
+      from: formatResendFromAddress(env.RESEND_FROM),
+      to,
+      subject: `New PortfolioGuardian application — ${subjectRef}`,
+      html,
+      text,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
+
+    if (error) {
+      const msg =
+        typeof error === "object" && error !== null && "message" in error
+          ? String((error as { message: unknown }).message)
+          : JSON.stringify(error);
+      console.error("Resend API rejected notification email.", error);
+      return { sent: false, error: msg };
+    }
+
+    if (data?.id) {
+      console.info("Notification email queued.", { resendEmailId: data.id, to });
+    }
 
     return { sent: true, error: null };
   } catch (error) {
