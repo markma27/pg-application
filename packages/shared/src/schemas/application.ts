@@ -106,6 +106,8 @@ export const documentSendToValueSchema = z.union([
  */
 export const fullApplicationSubmissionSchema = applicationInputSchema.extend({
   individuals: z.array(individualInputSchema).min(1).max(4),
+  /** When false, applicant indicated no investment adviser; adviser contact fields are empty. */
+  hasInvestmentAdviser: z.boolean().optional(),
   adviserName: z.string().optional().default(""),
   adviserCompany: z.string().optional().default(""),
   adviserAddress: z.string().optional().default(""),

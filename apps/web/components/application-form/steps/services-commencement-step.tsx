@@ -42,9 +42,12 @@ function ServiceRowToggle({
   "aria-label"?: string;
 }) {
   return (
-    <li className="flex items-center justify-between gap-4 py-1.5">
-      <span className="text-sm text-slate-700">{label}</span>
-      <label className="relative inline-flex shrink-0 cursor-pointer items-center" aria-label={ariaLabel}>
+    <li className="grid grid-cols-[minmax(0,1fr)_4.83rem] items-center gap-x-4 py-1.5">
+      <span className="min-w-0 text-sm text-slate-700">{label}</span>
+      <label
+        className="relative inline-flex shrink-0 cursor-pointer items-center justify-self-end"
+        aria-label={ariaLabel}
+      >
         <input
           type="checkbox"
           checked={checked}
@@ -52,7 +55,17 @@ function ServiceRowToggle({
           className="peer sr-only"
           role="switch"
         />
-        <span className="relative inline-block h-6 w-11 shrink-0 rounded-full bg-slate-200 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-emerald-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-3 peer-focus-visible:ring-emerald-600/30" />
+        {/* Yes/No switch — Uiverse-style; sizes +15% vs prior step */}
+        <div
+          className={cn(
+            "peer relative inline-block h-[2.415rem] w-[4.83rem] shrink-0 rounded-full bg-emerald-200 outline-none transition-colors duration-100 after:duration-300",
+            "peer-checked:bg-emerald-600",
+            "peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500/50",
+            "after:pointer-events-none after:absolute after:left-[0.1725rem] after:top-[0.1725rem] after:flex after:h-[2.07rem] after:w-[2.07rem] after:items-center after:justify-center after:rounded-full after:bg-white after:text-[9px] after:font-bold after:text-emerald-900 after:shadow-md after:outline-none after:transition-transform",
+            "after:content-['No']",
+            "peer-checked:after:translate-x-[2.415rem] peer-checked:after:content-['Yes'] peer-checked:after:border peer-checked:after:border-white",
+          )}
+        />
       </label>
     </li>
   );
@@ -109,10 +122,13 @@ export function ServicesCommencementStep() {
 
         {/* Add-on services */}
         <div className="space-y-3">
-          <Label className="text-base font-semibold text-slate-900">
-            Our portfolio add-on services will be provided by Jaquillard Minns, including:
-          </Label>
-          <ul className="list-none space-y-0 rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2">
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-bold tracking-tight text-emerald-700 sm:text-xl">Portfolio add-on services</h2>
+            <p className="text-base font-semibold text-slate-900">
+              Our portfolio add-on services will be provided by Jaquillard Minns, including:
+            </p>
+          </div>
+          <ul className="list-none space-y-0 rounded-lg border border-slate-200 bg-white px-4 py-2 shadow-sm">
             {ADD_ON_SERVICES.map(({ label, code }) => (
               <ServiceRowToggle
                 key={code + label}
@@ -127,10 +143,13 @@ export function ServicesCommencementStep() {
 
         {/* PAF & PuAF services */}
         <div className="space-y-3">
-          <Label className="text-base font-semibold text-slate-900">
-            Our PAF & PuAF services will be provided by Jaquillard Minns, including:
-          </Label>
-          <ul className="list-none space-y-0 rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2">
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-bold tracking-tight text-emerald-700 sm:text-xl">PAF &amp; PuAF services</h2>
+            <p className="text-base font-semibold text-slate-900">
+              Our PAF &amp; PuAF services will be provided by Jaquillard Minns, including:
+            </p>
+          </div>
+          <ul className="list-none space-y-0 rounded-lg border border-slate-200 bg-white px-4 py-2 shadow-sm">
             {PAF_PUAF_SERVICES.map(({ label, key }) => (
               <ServiceRowToggle
                 key={key}
@@ -161,9 +180,9 @@ export function ServicesCommencementStep() {
             Preferred commencement date <span className="text-red-500">*</span>
           </Label>
           <Input
+            type="date"
             value={commencementDate}
             onChange={(e) => setGroupServices({ groupCommencementDate: e.target.value })}
-            placeholder="e.g. 1 July 2025"
             required
             aria-invalid={commencementError}
             className={cn("h-11 max-w-md rounded-lg border-slate-300 px-4", commencementError && "border-red-500 ring-2 ring-red-500/20")}

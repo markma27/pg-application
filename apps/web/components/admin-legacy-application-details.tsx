@@ -62,7 +62,7 @@ function formatSendToFromJsonb(val: unknown): string | undefined {
   }
   if (Array.isArray(val)) {
     if (val.length === 0) return undefined;
-    return val.map((x) => (x === "trustee" ? "Trustee" : "Adviser")).join(", ");
+    return val.map((x) => (x === "trustee" ? "Individual" : "Adviser")).join(", ");
   }
   return undefined;
 }
@@ -323,7 +323,7 @@ export function AdminLegacyApplicationDetails({
           <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
             <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
               <AdminSectionHeader
-                title={`Individual ${i + 1}`}
+                title={`Know Your Customer (KYC) – Individual ${i + 1}`}
                 subtitle="From application_individuals (relational)"
               />
             </CardHeader>
@@ -342,7 +342,7 @@ export function AdminLegacyApplicationDetails({
                   }
                 />
                 <ReviewRow
-                  label="Address"
+                  label="Residential address"
                   value={[ind.street_address, ind.street_address_line2].filter(Boolean).join(", ") || undefined}
                 />
                 <ReviewRow label="Tax File Number" value={ind.tax_file_number || undefined} />
@@ -382,7 +382,7 @@ export function AdminLegacyApplicationDetails({
             <AdminReviewFieldGrid>
               <ReviewRow label="Adviser name" value={adviserRelational.adviser_name?.trim() || undefined} />
               <ReviewRow label="Company" value={adviserRelational.adviser_company?.trim() || undefined} />
-              <ReviewRow label="Address" value={adviserRelational.adviser_address?.trim() || undefined} />
+              <ReviewRow label="Adviser address" value={adviserRelational.adviser_address?.trim() || undefined} />
               <ReviewRow label="Phone" value={adviserRelational.adviser_tel?.trim() || undefined} />
               <ReviewRow label="Fax" value={adviserRelational.adviser_fax?.trim() || undefined} />
               <ReviewRow label="Email" value={adviserRelational.adviser_email?.trim() || undefined} />

@@ -6,7 +6,7 @@ import {
   ENTITY_TYPE_OPTIONS,
   PORTFOLIO_STATUS_OPTIONS,
 } from "@/lib/application-form/constants";
-import type { DocumentSendToValue } from "@/lib/application-form/types";
+import { formatDocumentSendToDisplay } from "@/lib/application-form/format-document-send";
 import {
   Card,
   CardContent,
@@ -18,13 +18,6 @@ import { Pencil } from "lucide-react";
 
 const ENTITY_STEPS_START = 2;
 const ENTITY_STEPS_PER_ENTITY = 2;
-
-function formatDocumentSendTo(value: DocumentSendToValue): string | undefined {
-  if (!value) return undefined;
-  if (value === "not_required") return "Not required";
-  if (Array.isArray(value) && value.length > 0) return value.map((v) => (v === "trustee" ? "Trustee" : "Adviser")).join(", ");
-  return undefined;
-}
 
 function ReviewRow({ label, value, className = "" }: { label: string; value: React.ReactNode; className?: string }) {
   if (value == null || value === "") return null;
@@ -74,6 +67,7 @@ export function ReviewStep() {
   const entityTypeLabel = (value: string) => ENTITY_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
   const portfolioLabel = (value: string) => PORTFOLIO_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? value;
   const relationshipLabel = (r: string) => r.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const kycIndividualTitle = (n: number) => `Know Your Customer (KYC) – Individual ${n}`;
 
   return (
     <div className="space-y-8">
@@ -126,6 +120,16 @@ export function ReviewStep() {
                   label="Portfolio status"
                   value={entity.portfolioStatus ? portfolioLabel(entity.portfolioStatus) : undefined}
                 />
+                {(entity.existingPortfolioReportFiles?.length ?? 0) > 0 ? (
+                  <ReviewRow
+                    label="Portfolio documents"
+                    value={
+                      <span className="block">
+                        {(entity.existingPortfolioReportFiles ?? []).map((f) => f.name).join(", ")}
+                      </span>
+                    }
+                  />
+                ) : null}
                 <ReviewRow label="Portfolio HIN" value={entity.portfolioHin || undefined} />
                 <ReviewRow label="ABN" value={entity.abn || undefined} />
                 <ReviewRow label="TFN" value={entity.tfn || undefined} />
@@ -214,7 +218,8 @@ export function ReviewStep() {
           <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
             <CardHeader className="border-b border-slate-100 bg-slate-50/60 pl-6 pr-6 py-4">
               <SectionHeader
-                title={`Individual ${i + 1}`}
+                title={kycIndividualTitle(i + 1)}
+                subtitle="KYC / identity"
                 onEdit={() => goToStep(individualDetailsStepIndex)}
                 editStepLabel="Edit individual details"
               />
@@ -233,7 +238,7 @@ export function ReviewStep() {
                 }
               />
               <ReviewRow
-                label="Address"
+                label="Residential address"
                 value={[ind.streetAddress, ind.streetAddressLine2].filter(Boolean).join(", ") || undefined}
               />
               <ReviewRow label="Tax File Number" value={ind.taxFileNumber || undefined} />
@@ -247,64 +252,72 @@ export function ReviewStep() {
           </Card>
         ))}
 
-        {/* Adviser & administration */}
+        {/* Investment adviser & administration */}
         <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 pl-6 pr-6 py-4">
             <SectionHeader
-              title="Adviser & administration"
-              subtitle="Investment adviser and document preferences"
+              title="Investment adviser & administration"
+              subtitle="Investment adviser, document routing (Individual / Adviser), dividend preference"
               onEdit={() => goToStep(adviserDetailsStepIndex)}
-              editStepLabel="Edit adviser & administration"
+              editStepLabel="Edit investment adviser and administration"
             />
           </CardHeader>
           <CardContent className="divide-y divide-slate-100 px-6 py-4">
-            <ReviewRow label="Adviser name" value={state.adviserName || undefined} />
-            <ReviewRow label="Company" value={state.adviserCompany || undefined} />
-            <ReviewRow label="Address" value={state.adviserAddress || undefined} />
-            <ReviewRow label="Phone" value={state.adviserTel || undefined} />
-            <ReviewRow label="Fax" value={state.adviserFax || undefined} />
-            <ReviewRow label="Email" value={state.adviserEmail || undefined} />
             <ReviewRow
-              label="Nominate adviser as primary contact"
-              value={
-                state.nominateAdviserPrimaryContact === true
-                  ? "Yes"
-                  : state.nominateAdviserPrimaryContact === false
-                    ? "No"
-                    : undefined
-              }
+              label="Has investment adviser"
+              value={state.hasInvestmentAdviser === true ? "Yes" : "No"}
             />
-            <ReviewRow
-              label="Authorise adviser access to statements"
-              value={
-                state.authoriseAdviserAccessStatements === true
-                  ? "Yes"
-                  : state.authoriseAdviserAccessStatements === false
-                    ? "No"
-                    : undefined
-              }
-            />
-            <ReviewRow
-              label="Authorise deal with adviser direct"
-              value={
-                state.authoriseDealWithAdviserDirect === true
-                  ? "Yes"
-                  : state.authoriseDealWithAdviserDirect === false
-                    ? "No"
-                    : undefined
-              }
-            />
+            {state.hasInvestmentAdviser === true ? (
+              <>
+                <ReviewRow label="Adviser name" value={state.adviserName || undefined} />
+                <ReviewRow label="Company" value={state.adviserCompany || undefined} />
+                <ReviewRow label="Adviser address" value={state.adviserAddress || undefined} />
+                <ReviewRow label="Phone" value={state.adviserTel || undefined} />
+                <ReviewRow label="Fax" value={state.adviserFax || undefined} />
+                <ReviewRow label="Email" value={state.adviserEmail || undefined} />
+                <ReviewRow
+                  label="Nominate adviser as primary contact"
+                  value={
+                    state.nominateAdviserPrimaryContact === true
+                      ? "Yes"
+                      : state.nominateAdviserPrimaryContact === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+                <ReviewRow
+                  label="Authorise adviser access to statements"
+                  value={
+                    state.authoriseAdviserAccessStatements === true
+                      ? "Yes"
+                      : state.authoriseAdviserAccessStatements === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+                <ReviewRow
+                  label="Authorise deal with adviser direct"
+                  value={
+                    state.authoriseDealWithAdviserDirect === true
+                      ? "Yes"
+                      : state.authoriseDealWithAdviserDirect === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+              </>
+            ) : null}
             <ReviewRow
               label="Annual report send to"
-              value={formatDocumentSendTo(state.annualReportSendTo)}
+              value={formatDocumentSendToDisplay(state.annualReportSendTo)}
             />
             <ReviewRow
               label="Meeting proxy send to"
-              value={formatDocumentSendTo(state.meetingProxySendTo)}
+              value={formatDocumentSendToDisplay(state.meetingProxySendTo)}
             />
             <ReviewRow
               label="Investment offers send to"
-              value={formatDocumentSendTo(state.investmentOffersSendTo)}
+              value={formatDocumentSendToDisplay(state.investmentOffersSendTo)}
             />
             <ReviewRow
               label="Dividend preference"

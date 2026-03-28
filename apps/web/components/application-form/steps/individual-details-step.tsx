@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MAX_INDIVIDUALS } from "@/lib/application-form/constants";
 import { cn } from "@/lib/utils";
+import { Plus } from "lucide-react";
 
 const RELATIONSHIP_OPTIONS: { value: IndividualRelationshipRole; label: string }[] = [
   { value: "individual", label: "Individual" },
@@ -23,7 +24,7 @@ function toggleRole(roles: IndividualRelationshipRole[], role: IndividualRelatio
 }
 
 export function IndividualDetailsStep() {
-  const { state, setIndividual, setIndividualCount } = useApplicationForm();
+  const { state, setIndividual, setIndividualCount, removeIndividualAt } = useApplicationForm();
   const count = state.individualCount;
   const individuals = state.individuals.slice(0, count);
   const err = (index: number, field: string) => state.stepErrorField === `individual_${index}_${field}`;
@@ -46,7 +47,7 @@ export function IndividualDetailsStep() {
             className="rounded-xl border border-slate-200 bg-white shadow-sm"
           >
             <h2 className="rounded-t-xl bg-emerald-50 px-4 py-3 text-lg font-semibold text-emerald-800">
-              Individual {index + 1}
+              Know Your Customer (KYC) – Individual {index + 1}
             </h2>
             <div className="space-y-6 p-4 sm:p-6">
               <div className={cn("space-y-3", err(index, "relationshipRoles") && "rounded-lg border-2 border-red-500 bg-red-50/30 p-3")}>
@@ -95,7 +96,7 @@ export function IndividualDetailsStep() {
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-700">Street Address <span className="text-red-600">*</span></Label>
+                  <Label className="text-slate-700">Residential Address <span className="text-red-600">*</span></Label>
                   <AddressAutocomplete
                     value={ind.streetAddress}
                     onChange={(v) => setIndividual(index, { streetAddress: v })}
@@ -181,12 +182,12 @@ export function IndividualDetailsStep() {
                 </div>
               </div>
 
-              {index === count - 1 && count > 1 && (
+              {count > 1 && (
                 <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => setIndividualCount(count - 1)}
-                    className="cursor-pointer text-sm font-medium text-slate-600 underline hover:text-slate-800"
+                    onClick={() => removeIndividualAt(index)}
+                    className="cursor-pointer text-sm font-medium text-red-600 underline underline-offset-2 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                   >
                     Remove this individual
                   </button>
@@ -197,16 +198,18 @@ export function IndividualDetailsStep() {
         ))}
 
         {count < MAX_INDIVIDUALS && (
-          <div>
+          <div className="pt-1">
             <button
               type="button"
               onClick={() => setIndividualCount(count + 1)}
               className={cn(
-                "cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600",
-                "hover:border-emerald-400 hover:bg-emerald-50/50 hover:text-emerald-700"
+                "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white",
+                "transition-colors hover:bg-emerald-700 active:bg-emerald-800",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               )}
             >
-              + Add another individual
+              <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+              Add another individual
             </button>
           </div>
         )}

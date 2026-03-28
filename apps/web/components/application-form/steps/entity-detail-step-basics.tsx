@@ -9,6 +9,48 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { PartialEntity } from "@/lib/application-form/types";
 
+const MAX_PORTFOLIO_FILES = 5;
+const MAX_PORTFOLIO_BYTES = 10 * 1024 * 1024;
+
+function isAllowedPortfolioFile(name: string, mime: string): boolean {
+  const m = mime.toLowerCase();
+  if (
+    m === "application/pdf" ||
+    m === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    m === "application/vnd.ms-excel" ||
+    m === "text/csv" ||
+    m === "text/plain"
+  ) {
+    return true;
+  }
+  const n = name.toLowerCase();
+  return n.endsWith(".pdf") || n.endsWith(".xlsx") || n.endsWith(".xls") || n.endsWith(".csv");
+}
+
+function mergePortfolioFiles(
+  current: File[] | undefined,
+  incoming: FileList | null,
+): { ok: true; files: File[] } | { ok: false; message: string } {
+  const cur = [...(current ?? [])];
+  const add = incoming ? Array.from(incoming) : [];
+  if (add.length === 0) return { ok: true, files: cur };
+  if (cur.length + add.length > MAX_PORTFOLIO_FILES) {
+    return { ok: false, message: `You can upload at most ${MAX_PORTFOLIO_FILES} files per entity.` };
+  }
+  for (const f of add) {
+    if (f.size > MAX_PORTFOLIO_BYTES) {
+      return { ok: false, message: `Each file must be at most 10 MB (${f.name}).` };
+    }
+    if (f.size < 1) {
+      return { ok: false, message: `File is empty (${f.name}).` };
+    }
+    if (!isAllowedPortfolioFile(f.name, f.type || "")) {
+      return { ok: false, message: `Use PDF or Excel (.xlsx, .xls) or CSV only (${f.name}).` };
+    }
+  }
+  return { ok: true, files: [...cur, ...add] };
+}
+
 function AnimateSectionIn({
   className,
   children,
@@ -46,10 +88,14 @@ function PortfolioReportSection({
   update: (data: Partial<PartialEntity>) => void;
 }) {
   const [runAnimation, setRunAnimation] = useState(false);
+  const [fileHint, setFileHint] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   useEffect(() => {
     const id = requestAnimationFrame(() => setRunAnimation(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  const files = entity.existingPortfolioReportFiles ?? [];
 
   return (
     <div
@@ -64,35 +110,72 @@ function PortfolioReportSection({
         Recent investment portfolio report <span className="text-slate-400 font-normal">(optional)</span>
       </Label>
       <p className="text-xs text-slate-500">
-        PDF or Excel (.xlsx, .xls, .csv). Helps us understand your current holdings.
+        PDF or Excel (.xlsx, .xls, .csv). Up to {MAX_PORTFOLIO_FILES} files, 10 MB each. Helps us understand your current holdings.
       </p>
+      {fileHint && <p className="text-xs text-red-600">{fileHint}</p>}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <input
+          key={fileInputKey}
           type="file"
           id={`portfolio-report-${entityIndex}`}
-          accept=".pdf,.xlsx,.xls,.csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
-          onChange={(e) => update({ existingPortfolioReportFile: e.target.files?.[0] ?? null })}
+          multiple
+          accept=".pdf,.xlsx,.xls,.csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/plain"
+          onChange={(e) => {
+            const merged = mergePortfolioFiles(entity.existingPortfolioReportFiles, e.target.files);
+            e.target.value = "";
+            if (!merged.ok) {
+              setFileHint(merged.message);
+              return;
+            }
+            setFileHint(null);
+            update({ existingPortfolioReportFiles: merged.files });
+          }}
           className="sr-only"
         />
         <label
           htmlFor={`portfolio-report-${entityIndex}`}
-          className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+          className={cn(
+            "inline-flex cursor-pointer items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700",
+            files.length >= MAX_PORTFOLIO_FILES && "pointer-events-none opacity-50",
+          )}
         >
-          Choose file
+          {files.length >= MAX_PORTFOLIO_FILES ? "Maximum files reached" : "Add files"}
         </label>
-        {entity.existingPortfolioReportFile && (
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <span className="truncate">{entity.existingPortfolioReportFile.name}</span>
-            <button
-              type="button"
-              onClick={() => update({ existingPortfolioReportFile: null })}
-              className="cursor-pointer text-slate-500 underline hover:text-slate-700"
-            >
-              Remove
-            </button>
-          </div>
-        )}
       </div>
+      {files.length > 0 && (
+        <ul className="space-y-2 text-sm text-slate-600">
+          {files.map((f, idx) => (
+            <li key={`${f.name}-${f.size}-${idx}`} className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate">{f.name}</span>
+              <span className="shrink-0 text-xs text-slate-400">{(f.size / 1024).toFixed(0)} KB</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = files.filter((_, i) => i !== idx);
+                  update({ existingPortfolioReportFiles: next });
+                  setFileInputKey((k) => k + 1);
+                }}
+                className="cursor-pointer shrink-0 text-slate-500 underline hover:text-slate-700"
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {files.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            update({ existingPortfolioReportFiles: [] });
+            setFileHint(null);
+            setFileInputKey((k) => k + 1);
+          }}
+          className="text-sm text-slate-500 underline hover:text-slate-700"
+        >
+          Remove all files
+        </button>
+      )}
     </div>
   );
 }
@@ -235,7 +318,7 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                       onChange={() =>
                       update({
                         portfolioStatus: opt.value as EntityInput["portfolioStatus"],
-                        ...(opt.value !== "existing_clean" ? { existingPortfolioReportFile: null } : {}),
+                        ...(opt.value !== "existing_clean" ? { existingPortfolioReportFiles: [] } : {}),
                       })
                     }
                       className="sr-only"

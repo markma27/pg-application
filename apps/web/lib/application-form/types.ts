@@ -37,6 +37,8 @@ export interface ApplicationFormState {
   };
   /** Other comments or notes about services (applies to entire group) */
   servicesComments: string;
+  /** When false, adviser contact fields and adviser-only questions are hidden and omitted from submission */
+  hasInvestmentAdviser: boolean;
   /** Adviser & admin details (step before review) */
   adviserName: string;
   adviserCompany: string;
@@ -85,8 +87,8 @@ export interface PartialEntity {
   entityName: string;
   entityType: EntityInput["entityType"] | "";
   portfolioStatus: EntityInput["portfolioStatus"] | "";
-  /** Optional file when portfolio status is existing (not sent in JSON payload; for future multipart upload) */
-  existingPortfolioReportFile?: File | null;
+  /** Optional portfolio reports when status is existing — uploaded to Supabase after JSON submit */
+  existingPortfolioReportFiles?: File[];
   portfolioHin: string;
   abn: string;
   tfn: string;
@@ -178,7 +180,9 @@ export function formStateToPayload(state: ApplicationFormState): FullApplication
     email: ind.email ?? "",
   }));
 
+  const hasAdv = state.hasInvestmentAdviser === true;
   return {
+    hasInvestmentAdviser: hasAdv,
     primaryContactName: state.primaryContactName,
     email: state.email,
     phone: state.phone,
@@ -188,15 +192,15 @@ export function formStateToPayload(state: ApplicationFormState): FullApplication
     servicesComments: state.servicesComments ?? "",
     entities,
     individuals,
-    adviserName: state.adviserName ?? "",
-    adviserCompany: state.adviserCompany ?? "",
-    adviserAddress: state.adviserAddress ?? "",
-    adviserTel: state.adviserTel ?? "",
-    adviserFax: state.adviserFax ?? "",
-    adviserEmail: state.adviserEmail ?? "",
-    nominateAdviserPrimaryContact: state.nominateAdviserPrimaryContact,
-    authoriseAdviserAccessStatements: state.authoriseAdviserAccessStatements,
-    authoriseDealWithAdviserDirect: state.authoriseDealWithAdviserDirect,
+    adviserName: hasAdv ? (state.adviserName ?? "") : "",
+    adviserCompany: hasAdv ? (state.adviserCompany ?? "") : "",
+    adviserAddress: hasAdv ? (state.adviserAddress ?? "") : "",
+    adviserTel: hasAdv ? (state.adviserTel ?? "") : "",
+    adviserFax: hasAdv ? (state.adviserFax ?? "") : "",
+    adviserEmail: hasAdv ? (state.adviserEmail ?? "") : "",
+    nominateAdviserPrimaryContact: hasAdv ? state.nominateAdviserPrimaryContact : "",
+    authoriseAdviserAccessStatements: hasAdv ? state.authoriseAdviserAccessStatements : "",
+    authoriseDealWithAdviserDirect: hasAdv ? state.authoriseDealWithAdviserDirect : "",
     annualReportSendTo: state.annualReportSendTo === "" ? "" : state.annualReportSendTo,
     meetingProxySendTo: state.meetingProxySendTo === "" ? "" : state.meetingProxySendTo,
     investmentOffersSendTo: state.investmentOffersSendTo === "" ? "" : state.investmentOffersSendTo,

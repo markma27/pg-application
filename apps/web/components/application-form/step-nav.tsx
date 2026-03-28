@@ -19,6 +19,7 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
     submit,
     reviewStepIndex,
     confirmationStepIndex,
+    individualDetailsStepIndex,
     currentStepLabel,
     currentStepDescription,
   } = useApplicationForm();
@@ -138,6 +139,9 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
         </div>
       )}
       <div className="space-y-2">
+        {state.step === individualDetailsStepIndex && (
+          <p className="text-sm font-medium text-emerald-100">Know Your Customer (KYC)</p>
+        )}
         <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{currentStepLabel}</h2>
         <p className="text-sm text-emerald-100">{currentStepDescription}</p>
       </div>

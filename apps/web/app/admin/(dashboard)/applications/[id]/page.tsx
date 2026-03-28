@@ -19,6 +19,7 @@ import {
   type ApplicationAuditEventRow,
 } from "@/components/admin-application-audit-section";
 import { AdminApplicationStatusFlow } from "@/components/admin-application-status-flow";
+import type { PortfolioDocRow } from "@/components/admin-portfolio-documents";
 import { createClient } from "@/lib/supabase/server";
 import { updateApplicationWorkflowStatus } from "./actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -52,7 +53,42 @@ type EntityRow = {
   indicative_onboarding_fee: string | number | null;
   pricing_status: string;
   entity_services: EntityServiceRow[] | null;
+  portfolio_documents: unknown;
+  form_submission_entity_id: string | null;
 };
+
+function portfolioDocsFromRow(raw: unknown): PortfolioDocRow[] {
+  if (!Array.isArray(raw)) return [];
+  const out: PortfolioDocRow[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const storage_path = o.storage_path;
+    const original_name = o.original_name;
+    if (typeof storage_path !== "string" || typeof original_name !== "string") continue;
+    out.push({
+      storage_path,
+      original_name,
+      content_type: typeof o.content_type === "string" ? o.content_type : undefined,
+      size_bytes: typeof o.size_bytes === "number" ? o.size_bytes : undefined,
+    });
+  }
+  return out;
+}
+
+function portfolioDocumentsByFormEntityId(rows: EntityRow[]): Record<string, PortfolioDocRow[]> {
+  const map: Record<string, PortfolioDocRow[]> = {};
+  for (const row of rows) {
+    const fid = row.form_submission_entity_id;
+    if (typeof fid === "string" && fid.trim()) {
+      const docs = portfolioDocsFromRow(row.portfolio_documents);
+      if (docs.length > 0) {
+        map[fid] = docs;
+      }
+    }
+  }
+  return map;
+}
 
 function outcomeLabel(outcome: string) {
   switch (outcome) {
@@ -122,6 +158,8 @@ export default async function AdminApplicationDetailPage({
       indicative_annual_fee,
       indicative_onboarding_fee,
       pricing_status,
+      portfolio_documents,
+      form_submission_entity_id,
       entity_services ( id, service_code, service_label )
     `,
     )
@@ -151,6 +189,7 @@ export default async function AdminApplicationDetailPage({
     : ((auditQuery.data ?? []) as ApplicationAuditEventRow[]);
 
   const entityRows = (entities ?? []) as unknown as EntityRow[];
+  const entityPortfolioDocs = portfolioDocumentsByFormEntityId(entityRows);
 
   const appRel = app as typeof app & Partial<AdviserRelationalFields>;
   const adviserRelational: AdviserRelationalFields = {
@@ -179,8 +218,9 @@ export default async function AdminApplicationDetailPage({
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Back to applications
         </Link>
-        <div className="grid gap-8 xl:grid-cols-3 xl:items-center xl:gap-6">
-          <div className="min-w-0 justify-self-start xl:max-w-md">
+        {/* One row on lg+: application (with entities stacked below) | pipeline. Narrow left column keeps pipeline space. */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-6 xl:gap-8">
+          <div className="w-full min-w-0 shrink-0 lg:max-w-[min(100%,17rem)] xl:max-w-[min(100%,19rem)]">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Application</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#0c2742]">{app.reference}</h1>
             <p className="mt-1 text-base text-slate-700">{app.primary_contact_name}</p>
@@ -200,8 +240,22 @@ export default async function AdminApplicationDetailPage({
                 </span>
               </p>
             ) : null}
+            <div
+              className="mt-4 flex max-w-fit flex-col gap-0.5 rounded-lg border border-emerald-200/85 bg-gradient-to-br from-emerald-50 to-emerald-100/70 px-3 py-2.5 text-left shadow-sm"
+              role="status"
+              aria-label={`${entityRows.length} ${entityRows.length === 1 ? "entity" : "entities"} in this application`}
+            >
+              <div className="flex items-center gap-1.5 text-emerald-800/90">
+                <Layers className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900/85">Entities</span>
+              </div>
+              <p className="text-2xl font-bold tabular-nums leading-none text-emerald-900">{entityRows.length}</p>
+              <p className="text-[11px] font-medium leading-tight text-emerald-800/90">
+                {entityRows.length === 1 ? "portfolio entity" : "portfolio entities"}
+              </p>
+            </div>
           </div>
-          <div className="flex min-w-0 w-full max-w-none flex-col items-center justify-center justify-self-center px-0 sm:px-1">
+          <div className="min-w-0 flex-1 lg:border-l lg:border-slate-100 lg:pl-6 xl:pl-8">
             <AdminApplicationStatusFlow
               updateStatus={updateApplicationWorkflowStatus}
               applicationId={id}
@@ -209,26 +263,16 @@ export default async function AdminApplicationDetailPage({
               disabled={!!app.deleted_at}
             />
           </div>
-          <div
-            className="flex shrink-0 flex-col items-center justify-center justify-self-end rounded-xl border-2 border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-emerald-100/80 px-8 py-5 text-center shadow-sm sm:min-w-[11rem]"
-            role="status"
-            aria-label={`${entityRows.length} ${entityRows.length === 1 ? "entity" : "entities"} in this application`}
-          >
-            <div className="flex items-center gap-2 text-emerald-800/90">
-              <Layers className="h-5 w-5 shrink-0" aria-hidden />
-              <span className="text-xs font-bold uppercase tracking-widest text-emerald-900/85">Entities</span>
-            </div>
-            <p className="mt-2 text-5xl font-bold tabular-nums leading-none text-emerald-900">{entityRows.length}</p>
-            <p className="mt-2 text-xs font-medium text-emerald-800/90">
-              {entityRows.length === 1 ? "portfolio entity" : "portfolio entities"}
-            </p>
-          </div>
         </div>
       </div>
 
       {submission.success ? (
         <>
-          <AdminFormSubmissionDetails data={submission.data} />
+          <AdminFormSubmissionDetails
+            data={submission.data}
+            applicationId={id}
+            portfolioDocumentsByEntityId={entityPortfolioDocs}
+          />
           {entityRows.length > 0 ? (
             <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
               <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">

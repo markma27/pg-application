@@ -49,6 +49,16 @@ export function EntityCountStep() {
               );
             })}
           </div>
+          <p className="text-xs text-slate-500">
+            If you have more than {MAX_ENTITIES} entities, please contact us at{" "}
+            <a
+              href="mailto:applications@portfolioguardian.com.au"
+              className="font-medium text-emerald-700 underline-offset-2 hover:text-emerald-800 hover:underline"
+            >
+              applications@portfolioguardian.com.au
+            </a>
+            .
+          </p>
         </div>
       </div>
     </>

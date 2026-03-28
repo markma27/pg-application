@@ -142,6 +142,7 @@ export async function persistApplicationToSupabase(params: {
       .from("application_entities")
       .insert({
         application_id: applicationId,
+        form_submission_entity_id: entity.id,
         entity_name: entity.entityName,
         entity_type: entity.entityType,
         portfolio_status: entity.portfolioStatus,

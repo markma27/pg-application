@@ -4,7 +4,15 @@ import React, { useCallback, useMemo, useState } from "react";
 import { fullApplicationSubmissionSchema } from "@pg/shared";
 import type { ApplicationFormState, PartialEntity, PartialIndividual, SubmitResult } from "./types";
 import { formStateToPayload } from "./types";
+import { uploadPreparedPortfolioFiles } from "./portfolio-client-upload";
 import { MIN_ENTITIES, MAX_ENTITIES, MIN_INDIVIDUALS, MAX_INDIVIDUALS } from "./constants";
+
+/** Annual report / proxy / offers: at least one of Individual (trustee), Adviser, or Not required */
+function documentSendToIsComplete(v: ApplicationFormState["annualReportSendTo"]): boolean {
+  if (v === "not_required") return true;
+  if (Array.isArray(v) && v.length > 0) return true;
+  return false;
+}
 
 function createEmptyIndividual(id: string): PartialIndividual {
   return {
@@ -43,6 +51,7 @@ function createEmptyEntity(id: string): PartialEntity {
     hasForeignInvestments: false,
     serviceCodes: [],
     commencementDate: "",
+    existingPortfolioReportFiles: [],
   };
 }
 
@@ -66,6 +75,7 @@ const initialState: ApplicationFormState = {
     puafSubFundMonthlyStatements: false,
   },
   servicesComments: "",
+  hasInvestmentAdviser: false,
   individualCount: 1,
   individuals: [createEmptyIndividual(crypto.randomUUID())],
   adviserName: "",
@@ -100,7 +110,8 @@ type ApplicationFormContextValue = {
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
   setIndividual: (index: number, data: Partial<PartialIndividual>) => void;
   setIndividualCount: (count: number) => void;
-  setAdviser: (data: Partial<Pick<ApplicationFormState, "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => void;
+  removeIndividualAt: (index: number) => void;
+  setAdviser: (data: Partial<Pick<ApplicationFormState, "hasInvestmentAdviser" | "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => void;
   servicesStepIndex: number;
   individualDetailsStepIndex: number;
   adviserDetailsStepIndex: number;
@@ -204,6 +215,21 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     });
   }, []);
 
+  const removeIndividualAt = useCallback((index: number) => {
+    setState((s) => {
+      if (s.individualCount <= MIN_INDIVIDUALS) return s;
+      if (index < 0 || index >= s.individualCount) return s;
+      const individuals = s.individuals.slice(0, s.individualCount).filter((_, i) => i !== index);
+      return {
+        ...s,
+        individualCount: s.individualCount - 1,
+        individuals,
+        stepError: null,
+        stepErrorField: null,
+      };
+    });
+  }, []);
+
   const setIndividual = useCallback((index: number, data: Partial<PartialIndividual>) => {
     setState((s) => {
       const individuals = [...s.individuals];
@@ -220,7 +246,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     });
   }, []);
 
-  const setAdviser = useCallback((data: Partial<Pick<ApplicationFormState, "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => {
+  const setAdviser = useCallback((data: Partial<Pick<ApplicationFormState, "hasInvestmentAdviser" | "adviserName" | "adviserCompany" | "adviserAddress" | "adviserTel" | "adviserFax" | "adviserEmail" | "nominateAdviserPrimaryContact" | "authoriseAdviserAccessStatements" | "authoriseDealWithAdviserDirect" | "annualReportSendTo" | "meetingProxySendTo" | "investmentOffersSendTo" | "dividendPreference">>) => {
     setState((s) => ({ ...s, ...data, stepError: null, stepErrorField: null }));
   }, []);
 
@@ -281,7 +307,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
             return { ...s, stepError: `Individual ${n}: please select at least one Relationship to Account.`, stepErrorField: indField(i, "relationshipRoles") };
           if (!ind.title?.trim()) return { ...s, stepError: `Individual ${n}: Title is required.`, stepErrorField: indField(i, "title") };
           if (!ind.fullName?.trim()) return { ...s, stepError: `Individual ${n}: Full name is required.`, stepErrorField: indField(i, "fullName") };
-          if (!ind.streetAddress?.trim()) return { ...s, stepError: `Individual ${n}: Street address is required.`, stepErrorField: indField(i, "streetAddress") };
+          if (!ind.streetAddress?.trim()) return { ...s, stepError: `Individual ${n}: Residential address is required.`, stepErrorField: indField(i, "streetAddress") };
           if (!ind.taxFileNumber?.trim()) return { ...s, stepError: `Individual ${n}: Tax File Number is required.`, stepErrorField: indField(i, "taxFileNumber") };
           if (!/^\d{8,9}$/.test(ind.taxFileNumber))
             return { ...s, stepError: `Individual ${n}: Tax File Number must be 8 or 9 digits.`, stepErrorField: indField(i, "taxFileNumber") };
@@ -299,10 +325,72 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       }
       const adviserStep = individualStep + 1;
       if (s.step === adviserStep) {
-        if (s.adviserEmail?.trim() && !EMAIL_RE.test(s.adviserEmail.trim()))
-          return { ...s, stepError: "Adviser email format is invalid.", stepErrorField: "adviserEmail" };
-        if (s.adviserTel?.trim() && !/^\d{8,15}$/.test(s.adviserTel))
-          return { ...s, stepError: "Adviser phone must be 8–15 digits.", stepErrorField: "adviserTel" };
+        const hasAdv = s.hasInvestmentAdviser === true;
+        if (hasAdv) {
+          if (!s.adviserName?.trim())
+            return { ...s, stepError: "Adviser name is required.", stepErrorField: "adviserName" };
+          if (!s.adviserCompany?.trim())
+            return { ...s, stepError: "Adviser company is required.", stepErrorField: "adviserCompany" };
+          if (!s.adviserAddress?.trim())
+            return { ...s, stepError: "Adviser address is required.", stepErrorField: "adviserAddress" };
+          if (!s.adviserTel?.trim())
+            return { ...s, stepError: "Adviser phone number is required.", stepErrorField: "adviserTel" };
+          if (!/^\d{8,15}$/.test(s.adviserTel.trim()))
+            return { ...s, stepError: "Adviser phone must be 8–15 digits.", stepErrorField: "adviserTel" };
+          if (!s.adviserEmail?.trim())
+            return { ...s, stepError: "Adviser email is required.", stepErrorField: "adviserEmail" };
+          if (!EMAIL_RE.test(s.adviserEmail.trim()))
+            return { ...s, stepError: "Adviser email format is invalid.", stepErrorField: "adviserEmail" };
+          if (s.nominateAdviserPrimaryContact !== true && s.nominateAdviserPrimaryContact !== false) {
+            return {
+              ...s,
+              stepError: "Please answer whether you nominate your investment adviser as primary contact.",
+              stepErrorField: "nominateAdviserPrimaryContact",
+            };
+          }
+          if (s.authoriseAdviserAccessStatements !== true && s.authoriseAdviserAccessStatements !== false) {
+            return {
+              ...s,
+              stepError: "Please answer whether you authorise your adviser to access statements online.",
+              stepErrorField: "authoriseAdviserAccessStatements",
+            };
+          }
+          if (s.authoriseDealWithAdviserDirect !== true && s.authoriseDealWithAdviserDirect !== false) {
+            return {
+              ...s,
+              stepError: "Please answer whether you authorise us to deal with your adviser direct.",
+              stepErrorField: "authoriseDealWithAdviserDirect",
+            };
+          }
+        }
+        if (!documentSendToIsComplete(s.annualReportSendTo)) {
+          return {
+            ...s,
+            stepError: "Please select where to send annual reports (Individual, Adviser, or Not required).",
+            stepErrorField: "annualReportSendTo",
+          };
+        }
+        if (!documentSendToIsComplete(s.meetingProxySendTo)) {
+          return {
+            ...s,
+            stepError: "Please select where to send meeting proxy documents (Individual, Adviser, or Not required).",
+            stepErrorField: "meetingProxySendTo",
+          };
+        }
+        if (!documentSendToIsComplete(s.investmentOffersSendTo)) {
+          return {
+            ...s,
+            stepError: "Please select where to send investment offers (Individual, Adviser, or Not required).",
+            stepErrorField: "investmentOffersSendTo",
+          };
+        }
+        if (s.dividendPreference !== "cash" && s.dividendPreference !== "reinvest") {
+          return {
+            ...s,
+            stepError: "Please choose whether to receive dividends in cash or re-invest.",
+            stepErrorField: "dividendPreference",
+          };
+        }
       }
       const reviewStep = adviserStep + 1;
       return { ...s, step: Math.min(s.step + 1, reviewStep), stepError: null, stepErrorField: null };
@@ -359,6 +447,86 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Submission failed");
+
+      const entitiesSnapshot = state.entities.slice(0, state.entityCount);
+      const portfolioEntities = entitiesSnapshot.filter(
+        (e) => e.portfolioStatus === "existing_clean" && (e.existingPortfolioReportFiles?.length ?? 0) > 0,
+      );
+
+      if (portfolioEntities.length > 0 && data.applicationId) {
+        const prepareRes = await fetch(`/api/applications/${data.applicationId}/portfolio/prepare`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uploads: portfolioEntities.map((e) => ({
+              entityFormId: e.id,
+              files: (e.existingPortfolioReportFiles ?? []).map((f) => ({
+                name: f.name,
+                contentType: f.type || "application/octet-stream",
+                size: f.size,
+              })),
+            })),
+          }),
+        });
+        const prepareData = (await prepareRes.json()) as {
+          slots?: {
+            entityFormId: string;
+            items: { path: string; token: string; originalName: string }[];
+          }[];
+          message?: string;
+        };
+        if (!prepareRes.ok) {
+          throw new Error(
+            prepareData.message ||
+              "Application was saved but portfolio files could not be uploaded. Please contact us with your reference number.",
+          );
+        }
+        const slots = prepareData.slots ?? [];
+        await uploadPreparedPortfolioFiles(slots, entitiesSnapshot);
+
+        const documentsPayload: {
+          entityFormId: string;
+          files: { path: string; originalName: string; sizeBytes: number; contentType: string }[];
+        }[] = [];
+        for (const slot of slots) {
+          const entity = entitiesSnapshot.find((x) => x.id === slot.entityFormId);
+          const files = entity?.existingPortfolioReportFiles ?? [];
+          const fileRows: {
+            path: string;
+            originalName: string;
+            sizeBytes: number;
+            contentType: string;
+          }[] = [];
+          for (let j = 0; j < slot.items.length; j++) {
+            const item = slot.items[j];
+            const file = files[j];
+            if (!item || !file) {
+              throw new Error("Portfolio file mismatch.");
+            }
+            fileRows.push({
+              path: item.path,
+              originalName: item.originalName,
+              sizeBytes: file.size,
+              contentType: file.type || "application/octet-stream",
+            });
+          }
+          documentsPayload.push({ entityFormId: slot.entityFormId, files: fileRows });
+        }
+
+        const finalizeRes = await fetch(`/api/applications/${data.applicationId}/portfolio/finalize`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documents: documentsPayload }),
+        });
+        const finalizeData = (await finalizeRes.json()) as { message?: string };
+        if (!finalizeRes.ok) {
+          throw new Error(
+            finalizeData.message ||
+              "Files uploaded but metadata could not be saved. Please contact us with your reference number.",
+          );
+        }
+      }
+
       setState((s) => ({
         ...s,
         isSubmitting: false,
@@ -398,6 +566,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       setEntity,
       setIndividual,
       setIndividualCount,
+      removeIndividualAt,
       setAdviser,
       servicesStepIndex,
       individualDetailsStepIndex,
@@ -409,7 +578,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       submit,
       clearStepError,
     }),
-    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setGroupServices, setEntityCount, setEntity, setIndividual, setIndividualCount, setAdviser, servicesStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex, nextStep, prevStep, goToStep, restart, submit, clearStepError],
+    [state, totalSteps, reviewStepIndex, confirmationStepIndex, currentStepLabel, currentStepDescription, setContact, setGroupServices, setEntityCount, setEntity, setIndividual, setIndividualCount, removeIndividualAt, setAdviser, servicesStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex, nextStep, prevStep, goToStep, restart, submit, clearStepError],
   );
 
   return (

@@ -18,17 +18,8 @@ import {
   ReviewRowAlways,
 } from "@/components/admin-application-review-layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-
-function formatDocumentSendTo(
-  value: FullApplicationSubmission["annualReportSendTo"],
-): string | undefined {
-  if (!value) return undefined;
-  if (value === "not_required") return "Not required";
-  if (Array.isArray(value) && value.length > 0) {
-    return value.map((v) => (v === "trustee" ? "Trustee" : "Adviser")).join(", ");
-  }
-  return undefined;
-}
+import { AdminPortfolioDocumentsList, type PortfolioDocRow } from "@/components/admin-portfolio-documents";
+import { formatDocumentSendToDisplay } from "@/lib/application-form/format-document-send";
 
 function serviceOptionLabel(code: string): string {
   const fromTable = SERVICE_OPTIONS.find((o) => o.value === code)?.label;
@@ -37,6 +28,20 @@ function serviceOptionLabel(code: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+/** Legacy submissions omit `hasInvestmentAdviser`; infer from any adviser field when unset. */
+function hasInvestmentAdviserFromPayload(data: FullApplicationSubmission): boolean {
+  if (typeof data.hasInvestmentAdviser === "boolean") {
+    return data.hasInvestmentAdviser;
+  }
+  return !!(
+    data.adviserName?.trim() ||
+    data.adviserCompany?.trim() ||
+    data.adviserAddress?.trim() ||
+    data.adviserEmail?.trim() ||
+    data.adviserTel?.trim()
+  );
 }
 
 function formatOtherAssets(e: EntityInput): string | undefined {
@@ -62,11 +67,21 @@ function partitionServiceCodes(codes: EntityInput["serviceCodes"]) {
 }
 
 /** Renders the full validated form payload — layout aligned with the public “Review and summary” step. */
-export function AdminFormSubmissionDetails({ data }: { data: FullApplicationSubmission }) {
+export function AdminFormSubmissionDetails({
+  data,
+  applicationId,
+  portfolioDocumentsByEntityId,
+}: {
+  data: FullApplicationSubmission;
+  applicationId: string;
+  /** Uploaded portfolio files keyed by form entity id (`entity.id` in payload). */
+  portfolioDocumentsByEntityId?: Record<string, PortfolioDocRow[]>;
+}) {
   const firstEntity = data.entities[0];
   const serviceCodes = firstEntity?.serviceCodes ?? [];
   const { addon, paf, other } = partitionServiceCodes(serviceCodes);
   const commencement = firstEntity?.commencementDate ?? "—";
+  const showAdviserDetailFields = hasInvestmentAdviserFromPayload(data);
 
   return (
     <div className="space-y-6">
@@ -88,7 +103,9 @@ export function AdminFormSubmissionDetails({ data }: { data: FullApplicationSubm
       </Card>
 
       {/* Entities */}
-      {data.entities.map((entity, i) => (
+      {data.entities.map((entity, i) => {
+        const entityDocs = portfolioDocumentsByEntityId?.[entity.id];
+        return (
         <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader title={`Entity ${i + 1}`} subtitle="Entity & portfolio details" />
@@ -125,9 +142,17 @@ export function AdminFormSubmissionDetails({ data }: { data: FullApplicationSubm
               <ReviewRow label="Wrap" value={entity.wrapCount != null ? String(entity.wrapCount) : undefined} />
               <ReviewRow label="Other assets" value={formatOtherAssets(entity)} />
             </AdminReviewFieldGrid>
+            {entityDocs && entityDocs.length > 0 ? (
+              <AdminPortfolioDocumentsList
+                applicationId={applicationId}
+                documents={entityDocs}
+                variant="embedded"
+              />
+            ) : null}
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
 
       {/* Services & commencement */}
       <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
@@ -160,7 +185,10 @@ export function AdminFormSubmissionDetails({ data }: { data: FullApplicationSubm
       {data.individuals.map((ind, i) => (
         <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
-            <AdminSectionHeader title={`Individual ${i + 1}`} subtitle="KYC / identity" />
+            <AdminSectionHeader
+              title={`Know Your Customer (KYC) – Individual ${i + 1}`}
+              subtitle="KYC / identity"
+            />
           </CardHeader>
           <CardContent className="px-6 py-4">
             <AdminReviewFieldGrid>
@@ -177,7 +205,7 @@ export function AdminFormSubmissionDetails({ data }: { data: FullApplicationSubm
                 }
               />
               <ReviewRow
-                label="Address"
+                label="Residential address"
                 value={[ind.streetAddress, ind.streetAddressLine2].filter(Boolean).join(", ") || undefined}
               />
               <ReviewRow label="Tax File Number" value={ind.taxFileNumber || undefined} />
@@ -202,45 +230,53 @@ export function AdminFormSubmissionDetails({ data }: { data: FullApplicationSubm
         </CardHeader>
         <CardContent className="px-6 py-4">
           <AdminReviewFieldGrid>
-            <ReviewRow label="Adviser name" value={data.adviserName?.trim() || undefined} />
-            <ReviewRow label="Company" value={data.adviserCompany?.trim() || undefined} />
-            <ReviewRow label="Address" value={data.adviserAddress?.trim() || undefined} />
-            <ReviewRow label="Phone" value={data.adviserTel?.trim() || undefined} />
-            <ReviewRow label="Fax" value={data.adviserFax?.trim() || undefined} />
-            <ReviewRow label="Email" value={data.adviserEmail?.trim() || undefined} />
             <ReviewRow
-              label="Nominate adviser as primary contact"
-              value={
-                data.nominateAdviserPrimaryContact === true
-                  ? "Yes"
-                  : data.nominateAdviserPrimaryContact === false
-                    ? "No"
-                    : undefined
-              }
+              label="Has investment adviser"
+              value={showAdviserDetailFields ? "Yes" : "No"}
             />
-            <ReviewRow
-              label="Authorise adviser access to statements"
-              value={
-                data.authoriseAdviserAccessStatements === true
-                  ? "Yes"
-                  : data.authoriseAdviserAccessStatements === false
-                    ? "No"
-                    : undefined
-              }
-            />
-            <ReviewRow
-              label="Authorise deal with adviser direct"
-              value={
-                data.authoriseDealWithAdviserDirect === true
-                  ? "Yes"
-                  : data.authoriseDealWithAdviserDirect === false
-                    ? "No"
-                    : undefined
-              }
-            />
-            <ReviewRow label="Annual report send to" value={formatDocumentSendTo(data.annualReportSendTo)} />
-            <ReviewRow label="Meeting proxy send to" value={formatDocumentSendTo(data.meetingProxySendTo)} />
-            <ReviewRow label="Investment offers send to" value={formatDocumentSendTo(data.investmentOffersSendTo)} />
+            {showAdviserDetailFields ? (
+              <>
+                <ReviewRow label="Adviser name" value={data.adviserName?.trim() || undefined} />
+                <ReviewRow label="Company" value={data.adviserCompany?.trim() || undefined} />
+                <ReviewRow label="Adviser address" value={data.adviserAddress?.trim() || undefined} />
+                <ReviewRow label="Phone" value={data.adviserTel?.trim() || undefined} />
+                <ReviewRow label="Fax" value={data.adviserFax?.trim() || undefined} />
+                <ReviewRow label="Email" value={data.adviserEmail?.trim() || undefined} />
+                <ReviewRow
+                  label="Nominate adviser as primary contact"
+                  value={
+                    data.nominateAdviserPrimaryContact === true
+                      ? "Yes"
+                      : data.nominateAdviserPrimaryContact === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+                <ReviewRow
+                  label="Authorise adviser access to statements"
+                  value={
+                    data.authoriseAdviserAccessStatements === true
+                      ? "Yes"
+                      : data.authoriseAdviserAccessStatements === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+                <ReviewRow
+                  label="Authorise deal with adviser direct"
+                  value={
+                    data.authoriseDealWithAdviserDirect === true
+                      ? "Yes"
+                      : data.authoriseDealWithAdviserDirect === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+              </>
+            ) : null}
+            <ReviewRow label="Annual report send to" value={formatDocumentSendToDisplay(data.annualReportSendTo)} />
+            <ReviewRow label="Meeting proxy send to" value={formatDocumentSendToDisplay(data.meetingProxySendTo)} />
+            <ReviewRow label="Investment offers send to" value={formatDocumentSendToDisplay(data.investmentOffersSendTo)} />
             <ReviewRow
               label="Dividend preference"
               value={

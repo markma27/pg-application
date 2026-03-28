@@ -115,6 +115,9 @@ export function AddressAutocomplete({
   const [open, setOpen] = useState(false);
   const sessionTokenRef = useRef<unknown>(null);
   const suggestionsRef = useRef<Array<{ placePrediction: { toPlace: () => Promise<{ fetchFields: (opts: { fields: string[] }) => Promise<{ formattedAddress?: string }> }>; placeId: string; text?: { text?: string } } }>>([]);
+  /** Mirrors `suggestions` so selection always sees the latest rows (async fetch may not re-run parent). */
+  const latestSuggestionsDisplayRef = useRef(suggestions);
+  latestSuggestionsDisplayRef.current = suggestions;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionRequestIdRef = useRef(0);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
@@ -215,7 +218,7 @@ export function AddressAutocomplete({
   const selectSuggestion = useCallback(
     async (index: number) => {
       const list = suggestionsRef.current;
-      const display = suggestions[index];
+      const display = latestSuggestionsDisplayRef.current[index];
       setSuggestions([]);
       suggestionsRef.current = [];
       setOpen(false);

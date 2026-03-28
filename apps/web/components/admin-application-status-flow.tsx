@@ -151,7 +151,7 @@ export function AdminApplicationStatusFlow({
       <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
         Pipeline status
       </p>
-      <div className="-mx-1 flex flex-col gap-4 overflow-x-auto pb-1 sm:mx-0 sm:flex-row sm:items-stretch sm:justify-center sm:gap-3 sm:overflow-visible md:gap-4">
+      <div className="-mx-1 flex flex-col gap-4 overflow-x-auto pb-1 sm:mx-0 sm:flex-row sm:items-stretch sm:justify-center sm:gap-3 md:gap-4">
         {WORKFLOW_STATUS_ORDER.map((key, i) => {
           const isCurrent = key === current;
           const isPast = i < currentIndex;
