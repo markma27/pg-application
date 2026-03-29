@@ -22,19 +22,38 @@ function optionalLine(label: string, value: string | undefined | null): string {
 }
 
 const LOGO_CID = "pg-logo";
+const LOGO_PNG = "portfolioguardian-logo.png";
 const LOGO_SVG = "PortfolioGuardian_OriginalLogo.svg";
 
+type EmailLogoAsset = {
+  filePath: string;
+  contentType: "image/png" | "image/svg+xml";
+  attachmentFilename: string;
+};
+
 /** Same rules as `apps/web/lib/email/logo-inline.ts` (Vercel cwd often `apps/web`). */
-function findLogoSvgPath(): string | null {
+function findPublicFile(filename: string): string | null {
   let dir = process.cwd();
   for (let i = 0; i < 16; i++) {
-    const inPublic = path.join(dir, "public", LOGO_SVG);
+    const inPublic = path.join(dir, "public", filename);
     if (existsSync(inPublic)) return inPublic;
-    const inAppsWeb = path.join(dir, "apps", "web", "public", LOGO_SVG);
+    const inAppsWeb = path.join(dir, "apps", "web", "public", filename);
     if (existsSync(inAppsWeb)) return inAppsWeb;
     const parent = path.dirname(dir);
     if (parent === dir) break;
     dir = parent;
+  }
+  return null;
+}
+
+function resolveEmailLogoAsset(): EmailLogoAsset | null {
+  const pngPath = findPublicFile(LOGO_PNG);
+  if (pngPath) {
+    return { filePath: pngPath, contentType: "image/png", attachmentFilename: "logo.png" };
+  }
+  const svgPath = findPublicFile(LOGO_SVG);
+  if (svgPath) {
+    return { filePath: svgPath, contentType: "image/svg+xml", attachmentFilename: "logo.svg" };
   }
   return null;
 }
@@ -47,30 +66,31 @@ function logoTextFallback(): { attachments: Attachment[]; imgHtml: string } {
 }
 
 /**
- * Inline logo via CID (SVG). Resend expects base64 `content` strings.
- * PNG rasterization via `sharp` was removed to keep serverless bundles under Vercel size limits.
+ * Inline logo via CID. Prefers `portfolioguardian-logo.png`, then SVG; no `sharp`.
  */
 async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment[]; imgHtml: string }> {
-  const svgPath = findLogoSvgPath();
-  if (!svgPath) {
-    console.warn("Email logo: SVG not found (checked cwd/public and parents apps/web/public).");
+  const asset = resolveEmailLogoAsset();
+  if (!asset) {
+    console.warn(
+      "Email logo: no PNG or SVG found (checked cwd/public and parents apps/web/public).",
+    );
     return logoTextFallback();
   }
 
-  let svgBuf: Buffer;
+  let buf: Buffer;
   try {
-    svgBuf = readFileSync(svgPath);
+    buf = readFileSync(asset.filePath);
   } catch (err) {
-    console.warn("Email logo: could not read SVG file.", err);
+    console.warn("Email logo: could not read logo file.", err);
     return logoTextFallback();
   }
 
   return {
     attachments: [
       {
-        filename: "logo.svg",
-        content: svgBuf.toString("base64"),
-        contentType: "image/svg+xml",
+        filename: asset.attachmentFilename,
+        content: buf.toString("base64"),
+        contentType: asset.contentType,
         contentId: LOGO_CID,
       },
     ],
@@ -79,7 +99,7 @@ async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment
 }
 
 /**
- * Branded HTML + plain text for Resend (logo as inline SVG CID attachment).
+ * Branded HTML + plain text for Resend (logo as inline PNG or SVG CID attachment).
  */
 export async function buildApplicationNotificationEmail(params: {
   applicationId: string;

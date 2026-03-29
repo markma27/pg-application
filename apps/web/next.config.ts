@@ -93,9 +93,22 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "*": ["apps/api/**/*", "../api/**/*", ...vercelSharpTraceExcludes],
   },
-  /** Server actions read the logo from disk for Resend CID attachments; ensure it is deployed. */
+  /**
+   * Server code reads logos from disk for Resend CID attachments; ensure they are traced.
+   * PNG is preferred for email; SVG remains as fallback.
+   */
   outputFileTracingIncludes: {
-    "*": ["./public/PortfolioGuardian_OriginalLogo.svg"],
+    "*": [
+      "./public/portfolioguardian-logo.png",
+      "./public/PortfolioGuardian_OriginalLogo.svg",
+    ],
+  },
+  /**
+   * Avoid pulling `sharp` / `@img/*` into the serverless bundle for `next/image` optimization.
+   * Images are served from `public/` or remote URLs as-is (acceptable trade-off for bundle size).
+   */
+  images: {
+    unoptimized: true,
   },
   /**
    * Next 16+ defaults `lockDistDir` to true (writes `.next/lock` during build). The lock is
