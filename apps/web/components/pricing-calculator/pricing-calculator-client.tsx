@@ -138,10 +138,10 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
 
   const [entityType, setEntityType] = useState<EntityInput["entityType"]>("individual");
   const [portfolioStatus, setPortfolioStatus] = useState<EntityInput["portfolioStatus"]>("new");
-  const [listed, setListed] = useState("12");
-  const [unlisted, setUnlisted] = useState("2");
-  const [property, setProperty] = useState("1");
-  const [wrap, setWrap] = useState("1");
+  const [listed, setListed] = useState("0");
+  const [unlisted, setUnlisted] = useState("0");
+  const [property, setProperty] = useState("0");
+  const [wrap, setWrap] = useState("0");
   const [reportingTier, setReportingTier] = useState<ReportingTier>("annual_only");
   const [bas, setBas] = useState(false);
   const [asicAgent, setAsicAgent] = useState(false);
@@ -535,7 +535,7 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
                     </div>
                     <p className="text-xs text-slate-600 pt-1">
                       Ongoing years: annual component only ({aud(assessment.annualSubtotal)} per year at
-                      this profile).
+                      this profile; {aud(assessment.annualSubtotal / 12)} per month).
                     </p>
                   </dl>
                 ) : (
