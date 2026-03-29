@@ -1,10 +1,15 @@
 /**
  * Trims `@vercel/nft` outputs for Next so serverless bundles stay under Vercel's 250MB limit.
  *
- * 1. Drops traced files under the sibling `apps/api` workspace (standalone Express) — not used by Next.
- * 2. Drops `.next/cache` trees (e.g. webpack .pack files) — must not be deployed; often blows past 250MB alone.
- * 3. For `app/api/**` route handlers only, drops traced `apps/web/app/**` and `apps/web/components/**`
- *    sources that NFT incorrectly attaches via shared chunks; routes do not execute that UI at runtime.
+ * Processes both `.next/server/**\/*.nft.json` (per-route) and `.next/*.nft.json` (server-level).
+ *
+ * 1. Drops traced files under the sibling `apps/api` workspace (standalone Express).
+ * 2. Drops `.next/cache` trees (webpack .pack files, preview info) — must not be deployed.
+ * 3. Drops `.next/dev` artifacts that NFT may reference from a prior dev session.
+ * 4. Drops ALL `sharp` / `@img/*` entries — images are unoptimized, sharp is never used at runtime.
+ * 5. Drops `@next/swc-*` native binaries — only needed at build time.
+ * 6. For `app/api/**` route handlers, drops traced `apps/web/app/**` and `apps/web/components/**`
+ *    sources that NFT incorrectly attaches via shared chunks.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -33,19 +38,13 @@ function resolveMonorepoRoot() {
 }
 
 const monorepoRoot = resolveMonorepoRoot();
-/** Vercel sets VERCEL=1; CI is set on most build pipelines — prune extra @img/sharp targets. */
-const isVercelLike = process.env.VERCEL === "1" || process.env.CI === "1";
 
 /**
- * On Vercel (Linux glibc), only `@img/sharp-*linux-x64*` / `sharp-libvips-linux-x64` are needed.
- * NFT often still lists darwin, win32, arm, wasm, musl — drop those entries from *.nft.json.
+ * Images are unoptimized (no sharp at runtime), so drop ALL sharp / @img entries.
  */
-function shouldKeepImgSharpOnVercel(relFromNft) {
+function isSharpOrImg(relFromNft) {
   const raw = relFromNft.replace(/\\/g, "/");
-  if (!raw.includes("node_modules/@img/")) return true;
-  if (raw.includes("linuxmusl")) return false;
-  if (raw.includes("linux-x64")) return true;
-  return false;
+  return raw.includes("node_modules/sharp/") || raw.includes("node_modules/@img/");
 }
 
 function walk(dir, out = []) {
@@ -63,8 +62,26 @@ function isNextApiRouteNft(nftPath) {
 
 function shouldKeepTraceFile(nftPath, relFromNft) {
   const raw = relFromNft.replace(/\\/g, "/");
-  /** NFT paths often use `../cache/webpack/...` (no `.next` segment in the string). */
-  if (raw.includes("/cache/webpack/") || raw.includes("/cache/turbopack/") || raw.includes(".next/cache/")) {
+
+  if (
+    raw.includes("/cache/webpack/") ||
+    raw.includes("/cache/turbopack/") ||
+    raw.includes(".next/cache/") ||
+    raw.includes("/cache/.previewinfo") ||
+    raw.includes("/cache/.rscinfo")
+  ) {
+    return false;
+  }
+
+  if (raw.includes(".next/dev/") || raw.includes("/dev/_events")) {
+    return false;
+  }
+
+  if (raw.includes("node_modules/@next/swc-") || raw.includes("node_modules/@next/.swc-")) {
+    return false;
+  }
+
+  if (isSharpOrImg(raw)) {
     return false;
   }
 
@@ -78,21 +95,25 @@ function shouldKeepTraceFile(nftPath, relFromNft) {
     if (rel === "apps/web/components.json") return false;
   }
 
-  if (isVercelLike && !shouldKeepImgSharpOnVercel(relFromNft)) {
-    return false;
-  }
-
   return true;
 }
 
-const serverDir = path.join(webRoot, ".next", "server");
+const dotNextDir = path.join(webRoot, ".next");
+const serverDir = path.join(dotNextDir, "server");
 if (!fs.existsSync(serverDir)) {
   console.warn("prune-nft-trace: .next/server missing; skip.");
   process.exit(0);
 }
 
+const nftFiles = [
+  ...walk(serverDir),
+  ...fs.readdirSync(dotNextDir)
+    .filter((f) => f.endsWith(".nft.json"))
+    .map((f) => path.join(dotNextDir, f)),
+];
+
 let totalPruned = 0;
-for (const nftPath of walk(serverDir)) {
+for (const nftPath of nftFiles) {
   const raw = fs.readFileSync(nftPath, "utf8");
   let data;
   try {

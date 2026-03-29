@@ -42,31 +42,35 @@ function resolveMonorepoRoot(): string {
 const monorepoRoot = resolveMonorepoRoot();
 
 /**
- * Next.js keeps `sharp` for `next/image`. NFT can still list every optional `@img/*` platform;
- * exclude non-Linux targets so the serverless bundle stays small (paths relative to tracing root).
+ * Images are unoptimized (no sharp at runtime), so exclude ALL sharp / @img platform binaries.
+ * Patterns are relative to outputFileTracingRoot (monorepo root); duplicate with `../../` prefix
+ * so both absolute and relative NFT resolutions are covered.
  */
-const vercelSharpTraceExcludeBase =
-  process.env.VERCEL === "1"
-    ? ([
-        "node_modules/@img/sharp-darwin-*/**/*",
-        "node_modules/@img/sharp-libvips-darwin-*/**/*",
-        "node_modules/@img/sharp-linux-arm*/**/*",
-        "node_modules/@img/sharp-libvips-linux-arm*/**/*",
-        "node_modules/@img/sharp-linux-ppc64/**/*",
-        "node_modules/@img/sharp-libvips-linux-ppc64/**/*",
-        "node_modules/@img/sharp-linux-riscv64/**/*",
-        "node_modules/@img/sharp-libvips-linux-riscv64/**/*",
-        "node_modules/@img/sharp-linux-s390x/**/*",
-        "node_modules/@img/sharp-libvips-linux-s390x/**/*",
-        "node_modules/@img/sharp-linuxmusl-*/**/*",
-        "node_modules/@img/sharp-libvips-linuxmusl-*/**/*",
-        "node_modules/@img/sharp-wasm32/**/*",
-        "node_modules/@img/sharp-win32-*/**/*",
-      ] as const)
-    : [];
+const sharpExcludes = [
+  "node_modules/sharp/**/*",
+  "node_modules/@img/**/*",
+];
 
-const vercelSharpTraceExcludes = vercelSharpTraceExcludeBase.flatMap((p) =>
-  p.startsWith("node_modules/") ? [p, `../../${p}`] : [p],
+/**
+ * Exclude SWC native binaries — only needed at build time, never at runtime in serverless.
+ */
+const swcExcludes = [
+  "node_modules/@next/swc-*/**/*",
+  "node_modules/@next/.swc-*/**/*",
+];
+
+/**
+ * Build cache, dev artifacts, and other items that must never land in serverless functions.
+ */
+const cacheExcludes = [
+  "apps/web/.next/cache/**/*",
+  ".next/cache/**/*",
+  "**/.next/cache/**/*",
+  "node_modules/.cache/**/*",
+];
+
+const vercelExcludes = [...sharpExcludes, ...swcExcludes, ...cacheExcludes].flatMap(
+  (p) => (p.startsWith("node_modules/") ? [p, `../../${p}`] : [p]),
 );
 
 // `loadEnvConfig` from @next/env can miss root `.env.local` in monorepos; load explicitly so
@@ -91,7 +95,11 @@ const nextConfig: NextConfig = {
    * routes only need `@pg/submission` subpaths.
    */
   outputFileTracingExcludes: {
-    "*": ["apps/api/**/*", "../api/**/*", ...vercelSharpTraceExcludes],
+    "*": [
+      "apps/api/**/*",
+      "../api/**/*",
+      ...vercelExcludes,
+    ],
   },
   /**
    * Server code reads logos from disk for Resend CID attachments; ensure they are traced.
