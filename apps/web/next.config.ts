@@ -41,6 +41,27 @@ function resolveMonorepoRoot(): string {
 
 const monorepoRoot = resolveMonorepoRoot();
 
+/** Vercel Linux builds only need one sharp/libvips arch; shipping all optional @img/* targets blows past the 250MB serverless limit. */
+const vercelSharpTraceExcludes =
+  process.env.VERCEL === "1"
+    ? ([
+        "../../node_modules/@img/sharp-darwin-*/**/*",
+        "../../node_modules/@img/sharp-libvips-darwin-*/**/*",
+        "../../node_modules/@img/sharp-linux-arm*/**/*",
+        "../../node_modules/@img/sharp-libvips-linux-arm*/**/*",
+        "../../node_modules/@img/sharp-linux-ppc64/**/*",
+        "../../node_modules/@img/sharp-libvips-linux-ppc64/**/*",
+        "../../node_modules/@img/sharp-linux-riscv64/**/*",
+        "../../node_modules/@img/sharp-libvips-linux-riscv64/**/*",
+        "../../node_modules/@img/sharp-linux-s390x/**/*",
+        "../../node_modules/@img/sharp-libvips-linux-s390x/**/*",
+        "../../node_modules/@img/sharp-linuxmusl-*/**/*",
+        "../../node_modules/@img/sharp-libvips-linuxmusl-*/**/*",
+        "../../node_modules/@img/sharp-wasm32/**/*",
+        "../../node_modules/@img/sharp-win32-*/**/*",
+      ] as const)
+    : [];
+
 // `loadEnvConfig` from @next/env can miss root `.env.local` in monorepos; load explicitly so
 // `process.env` is populated before the `env` block (required for client-side NEXT_PUBLIC_*).
 if (existsSync(path.join(monorepoRoot, ".env"))) {
@@ -59,6 +80,14 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp"],
   /** Monorepo root so server traces include `packages/*` correctly on Vercel. */
   outputFileTracingRoot: path.join(__dirname, "..", ".."),
+  /**
+   * Keep Next serverless bundles under Vercel's 250MB limit. Without excludes, NFT can pull in
+   * the sibling `apps/api` workspace (standalone Express) and redundant app sources even when
+   * routes only need `@pg/submission` subpaths.
+   */
+  outputFileTracingExcludes: {
+    "*": ["../api/**/*", ...vercelSharpTraceExcludes],
+  },
   /**
    * Next 16+ defaults `lockDistDir` to true (writes `.next/lock` during build). The lock is
    * removed after the build; Vercel's trace step can still try to `lstat` it and fail with ENOENT.

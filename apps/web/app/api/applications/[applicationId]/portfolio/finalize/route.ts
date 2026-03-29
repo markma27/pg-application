@@ -2,7 +2,7 @@ import {
   finalizeApplicationPortfolioUploads,
   MAX_PORTFOLIO_DOCS_PER_ENTITY,
   MAX_PORTFOLIO_FILE_BYTES,
-} from "@pg/submission";
+} from "@pg/submission/portfolio";
 import { NextResponse } from "next/server";
 
 /** Persists portfolio document metadata on application_entities after signed uploads complete. */

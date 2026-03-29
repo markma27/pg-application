@@ -1,5 +1,5 @@
 import { fullApplicationSubmissionSchema } from "@pg/shared";
-import { submitApplication } from "@pg/submission";
+import { submitApplication } from "@pg/submission/submit";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 

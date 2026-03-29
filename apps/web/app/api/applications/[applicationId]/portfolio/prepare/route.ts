@@ -2,7 +2,7 @@ import {
   prepareApplicationPortfolioUploads,
   MAX_PORTFOLIO_DOCS_PER_ENTITY,
   MAX_PORTFOLIO_FILE_BYTES,
-} from "@pg/submission";
+} from "@pg/submission/portfolio";
 import { NextResponse } from "next/server";
 
 /**

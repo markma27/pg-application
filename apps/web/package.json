@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm exec -w @pg/web -- next build --webpack",
+    "build": "cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build:next -w @pg/web",
+    "build:next": "next build --webpack && node ./scripts/prune-nft-trace.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json"
