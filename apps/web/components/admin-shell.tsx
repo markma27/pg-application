@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 
 const topNavItems = [
   { href: "/admin", label: "Applications", icon: ClipboardList },
-  { href: "/admin/report", label: "Report", icon: FileBarChart },
   { href: "/admin/pricing-calculator", label: "Pricing Calculator", icon: Calculator },
+  { href: "/admin/report", label: "Report", icon: FileBarChart },
 ] as const;
 
 const bottomNavItems = [

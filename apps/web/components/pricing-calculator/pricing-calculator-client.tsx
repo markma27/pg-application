@@ -197,9 +197,6 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
   const reportingExtra =
     (reportingTier === "quarterly" ? pricingModelResolved.reportingAddOns.quarterly_reporting : 0) +
     (reportingTier === "monthly" ? pricingModelResolved.reportingAddOns.monthly_reporting : 0);
-  const otherExtra =
-    (bas ? pricingModelResolved.otherAddOns.bas : 0) +
-    (asicAgent ? pricingModelResolved.otherAddOns.asic_agent : 0);
 
   return (
     <div
@@ -365,24 +362,27 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
                 </div>
               </div>
               <div className="space-y-2 border-t border-slate-200 pt-3">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="cursor-pointer"
-                    checked={bas}
-                    onChange={(e) => setBas(e.target.checked)}
-                  />
-                  BAS (+{aud(pricingModelResolved.otherAddOns.bas)})
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="cursor-pointer"
-                    checked={asicAgent}
-                    onChange={(e) => setAsicAgent(e.target.checked)}
-                  />
-                  ASIC agent (+{aud(pricingModelResolved.otherAddOns.asic_agent)})
-                </label>
+                <Label>BAS and ASIC Agent</Label>
+                <div className="flex flex-col gap-2 text-sm">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="cursor-pointer"
+                      checked={bas}
+                      onChange={(e) => setBas(e.target.checked)}
+                    />
+                    BAS (+{aud(pricingModelResolved.otherAddOns.bas)})
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="cursor-pointer"
+                      checked={asicAgent}
+                      onChange={(e) => setAsicAgent(e.target.checked)}
+                    />
+                    ASIC agent (+{aud(pricingModelResolved.otherAddOns.asic_agent)})
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -450,10 +450,16 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
                       <span>{aud(reportingExtra)}</span>
                     </li>
                   )}
-                  {otherExtra > 0 && (
+                  {bas && (
                     <li className="flex justify-between gap-4">
-                      <span>Other add-ons</span>
-                      <span>{aud(otherExtra)}</span>
+                      <span>BAS</span>
+                      <span>{aud(pricingModelResolved.otherAddOns.bas)}</span>
+                    </li>
+                  )}
+                  {asicAgent && (
+                    <li className="flex justify-between gap-4">
+                      <span>ASIC agent</span>
+                      <span>{aud(pricingModelResolved.otherAddOns.asic_agent)}</span>
                     </li>
                   )}
                   <li className="flex justify-between gap-4 border-t border-slate-100 pt-2 font-medium">
