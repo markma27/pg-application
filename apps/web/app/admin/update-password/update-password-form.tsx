@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { recordPortalLogin } from "@/lib/admin/users-actions";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ export function UpdatePasswordForm() {
         setError(upErr.message);
         return;
       }
+      await recordPortalLogin();
       router.push("/admin");
       router.refresh();
     } finally {
@@ -95,7 +97,11 @@ export function UpdatePasswordForm() {
       {error ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
       ) : null}
-      <Button type="submit" disabled={loading} className="h-11 w-full">
+      <Button
+        type="submit"
+        disabled={loading}
+        className="h-11 w-full rounded-lg border-0 bg-emerald-700 text-base font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+      >
         {loading ? "Saving…" : "Update password"}
       </Button>
     </form>

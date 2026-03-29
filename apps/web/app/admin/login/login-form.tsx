@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { recordPortalLogin } from "@/lib/admin/users-actions";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,6 @@ const errorMessages: Record<string, string> = {
 };
 
 export function AdminLoginForm({ errorKey, errorDetail }: Props) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,15 +45,19 @@ export function AdminLoginForm({ errorKey, errorDetail }: Props) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setFormError(error.message);
+        setLoading(false);
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      await recordPortalLogin().catch(() => {
+        /* non-blocking; last_login may still sync on next visit */
+      });
+      // Full navigation so the browser sends the new auth cookies immediately. Client-only
+      // router.push + refresh often leaves the server layout seeing a stale session until manual refresh.
+      window.location.assign("/admin");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Sign-in failed. Check that Supabase environment variables are set.";
       setFormError(message);
-    } finally {
       setLoading(false);
     }
   }
@@ -118,7 +121,7 @@ export function AdminLoginForm({ errorKey, errorDetail }: Props) {
             disabled={loading}
             className="h-11 w-full rounded-lg border-0 bg-emerald-700 text-base font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {loading ? "Signing In…" : "Sign In"}
           </Button>
           <p className="text-center text-sm">
             <a

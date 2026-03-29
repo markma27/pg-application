@@ -87,7 +87,7 @@ export function AdminShell({
       </aside>
 
       <div className="ml-[198px] flex h-dvh min-h-0 flex-col overflow-hidden">
-        <header className="sticky top-0 z-20 flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-8 shadow-sm">
+        <header className="sticky top-0 z-20 flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-8">
           <h1 className="text-lg font-semibold tracking-tight text-[#0c2742]">
             Client Application Admin Portal
           </h1>
@@ -103,12 +103,10 @@ export function AdminShell({
               <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 group-open:rotate-180" aria-hidden />
             </summary>
             <div
-              className="absolute right-0 top-full z-50 mt-1 min-w-[12rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+              className="absolute right-0 top-full z-50 mt-1 min-w-[12rem] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-slate-100 px-1 py-1">
-                <AdminProfileMenu fullName={profile.fullName} />
-              </div>
+              <AdminProfileMenu fullName={profile.fullName} />
               <button
                 type="button"
                 onClick={() => void signOut()}

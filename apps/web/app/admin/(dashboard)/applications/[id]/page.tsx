@@ -18,6 +18,8 @@ import {
   AdminApplicationAuditSection,
   type ApplicationAuditEventRow,
 } from "@/components/admin-application-audit-section";
+import { AdminApplicationDeleteRow } from "@/components/admin-application-delete-row";
+import { ApplicationStatusBadges } from "@/components/admin-application-status-badges";
 import { AdminApplicationStatusFlow } from "@/components/admin-application-status-flow";
 import type { PortfolioDocRow } from "@/components/admin-portfolio-documents";
 import { createClient } from "@/lib/supabase/server";
@@ -210,7 +212,7 @@ export default async function AdminApplicationDetailPage({
 
   return (
     <div className="w-full min-w-0 space-y-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-none ring-0 sm:p-6">
         <Link
           href="/admin"
           className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#1e4a7a] hover:underline"
@@ -222,7 +224,13 @@ export default async function AdminApplicationDetailPage({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-6 xl:gap-8">
           <div className="w-full min-w-0 shrink-0 lg:max-w-[min(100%,17rem)] xl:max-w-[min(100%,19rem)]">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Application</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#0c2742]">{app.reference}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-[#0c2742]">{app.reference}</h1>
+              <ApplicationStatusBadges
+                status={typeof app.status === "string" ? app.status : "pending"}
+                deletedAt={app.deleted_at as string | null}
+              />
+            </div>
             <p className="mt-1 text-base text-slate-700">{app.primary_contact_name}</p>
             {app.created_at ? (
               <p className="mt-2 text-sm text-slate-500">
@@ -233,15 +241,8 @@ export default async function AdminApplicationDetailPage({
                 })}
               </p>
             ) : null}
-            {app.deleted_at ? (
-              <p className="mt-3">
-                <span className="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-900">
-                  Deleted
-                </span>
-              </p>
-            ) : null}
             <div
-              className="mt-4 flex max-w-fit min-w-[9rem] flex-col gap-0.5 rounded-lg border border-emerald-200/85 bg-gradient-to-br from-emerald-50 to-emerald-100/70 px-3 py-2.5 shadow-sm"
+              className="mt-4 flex max-w-fit min-w-[9rem] flex-col gap-0.5 rounded-lg border border-emerald-200/85 bg-gradient-to-br from-emerald-50 to-emerald-100/70 px-3 py-2.5"
               role="status"
               aria-label={`${entityRows.length} ${entityRows.length === 1 ? "entity" : "entities"} in this application`}
             >
@@ -274,7 +275,7 @@ export default async function AdminApplicationDetailPage({
             portfolioDocumentsByEntityId={entityPortfolioDocs}
           />
           {entityRows.length > 0 ? (
-            <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+            <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
               <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
                 <AdminSectionHeader title="Entity routing (system)" />
               </CardHeader>
@@ -308,7 +309,7 @@ export default async function AdminApplicationDetailPage({
         />
       )}
 
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader
             title="Indicative pricing"
@@ -337,7 +338,7 @@ export default async function AdminApplicationDetailPage({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader title="Notifications" subtitle="Email confirmation to operations" />
         </CardHeader>
@@ -368,6 +369,12 @@ export default async function AdminApplicationDetailPage({
               }
             : null
         }
+      />
+
+      <AdminApplicationDeleteRow
+        applicationId={id}
+        reference={typeof app.reference === "string" ? app.reference : id}
+        deletedAt={app.deleted_at as string | null}
       />
     </div>
   );

@@ -1,13 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
+import { assignApplicationToAdmin } from "@/lib/admin/assign-application-actions";
 import { Input } from "@/components/ui/input";
-import {
-  WORKFLOW_STATUS_LABEL,
-  normalizeWorkflowStatus,
-} from "@/lib/admin/application-workflow-status";
-import { cn } from "@/lib/utils";
+import { ApplicationStatusBadges } from "@/components/admin-application-status-badges";
+import { normalizeWorkflowStatus, type WorkflowStatus } from "@/lib/admin/application-workflow-status";
+
+export type AdminAssignableUser = {
+  id: string;
+  full_name: string;
+  email: string;
+};
 
 export type AdminApplicationRow = {
   id: string;
@@ -17,9 +21,13 @@ export type AdminApplicationRow = {
   status: string;
   created_at: string;
   deleted_at: string | null;
+  assignee_id: string | null;
   assignee_name: string | null;
   entity_count: number;
 };
+
+/** Preset from dashboard stat cards; narrows the list before search / deleted toggle. */
+export type DashboardStatPreset = "today" | WorkflowStatus;
 
 function formatCreated(iso: string) {
   const d = new Date(iso);
@@ -31,32 +39,40 @@ function formatCreated(iso: string) {
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const key = normalizeWorkflowStatus(status);
-  const label = WORKFLOW_STATUS_LABEL[key];
-  const variantClass =
-    key === "pending"
-      ? "bg-amber-50 text-amber-950 ring-1 ring-amber-200/80"
-      : key === "in_progress"
-        ? "bg-sky-100 text-sky-900"
-        : key === "documents_sent"
-          ? "bg-violet-100 text-violet-900"
-          : "bg-emerald-100 text-emerald-900";
-  return (
-    <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", variantClass)}>
-      {label}
-    </span>
-  );
-}
-
-export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
+export function AdminApplicationsTable({
+  rows,
+  assignableUsers = [],
+  presetFilter = null,
+  todayStartIso,
+}: {
+  rows: AdminApplicationRow[];
+  /** Active admin users shown in the Assignee column (empty = read-only names). */
+  assignableUsers?: AdminAssignableUser[];
+  presetFilter?: DashboardStatPreset | null;
+  /** Required when `presetFilter` is `"today"` (must match server dashboard count logic). */
+  todayStartIso?: string;
+}) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [q, setQ] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    const todayStartMs =
+      presetFilter === "today" && todayStartIso ? new Date(todayStartIso).getTime() : null;
+
     return rows.filter((r) => {
+      if (presetFilter) {
+        if (presetFilter === "today") {
+          if (todayStartMs === null) return false;
+          if (new Date(r.created_at).getTime() < todayStartMs) return false;
+        } else if (normalizeWorkflowStatus(r.status) !== presetFilter) {
+          return false;
+        }
+      }
+
       if (!showDeleted && r.deleted_at) return false;
       if (!needle) return true;
       const hay = [
@@ -64,6 +80,7 @@ export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }
         r.primary_contact_name,
         r.email,
         r.status,
+        r.deleted_at ? "deleted" : "",
         r.assignee_name ?? "",
         String(r.entity_count),
       ]
@@ -71,7 +88,7 @@ export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }
         .toLowerCase();
       return hay.includes(needle);
     });
-  }, [rows, q, showDeleted]);
+  }, [rows, q, showDeleted, presetFilter, todayStartIso]);
 
   const goToApplication = useCallback(
     (id: string) => {
@@ -80,8 +97,38 @@ export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }
     [router],
   );
 
+  const onAssigneeChange = useCallback(
+    (applicationId: string, value: string) => {
+      const next = value === "" ? null : value;
+      startTransition(async () => {
+        setNotice(null);
+        const res = await assignApplicationToAdmin(applicationId, next);
+        if (!res.ok) {
+          setNotice(res.error);
+          return;
+        }
+        if ("emailWarning" in res && res.emailWarning) {
+          setNotice(res.emailWarning);
+        }
+        router.refresh();
+      });
+    },
+    [router],
+  );
+
+  const canAssign = assignableUsers.length > 0;
+
   return (
     <div className="space-y-4">
+      {notice ? (
+        <div
+          role="status"
+          className="rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950"
+        >
+          {notice}
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
           placeholder="Search by reference, name, email, status, assignee, or entity count."
@@ -128,6 +175,7 @@ export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }
                   tabIndex={0}
                   onClick={() => goToApplication(r.id)}
                   onKeyDown={(e) => {
+                    if ((e.target as HTMLElement).closest?.("select")) return;
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       goToApplication(r.id);
@@ -139,12 +187,38 @@ export function AdminApplicationsTable({ rows }: { rows: AdminApplicationRow[] }
                   <td className="px-4 py-3 text-slate-800">{r.primary_contact_name}</td>
                   <td className="px-4 py-3 text-slate-600">{r.email}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={r.status} />
+                    <ApplicationStatusBadges status={r.status} deletedAt={r.deleted_at} />
                   </td>
                   <td className="px-4 py-3 text-center tabular-nums text-slate-800 font-medium">
                     {r.entity_count}
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{r.assignee_name ?? "—"}</td>
+                  <td
+                    className="px-4 py-3 text-slate-700"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    {canAssign ? (
+                      <select
+                        aria-label={`Assignee for ${r.reference}`}
+                        disabled={isPending || !!r.deleted_at}
+                        value={r.assignee_id ?? ""}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          onAssigneeChange(r.id, e.target.value);
+                        }}
+                        className="h-9 w-full max-w-[220px] rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 shadow-none focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <option value="">— Unassigned —</option>
+                        {assignableUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.full_name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span>{r.assignee_name ?? "—"}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-slate-600">
                     {formatCreated(r.created_at)}
                   </td>

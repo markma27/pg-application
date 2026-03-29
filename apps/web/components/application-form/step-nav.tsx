@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApplicationForm } from "@/lib/application-form";
-import { ArrowLeft, ArrowRight, FileText, RotateCcw, AlertTriangle } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ArrowLeft, ArrowRight, FileText, RotateCcw } from "lucide-react";
 
 type StepNavVariant = "header" | "panel";
 
@@ -36,63 +37,22 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
   const openRestartConfirm = () => setShowRestartConfirm(true);
   const closeRestartConfirm = () => setShowRestartConfirm(false);
   const confirmRestart = () => {
-    restart();
     closeRestartConfirm();
+    restart();
     router.push("/");
   };
-
-  const restartConfirmModal = showRestartConfirm && (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="restart-dialog-title"
-      aria-describedby="restart-dialog-description"
-    >
-      <div
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
-        onClick={closeRestartConfirm}
-        aria-hidden="true"
-      />
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
-        <div className="flex flex-col items-center gap-4 text-center sm:gap-5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-            <AlertTriangle className="h-6 w-6" aria-hidden />
-          </span>
-          <div className="space-y-2">
-            <h2 id="restart-dialog-title" className="text-lg font-semibold text-slate-900 sm:text-xl">
-              Restart application?
-            </h2>
-            <p id="restart-dialog-description" className="text-sm text-slate-600">
-              {RESTART_MESSAGE}
-            </p>
-          </div>
-          <div className="flex w-full flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={closeRestartConfirm}
-              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={confirmRestart}
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Restart
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   if (variant === "header") {
     return (
       <>
-        {restartConfirmModal}
+        <ConfirmDialog
+          open={showRestartConfirm}
+          onClose={closeRestartConfirm}
+          title="Restart application?"
+          description={RESTART_MESSAGE}
+          confirmLabel="Restart"
+          onConfirm={confirmRestart}
+        />
         <div className="flex items-center gap-2">
         <button
           type="button"

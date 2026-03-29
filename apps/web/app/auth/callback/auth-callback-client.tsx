@@ -1,5 +1,6 @@
 "use client";
 
+import { recordPortalLogin } from "@/lib/admin/users-actions";
 import { createClient } from "@/lib/supabase/client";
 import { createImplicitAuthClient } from "@/lib/supabase/implicit-auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -59,6 +60,7 @@ async function tryImplicitSessionThenTransfer(
 
   // Do not call implicit.auth.signOut() — that revokes refresh tokens server-side and would
   // invalidate the session we just copied into the cookie client.
+  await recordPortalLogin();
   router.replace(next);
   return true;
 }
@@ -104,6 +106,7 @@ export function AuthCallbackClient() {
           return;
         }
         finished.current = true;
+        await recordPortalLogin();
         router.replace(next);
         return;
       }
@@ -120,6 +123,7 @@ export function AuthCallbackClient() {
           return;
         }
         finished.current = true;
+        await recordPortalLogin();
         router.replace(next);
         return;
       }
@@ -130,6 +134,7 @@ export function AuthCallbackClient() {
         const { error } = await main.auth.exchangeCodeForSession(code);
         if (!error) {
           finished.current = true;
+          await recordPortalLogin();
           router.replace(next);
           return;
         }
@@ -141,6 +146,7 @@ export function AuthCallbackClient() {
       } = await main.auth.getSession();
       if (existing) {
         finished.current = true;
+        await recordPortalLogin();
         router.replace(next);
         return;
       }
@@ -151,7 +157,10 @@ export function AuthCallbackClient() {
         if (session && !finished.current) {
           finished.current = true;
           subscription.unsubscribe();
-          router.replace(next);
+          void (async () => {
+            await recordPortalLogin();
+            router.replace(next);
+          })();
         }
       });
 
@@ -164,6 +173,7 @@ export function AuthCallbackClient() {
         if (session) {
           finished.current = true;
           subscription.unsubscribe();
+          await recordPortalLogin();
           router.replace(next);
           return;
         }

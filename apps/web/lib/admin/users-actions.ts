@@ -40,6 +40,21 @@ async function requirePortalAdmin(): Promise<
   return { ok: true, userId: user.id };
 }
 
+/** Updates `last_login_at` for the signed-in portal user (RLS: own row, trigger allows `last_login_at`). */
+export async function recordPortalLogin(): Promise<void> {
+  const supabase = await createClient();
+  if (!supabase) return;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from("admin_users")
+    .update({ last_login_at: new Date().toISOString() })
+    .eq("id", user.id)
+    .eq("is_active", true);
+}
+
 export async function requestPasswordReset(
   prevState: { ok?: boolean; error?: string } | null,
   formData: FormData,
@@ -233,6 +248,58 @@ export async function removePortalUser(userId: string): Promise<{ ok?: boolean; 
   const { error: delAuthErr } = await service.auth.admin.deleteUser(userId);
   if (delAuthErr) {
     return { error: delAuthErr.message };
+  }
+
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+export async function updatePortalUserRole(
+  targetUserId: string,
+  newRole: "admin" | "general",
+): Promise<{ ok?: boolean; error?: string }> {
+  const gate = await requirePortalAdmin();
+  if (!gate.ok) {
+    return { error: gate.error };
+  }
+
+  let service;
+  try {
+    service = createServiceRoleClient();
+  } catch {
+    return { error: "Server not configured." };
+  }
+
+  const { data: target } = await service
+    .from("admin_users")
+    .select("id, role")
+    .eq("id", targetUserId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!target) {
+    return { error: "User not found." };
+  }
+
+  if (target.role === newRole) {
+    return { ok: true };
+  }
+
+  if (target.role === "admin" && newRole === "general") {
+    const { count } = await service
+      .from("admin_users")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "admin")
+      .eq("is_active", true);
+    if ((count ?? 0) <= 1) {
+      return { error: "Cannot demote the last active administrator." };
+    }
+  }
+
+  const { error } = await service.from("admin_users").update({ role: newRole }).eq("id", targetUserId);
+
+  if (error) {
+    return { error: error.message };
   }
 
   revalidatePath("/admin/users");

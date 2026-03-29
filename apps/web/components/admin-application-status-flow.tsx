@@ -9,6 +9,7 @@ import {
   normalizeWorkflowStatus,
   type WorkflowStatus,
 } from "@/lib/admin/application-workflow-status";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 /** Pastel bubble fills aligned with admin dashboard summary cards */
@@ -18,7 +19,7 @@ const STEP_SURFACE: Record<
 > = {
   pending: {
     fill: "bg-[#FEF9E7]",
-    borderCurrent: "border-amber-400/90 ring-2 ring-amber-400/30 shadow-sm",
+    borderCurrent: "border-2 border-amber-500/90",
     borderPast: "border-amber-200/80",
     borderFuture: "border-amber-100/70 opacity-[0.72]",
     label: "text-amber-950/90",
@@ -28,7 +29,7 @@ const STEP_SURFACE: Record<
   },
   in_progress: {
     fill: "bg-[#EBF5FB]",
-    borderCurrent: "border-sky-400/90 ring-2 ring-sky-400/30 shadow-sm",
+    borderCurrent: "border-2 border-sky-500/90",
     borderPast: "border-sky-200/80",
     borderFuture: "border-sky-100/70 opacity-[0.72]",
     label: "text-sky-950/90",
@@ -38,7 +39,7 @@ const STEP_SURFACE: Record<
   },
   documents_sent: {
     fill: "bg-[#F4ECF7]",
-    borderCurrent: "border-violet-400/85 ring-2 ring-violet-400/25 shadow-sm",
+    borderCurrent: "border-2 border-violet-500/85",
     borderPast: "border-violet-200/80",
     borderFuture: "border-violet-100/70 opacity-[0.72]",
     label: "text-violet-950/90",
@@ -48,7 +49,7 @@ const STEP_SURFACE: Record<
   },
   completed: {
     fill: "bg-[#E9F7EF]",
-    borderCurrent: "border-emerald-500/90 ring-2 ring-emerald-400/30 shadow-sm",
+    borderCurrent: "border-2 border-emerald-600/90",
     borderPast: "border-emerald-200/80",
     borderFuture: "border-emerald-100/70 opacity-[0.72]",
     label: "text-emerald-950/90",
@@ -122,19 +123,11 @@ export function AdminApplicationStatusFlow({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [pipelineConfirmTarget, setPipelineConfirmTarget] = useState<WorkflowStatus | null>(null);
 
   const currentIndex = WORKFLOW_STATUS_ORDER.indexOf(current);
 
-  const onSelect = (key: WorkflowStatus) => {
-    if (disabled || key === current) return;
-    const nextIndex = WORKFLOW_STATUS_ORDER.indexOf(key);
-    const goingBack = nextIndex < currentIndex;
-    if (goingBack && typeof window !== "undefined") {
-      const ok = window.confirm(
-        "Move this application to an earlier stage? This should be used when correcting workflow.",
-      );
-      if (!ok) return;
-    }
+  const runStatusUpdate = (key: WorkflowStatus) => {
     setError(null);
     startTransition(async () => {
       const res = await updateStatus(applicationId, key);
@@ -146,8 +139,46 @@ export function AdminApplicationStatusFlow({
     });
   };
 
+  const onSelect = (key: WorkflowStatus) => {
+    if (disabled || key === current) return;
+    setPipelineConfirmTarget(key);
+  };
+
+  const confirmPipelineChange = () => {
+    if (!pipelineConfirmTarget) return;
+    const key = pipelineConfirmTarget;
+    setPipelineConfirmTarget(null);
+    runStatusUpdate(key);
+  };
+
+  const pendingIndex =
+    pipelineConfirmTarget != null ? WORKFLOW_STATUS_ORDER.indexOf(pipelineConfirmTarget) : -1;
+  const isGoingBack = pendingIndex >= 0 && pendingIndex < currentIndex;
+  const targetLabel = pipelineConfirmTarget ? WORKFLOW_STATUS_LABEL[pipelineConfirmTarget] : "";
+
   return (
     <div className="w-full min-w-0">
+      <ConfirmDialog
+        open={!!pipelineConfirmTarget}
+        onClose={() => setPipelineConfirmTarget(null)}
+        title={isGoingBack ? "Move to an earlier stage?" : "Move to a later stage?"}
+        description={
+          isGoingBack ? (
+            <>
+              Move this application to <span className="font-semibold text-slate-800">{targetLabel}</span>? Only do
+              this when correcting the workflow; it cannot be automatically reversed.
+            </>
+          ) : (
+            <>
+              Move this application forward to{" "}
+              <span className="font-semibold text-slate-800">{targetLabel}</span>? The pipeline status will update for
+              your team.
+            </>
+          )
+        }
+        confirmLabel="Move stage"
+        onConfirm={confirmPipelineChange}
+      />
       <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
         Pipeline status
       </p>
@@ -167,7 +198,7 @@ export function AdminApplicationStatusFlow({
                 onClick={() => onSelect(key)}
                 title={disabled ? undefined : `Set status to ${label}`}
                 className={cn(
-                  "relative flex min-h-[8.5rem] w-full min-w-0 flex-1 flex-col items-stretch justify-between px-4 py-3.5 text-left transition-[box-shadow,opacity,border-color] sm:min-h-[9rem] sm:min-w-[13.5rem] sm:max-w-[16rem] sm:flex-initial sm:px-4 sm:py-4",
+                  "relative flex min-h-[8.5rem] w-full min-w-0 flex-1 flex-col items-stretch justify-between px-4 py-3.5 text-left transition-[opacity,border-color] sm:min-h-[9rem] sm:min-w-[13.5rem] sm:max-w-[16rem] sm:flex-initial sm:px-4 sm:py-4",
                   stepButtonClass(key, isCurrent, isPast),
                   disabled && "cursor-not-allowed opacity-50",
                   !disabled && !isPending && "cursor-pointer hover:brightness-[0.99]",
@@ -185,7 +216,7 @@ export function AdminApplicationStatusFlow({
                   <span
                     className={cn(
                       "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                      isCurrent && "bg-white/60 shadow-sm",
+                      isCurrent && "bg-white/60",
                       isPast && "bg-white/40",
                       isFuture && "bg-white/30",
                       stepSubClass(key, isCurrent, isPast),
@@ -226,7 +257,7 @@ export function AdminApplicationStatusFlow({
       ) : null}
       {!disabled ? (
         <p className="mt-3 text-center text-[11px] leading-snug text-slate-500">
-          Click a stage to move the application. Going backward asks for confirmation.
+          Click a stage to move the application. A confirmation is shown before each change.
         </p>
       ) : null}
     </div>

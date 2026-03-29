@@ -86,7 +86,7 @@ export function AdminFormSubmissionDetails({
   return (
     <div className="space-y-6">
       {/* Contact */}
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader title="Contact" subtitle="Primary applicant — from submission payload" />
         </CardHeader>
@@ -106,7 +106,7 @@ export function AdminFormSubmissionDetails({
       {data.entities.map((entity, i) => {
         const entityDocs = portfolioDocumentsByEntityId?.[entity.id];
         return (
-        <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader title={`Entity ${i + 1}`} subtitle="Entity & portfolio details" />
           </CardHeader>
@@ -155,7 +155,7 @@ export function AdminFormSubmissionDetails({
       })}
 
       {/* Services & commencement */}
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader
             title="Services & commencement"
@@ -183,7 +183,7 @@ export function AdminFormSubmissionDetails({
 
       {/* Individuals */}
       {data.individuals.map((ind, i) => (
-        <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader
               title={`Know Your Customer (KYC) – Individual ${i + 1}`}
@@ -221,7 +221,7 @@ export function AdminFormSubmissionDetails({
       ))}
 
       {/* Adviser & administration */}
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader
             title="Investment adviser & administration"

@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AdminApplicationRow } from "@/components/admin-applications-table";
-import { AdminApplicationsTable } from "@/components/admin-applications-table";
-import { Card } from "@/components/ui/card";
+import type { AdminApplicationRow, AdminAssignableUser } from "@/components/admin-applications-table";
+import { AdminDashboardStatFilters } from "@/components/admin-dashboard-stat-filters";
 
 function startOfTodayIso() {
   const d = new Date();
@@ -21,7 +20,7 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const todayStart = startOfTodayIso();
+  const todayStartIso = startOfTodayIso();
 
   const base = () => supabase.from("applications").select("*", { count: "exact", head: true });
 
@@ -32,12 +31,25 @@ export default async function AdminDashboardPage() {
     { count: documentsSentCount },
     { count: completedCount },
   ] = await Promise.all([
-    base().is("deleted_at", null).gte("created_at", todayStart),
+    base().is("deleted_at", null).gte("created_at", todayStartIso),
     base().is("deleted_at", null).eq("status", "pending"),
     base().is("deleted_at", null).eq("status", "in_progress"),
     base().is("deleted_at", null).eq("status", "documents_sent"),
     base().is("deleted_at", null).eq("status", "completed"),
   ]);
+
+  const { data: adminTeamRaw } = await supabase
+    .from("admin_users")
+    .select("id, full_name, email")
+    .eq("is_active", true)
+    .order("full_name", { ascending: true });
+
+  const assignableUsers: AdminAssignableUser[] =
+    (adminTeamRaw as AdminAssignableUser[] | null)?.map((u) => ({
+      id: u.id,
+      full_name: u.full_name,
+      email: u.email,
+    })) ?? [];
 
   const { data: rawRows, error } = await supabase
     .from("applications")
@@ -50,6 +62,7 @@ export default async function AdminDashboardPage() {
       status,
       created_at,
       deleted_at,
+      assignee_id,
       assignee:admin_users!applications_assignee_id_fkey(full_name)
     `,
     )
@@ -72,6 +85,7 @@ export default async function AdminDashboardPage() {
         status: r.status,
         created_at: r.created_at,
         deleted_at: r.deleted_at,
+        assignee_id: r.assignee_id ?? null,
         assignee_name: null,
         entity_count: 0,
       })) ?? [];
@@ -88,6 +102,7 @@ export default async function AdminDashboardPage() {
           status: r.status,
           created_at: r.created_at,
           deleted_at: r.deleted_at,
+          assignee_id: r.assignee_id ?? null,
           assignee_name: assignee?.full_name ?? null,
           entity_count: 0,
         };
@@ -106,33 +121,46 @@ export default async function AdminDashboardPage() {
   }
 
   const cards = [
-    { label: "Today's Applications", value: todayCount ?? 0, className: "bg-slate-200/90" },
-    { label: "Pending", value: pendingCount ?? 0, className: "bg-amber-50/95 ring-1 ring-amber-200/60" },
-    { label: "In progress", value: inProgressCount ?? 0, className: "bg-sky-100/90" },
-    { label: "Documents sent", value: documentsSentCount ?? 0, className: "bg-violet-100/90" },
-    { label: "Completed", value: completedCount ?? 0, className: "bg-emerald-100/90" },
+    {
+      label: "Today's Applications",
+      value: todayCount ?? 0,
+      className: "bg-slate-200/90",
+      preset: "today" as const,
+    },
+    {
+      label: "Pending",
+      value: pendingCount ?? 0,
+      className: "bg-amber-50/95 ring-1 ring-amber-200/60",
+      preset: "pending" as const,
+    },
+    {
+      label: "In progress",
+      value: inProgressCount ?? 0,
+      className: "bg-sky-100/90",
+      preset: "in_progress" as const,
+    },
+    {
+      label: "Documents sent",
+      value: documentsSentCount ?? 0,
+      className: "bg-violet-100/90",
+      preset: "documents_sent" as const,
+    },
+    {
+      label: "Completed",
+      value: completedCount ?? 0,
+      className: "bg-emerald-100/90",
+      preset: "completed" as const,
+    },
   ];
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {cards.map((c) => (
-          <Card key={c.label} className={`border-0 p-5 ${c.className}`}>
-            <p className="text-sm font-medium text-slate-700">{c.label}</p>
-            <p className="mt-3 text-3xl font-semibold tabular-nums text-[#0c2742]">{c.value}</p>
-          </Card>
-        ))}
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold text-[#0c2742]">Applications</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Submissions from the public form. Open a row to review full application details.
-        </p>
-        <div className="mt-6">
-          <AdminApplicationsTable rows={rows} />
-        </div>
-      </div>
+      <AdminDashboardStatFilters
+        cards={cards}
+        rows={rows}
+        todayStartIso={todayStartIso}
+        assignableUsers={assignableUsers}
+      />
     </div>
   );
 }

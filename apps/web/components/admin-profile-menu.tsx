@@ -1,22 +1,23 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { updatePortalProfileName } from "@/lib/admin/profile-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PortalModal } from "@/components/ui/portal-modal";
 
 type Props = {
   fullName: string;
 };
 
 export function AdminProfileMenu({ fullName }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(updatePortalProfileName, null);
 
   useEffect(() => {
     if (state?.ok) {
-      dialogRef.current?.close();
+      setOpen(false);
     }
   }, [state?.ok]);
 
@@ -26,18 +27,17 @@ export function AdminProfileMenu({ fullName }: Props) {
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          dialogRef.current?.showModal();
+          setOpen(true);
         }}
-        className="w-full rounded-md px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
+        className="w-full border-b border-slate-100 px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
       >
         Edit profile
       </button>
 
-      <dialog
-        ref={dialogRef}
-        className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg backdrop:bg-black/40"
-      >
-        <h2 className="text-lg font-semibold text-[#0c2742]">Edit profile</h2>
+      <PortalModal open={open} onClose={() => setOpen(false)} aria-labelledby="profile-dialog-title">
+        <h2 id="profile-dialog-title" className="text-lg font-semibold text-[#0c2742]">
+          Edit profile
+        </h2>
         <p className="mt-1 text-sm text-slate-600">Your email is your sign-in ID and cannot be changed here.</p>
         <form action={formAction} className="mt-6 space-y-4">
           <div className="space-y-2">
@@ -60,7 +60,7 @@ export function AdminProfileMenu({ fullName }: Props) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => dialogRef.current?.close()}
+              onClick={() => setOpen(false)}
               disabled={pending}
             >
               Cancel
@@ -70,7 +70,7 @@ export function AdminProfileMenu({ fullName }: Props) {
             </Button>
           </div>
         </form>
-      </dialog>
+      </PortalModal>
     </>
   );
 }

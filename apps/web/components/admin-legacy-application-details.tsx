@@ -183,7 +183,7 @@ export function AdminLegacyApplicationDetails({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm">
+      <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
         <p className="font-medium">No full JSON snapshot on file</p>
         <p className="mt-1 text-amber-900/90">
           The complete form copy (<code className="rounded bg-amber-100/80 px-1">applications.form_submission</code>) was
@@ -204,7 +204,7 @@ export function AdminLegacyApplicationDetails({
         )}
       </div>
 
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader title="Contact" subtitle="Primary applicant — from applications row" />
         </CardHeader>
@@ -224,7 +224,7 @@ export function AdminLegacyApplicationDetails({
       </Card>
 
       {entities.map((entity, i) => (
-        <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader title={`Entity ${i + 1}`} subtitle="Portfolio & complexity — from application_entities" />
           </CardHeader>
@@ -292,7 +292,7 @@ export function AdminLegacyApplicationDetails({
         </Card>
       ))}
 
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
         <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
           <AdminSectionHeader
             title="Services & commencement"
@@ -320,7 +320,7 @@ export function AdminLegacyApplicationDetails({
 
       {hasKyc ? (
         kycIndividuals.map((ind, i) => (
-          <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+          <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
             <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
               <AdminSectionHeader
                 title={`Know Your Customer (KYC) – Individual ${i + 1}`}
@@ -357,7 +357,7 @@ export function AdminLegacyApplicationDetails({
           </Card>
         ))
       ) : (
-        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader title="Individuals (KYC)" subtitle="No rows in application_individuals" />
           </CardHeader>
@@ -371,7 +371,7 @@ export function AdminLegacyApplicationDetails({
       )}
 
       {hasAdviserCols && adviserRelational ? (
-        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader
               title="Investment adviser & document preferences"
@@ -418,7 +418,7 @@ export function AdminLegacyApplicationDetails({
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 shadow-sm">
+        <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
             <AdminSectionHeader
               title="Investment adviser & document preferences"

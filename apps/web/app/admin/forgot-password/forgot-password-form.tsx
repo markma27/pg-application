@@ -40,7 +40,11 @@ export function ForgotPasswordForm() {
             className="h-11 border-slate-300 bg-white"
           />
         </div>
-        <Button type="submit" disabled={pending || state?.ok} className="h-11 w-full">
+        <Button
+          type="submit"
+          disabled={pending || state?.ok}
+          className="h-11 w-full rounded-lg border-0 bg-emerald-700 text-base font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+        >
           {pending ? "Sending…" : "Send reset link"}
         </Button>
       </form>
