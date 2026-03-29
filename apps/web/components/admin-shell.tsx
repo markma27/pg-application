@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
+  Calculator,
   ChevronDown,
   ClipboardList,
   FileBarChart,
@@ -16,13 +18,49 @@ import { AdminIdleLogout } from "@/components/admin-idle-logout";
 import { AdminProfileMenu } from "@/components/admin-profile-menu";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+const topNavItems = [
   { href: "/admin", label: "Applications", icon: ClipboardList },
+  { href: "/admin/report", label: "Report", icon: FileBarChart },
+  { href: "/admin/pricing-calculator", label: "Pricing Calculator", icon: Calculator },
+] as const;
+
+const bottomNavItems = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
-  { href: "/admin/report", label: "Report", icon: FileBarChart },
   { href: "/admin/settings", label: "Settings", icon: Settings },
-];
+] as const;
+
+function navLinkActive(href: string, pathname: string): boolean {
+  if (href === "/admin") {
+    return pathname === "/admin" || pathname.startsWith("/admin/applications");
+  }
+  if (href === "/admin/report") {
+    return pathname === "/admin/report" || pathname === "/admin/report/";
+  }
+  if (href === "/admin/pricing-calculator") {
+    return pathname === "/admin/pricing-calculator" || pathname.startsWith("/admin/pricing-calculator/");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function NavLink({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
+  const pathname = usePathname();
+  const active = navLinkActive(href, pathname);
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-colors",
+        active
+          ? "bg-white text-[#1e4a7a]"
+          : "text-[#334155] hover:bg-white/70 hover:text-[#0c2742]",
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+      {label}
+    </Link>
+  );
+}
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -38,7 +76,6 @@ export function AdminShell({
   children: React.ReactNode;
   profile: { fullName: string; email: string };
 }) {
-  const pathname = usePathname();
   const router = useRouter();
 
   async function signOut() {
@@ -63,28 +100,18 @@ export function AdminShell({
             />
           </div>
         </Link>
-        <nav className="flex flex-col gap-0.5">
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const active =
-              href === "/admin"
-                ? pathname === "/admin" || pathname.startsWith("/admin/applications")
-                : pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-colors",
-                  active
-                    ? "bg-white text-[#1e4a7a]"
-                    : "text-[#334155] hover:bg-white/70 hover:text-[#0c2742]",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-                {label}
-              </Link>
-            );
-          })}
+        <nav className="flex min-h-0 flex-1 flex-col">
+          <div className="flex flex-col gap-0.5">
+            {topNavItems.map(({ href, label, icon }) => (
+              <NavLink key={href} href={href} label={label} icon={icon} />
+            ))}
+          </div>
+
+          <div className="mt-auto flex flex-col gap-0.5 border-t border-[#dce6f7] pt-4">
+            {bottomNavItems.map(({ href, label, icon }) => (
+              <NavLink key={href} href={href} label={label} icon={icon} />
+            ))}
+          </div>
         </nav>
       </aside>
 

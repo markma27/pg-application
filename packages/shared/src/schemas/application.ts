@@ -163,7 +163,6 @@ export interface ApplicationAssessment {
   indicativePricingAvailable: boolean;
   annualSubtotal: number;
   onboardingSubtotal: number;
-  groupDiscountAmount: number;
   totalEstimate: number | null;
   requiresJmFollowUp: boolean;
   requiresManualReview: boolean;

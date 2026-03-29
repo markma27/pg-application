@@ -78,6 +78,7 @@ export default function HomePage() {
               width={364}
               height={112}
               className="h-auto w-full max-w-[358px] object-contain"
+              priority
             />
             <p className="mt-3 text-xs text-slate-500">PortfolioGuardian is a Jaquillard Minns Business</p>
           </div>

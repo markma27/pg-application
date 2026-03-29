@@ -1,0 +1,6 @@
+# Never emit or commit JS/declaration artifacts next to .ts sources — bundlers may
+# resolve *.js before *.ts and run stale logic (e.g. assessment without PricingModel).
+dist/
+src/**/*.js
+src/**/*.d.ts
+src/**/*.d.ts.map

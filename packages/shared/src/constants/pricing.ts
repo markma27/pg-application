@@ -2,16 +2,14 @@ export const ENTITY_BASE_FEES = {
   individual: 1800,
   company: 1800,
   trust: 1800,
-  smsf: 2000,
+  smsf: 1800,
 } as const;
 
 export const COMPLEXITY_POINTS = {
   listedInvestment: 1,
-  unlistedInvestment: 5,
+  unlistedInvestment: 3,
   investmentProperty: 6,
-  wrapAccount: 3,
-  crypto: 5,
-  foreignInvestments: 3,
+  wrapAccount: 5,
 } as const;
 
 export const COMPLEXITY_BANDS = [

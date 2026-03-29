@@ -98,7 +98,7 @@ export async function persistApplicationToSupabase(params: {
     application_id: applicationId,
     pg_annual_subtotal: assessment.annualSubtotal,
     pg_onboarding_subtotal: assessment.onboardingSubtotal,
-    group_discount_amount: assessment.groupDiscountAmount,
+    group_discount_amount: 0,
     pg_total_estimate: assessment.totalEstimate,
     contains_jm_entities: containsJmEntities,
     manual_review_required: assessment.requiresManualReview,

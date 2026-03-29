@@ -7,10 +7,7 @@ import { assignApplicationToAdmin } from "@/lib/admin/assign-application-actions
 import { Input } from "@/components/ui/input";
 import { ApplicationStatusBadges } from "@/components/admin-application-status-badges";
 import { normalizeWorkflowStatus, type WorkflowStatus } from "@/lib/admin/application-workflow-status";
-
-/** Matches Users `PortalRoleSelect` / application form select styling; height stays compact for table rows. */
-const assigneeSelectClass =
-  "flex h-9 w-full appearance-none rounded-lg border border-slate-300 bg-white py-1.5 pl-4 pr-10 text-sm text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:border-emerald-600 focus-visible:ring-emerald-600 [&::-ms-expand]:hidden disabled:cursor-not-allowed disabled:opacity-60";
+import { NATIVE_SELECT_CLASS } from "@/lib/native-select-styles";
 
 export type AdminAssignableUser = {
   id: string;
@@ -212,7 +209,7 @@ export function AdminApplicationsTable({
                             e.stopPropagation();
                             onAssigneeChange(r.id, e.target.value);
                           }}
-                          className={assigneeSelectClass}
+                          className={NATIVE_SELECT_CLASS}
                         >
                           <option value="">— Unassigned —</option>
                           {assignableUsers.map((u) => (

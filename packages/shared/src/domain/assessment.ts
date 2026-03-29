@@ -1,12 +1,6 @@
-import {
-  COMPLEXITY_BANDS,
-  COMPLEXITY_POINTS,
-  ENTITY_BASE_FEES,
-  JM_ONLY_SERVICES,
-  ONBOARDING_FEES,
-  OTHER_ADD_ONS,
-  REPORTING_ADD_ONS,
-} from "../constants/pricing";
+import { JM_ONLY_SERVICES } from "../constants/pricing";
+import type { PricingModel } from "./pricing-model";
+import { createDefaultPricingModel } from "./pricing-model";
 import type {
   ApplicationAssessment,
   ApplicationInput,
@@ -16,25 +10,17 @@ import type {
   RoutingOutcome,
 } from "../schemas/application";
 
-function calculateComplexityPoints(entity: EntityInput) {
+function calculateComplexityPoints(entity: EntityInput, model: PricingModel) {
+  const p = model.complexityPoints;
   return (
-    entity.listedInvestmentCount * COMPLEXITY_POINTS.listedInvestment +
-    entity.unlistedInvestmentCount * COMPLEXITY_POINTS.unlistedInvestment +
-    entity.propertyCount * COMPLEXITY_POINTS.investmentProperty +
-    entity.wrapCount * COMPLEXITY_POINTS.wrapAccount +
-    (entity.hasCrypto ? COMPLEXITY_POINTS.crypto : 0) +
-    (entity.hasForeignInvestments ? COMPLEXITY_POINTS.foreignInvestments : 0)
+    entity.listedInvestmentCount * p.listedInvestment +
+    entity.unlistedInvestmentCount * p.unlistedInvestment +
+    entity.propertyCount * p.investmentProperty +
+    entity.wrapCount * p.wrapAccount
   );
 }
 
-function deriveGroupDiscount(pgEntityCount: number, annualSubtotal: number) {
-  if (pgEntityCount <= 2) return 0;
-  if (pgEntityCount === 3) return annualSubtotal * 0.05;
-  if (pgEntityCount <= 5) return annualSubtotal * 0.1;
-  return 0;
-}
-
-function assessEntity(entity: EntityInput): EntityAssessment {
+function assessEntity(entity: EntityInput, model: PricingModel): EntityAssessment {
   const jmReasons: string[] = [];
   const reviewReasons: string[] = [];
 
@@ -50,8 +36,8 @@ function assessEntity(entity: EntityInput): EntityAssessment {
     jmReasons.push("Customised reporting requires JM or manual review.");
   }
 
-  const complexityPoints = calculateComplexityPoints(entity);
-  const complexityBand = COMPLEXITY_BANDS.find(
+  const complexityPoints = calculateComplexityPoints(entity, model);
+  const complexityBand = model.complexityBands.find(
     (band) => complexityPoints >= band.min && complexityPoints <= band.max,
   );
 
@@ -78,12 +64,14 @@ function assessEntity(entity: EntityInput): EntityAssessment {
     pricingStatus = "manual_review";
   } else {
     const baseFee =
-      ENTITY_BASE_FEES[entity.entityType as keyof typeof ENTITY_BASE_FEES] ?? null;
+      model.entityBaseFees[entity.entityType as keyof PricingModel["entityBaseFees"]] ?? null;
     const reportingAddOns = entity.serviceCodes.reduce((sum, serviceCode) => {
-      return sum + (REPORTING_ADD_ONS[serviceCode as keyof typeof REPORTING_ADD_ONS] ?? 0);
+      return (
+        sum + (model.reportingAddOns[serviceCode as keyof PricingModel["reportingAddOns"]] ?? 0)
+      );
     }, 0);
     const serviceAddOns = entity.serviceCodes.reduce((sum, serviceCode) => {
-      return sum + (OTHER_ADD_ONS[serviceCode as keyof typeof OTHER_ADD_ONS] ?? 0);
+      return sum + (model.otherAddOns[serviceCode as keyof PricingModel["otherAddOns"]] ?? 0);
     }, 0);
 
     if (baseFee === null || !complexityBand) {
@@ -93,7 +81,8 @@ function assessEntity(entity: EntityInput): EntityAssessment {
     } else {
       annualFeeEstimate = baseFee + complexityBand.annualFee + reportingAddOns + serviceAddOns;
       onboardingFeeEstimate =
-        ONBOARDING_FEES[entity.portfolioStatus as keyof typeof ONBOARDING_FEES] ?? null;
+        model.onboardingFees[entity.portfolioStatus as keyof PricingModel["onboardingFees"]] ??
+        null;
 
       if (onboardingFeeEstimate === null) {
         routingOutcome = "manual_review";
@@ -118,8 +107,11 @@ function assessEntity(entity: EntityInput): EntityAssessment {
   };
 }
 
-export function assessApplication(input: ApplicationInput): ApplicationAssessment {
-  const entityAssessments = input.entities.map(assessEntity);
+export function assessApplication(
+  input: ApplicationInput,
+  pricingModel: PricingModel = createDefaultPricingModel(),
+): ApplicationAssessment {
+  const entityAssessments = input.entities.map((e) => assessEntity(e, pricingModel));
   const pgEntities = entityAssessments.filter((entity) => entity.routingOutcome === "pg_fit");
   const requiresJmFollowUp = entityAssessments.some((entity) => entity.routingOutcome === "jm_fit");
   const requiresManualReview = entityAssessments.some(
@@ -134,8 +126,6 @@ export function assessApplication(input: ApplicationInput): ApplicationAssessmen
     (sum, entity) => sum + (entity.onboardingFeeEstimate ?? 0),
     0,
   );
-  const groupDiscountAmount =
-    pgEntities.length >= 6 ? 0 : deriveGroupDiscount(pgEntities.length, annualSubtotal);
 
   const overallOutcome: RoutingOutcome = requiresManualReview
     ? "manual_review"
@@ -155,7 +145,7 @@ export function assessApplication(input: ApplicationInput): ApplicationAssessmen
     );
 
   const totalEstimate = indicativePricingAvailable
-    ? annualSubtotal + onboardingSubtotal - groupDiscountAmount
+    ? annualSubtotal + onboardingSubtotal
     : null;
 
   return {
@@ -163,7 +153,6 @@ export function assessApplication(input: ApplicationInput): ApplicationAssessmen
     indicativePricingAvailable,
     annualSubtotal,
     onboardingSubtotal,
-    groupDiscountAmount,
     totalEstimate,
     requiresJmFollowUp,
     requiresManualReview: requiresManualReview || pgEntities.length >= 6,
