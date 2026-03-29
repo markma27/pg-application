@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 type Props = {
   errorKey?: string;
   errorDetail?: string;
+  infoKey?: string;
 };
 
 const errorMessages: Record<string, string> = {
@@ -19,7 +20,12 @@ const errorMessages: Record<string, string> = {
   link: "The link could not be completed.",
 };
 
-export function AdminLoginForm({ errorKey, errorDetail }: Props) {
+const infoMessages: Record<string, string> = {
+  password_set: "Your password was updated. Sign in with your new password.",
+  idle_timeout: "You were signed out after 15 minutes of inactivity.",
+};
+
+export function AdminLoginForm({ errorKey, errorDetail, infoKey }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,6 +41,8 @@ export function AdminLoginForm({ errorKey, errorDetail }: Props) {
       return `${base} ${errorDetail}`;
     }
   })();
+
+  const infoBanner = infoKey ? (infoMessages[infoKey] ?? null) : null;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,6 +88,12 @@ export function AdminLoginForm({ errorKey, errorDetail }: Props) {
           Client Application
         </h1>
         <p className="mt-1 text-center text-sm text-slate-500">Admin Portal</p>
+
+        {infoBanner && !banner && !formError ? (
+          <p className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            {infoBanner}
+          </p>
+        ) : null}
 
         {(banner || formError) && (
           <p className="mt-6 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">

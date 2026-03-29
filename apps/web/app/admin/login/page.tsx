@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminLoginForm } from "./login-form";
 
 type Props = {
-  searchParams: Promise<{ error?: string; detail?: string }>;
+  searchParams: Promise<{ error?: string; detail?: string; info?: string }>;
 };
 
 export default async function AdminLoginPage({ searchParams }: Props) {
@@ -18,5 +18,5 @@ export default async function AdminLoginPage({ searchParams }: Props) {
     }
   }
 
-  return <AdminLoginForm errorKey={sp.error} errorDetail={sp.detail} />;
+  return <AdminLoginForm errorKey={sp.error} errorDetail={sp.detail} infoKey={sp.info} />;
 }

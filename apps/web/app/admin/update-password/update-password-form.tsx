@@ -1,15 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { recordPortalLogin } from "@/lib/admin/users-actions";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function UpdatePasswordForm() {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [ready, setReady] = useState(false);
@@ -50,9 +47,8 @@ export function UpdatePasswordForm() {
         setError(upErr.message);
         return;
       }
-      await recordPortalLogin();
-      router.push("/admin");
-      router.refresh();
+      await supabase.auth.signOut();
+      window.location.assign("/admin/login?info=password_set");
     } finally {
       setLoading(false);
     }

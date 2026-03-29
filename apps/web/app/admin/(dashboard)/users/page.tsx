@@ -1,5 +1,33 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service";
 import { UsersClient, type PortalUserRow } from "./users-client";
+
+/** `email_confirmed_at` is set after the invite / recovery flow completes — until then, show pending. */
+async function emailConfirmedByUserId(ids: string[]): Promise<Map<string, boolean>> {
+  const map = new Map<string, boolean>();
+  if (ids.length === 0) return map;
+
+  let service;
+  try {
+    service = createServiceRoleClient();
+  } catch {
+    for (const id of ids) map.set(id, true);
+    return map;
+  }
+
+  await Promise.all(
+    ids.map(async (id) => {
+      const { data, error } = await service.auth.admin.getUserById(id);
+      if (error || !data?.user) {
+        map.set(id, false);
+        return;
+      }
+      map.set(id, Boolean(data.user.email_confirmed_at));
+    }),
+  );
+
+  return map;
+}
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -27,7 +55,18 @@ export default async function AdminUsersPage() {
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  const users = (rows ?? []) as PortalUserRow[];
+  const baseRows = rows ?? [];
+  const confirmedMap = await emailConfirmedByUserId(baseRows.map((r) => r.id));
+
+  const users: PortalUserRow[] = baseRows.map((r) => ({
+    id: r.id,
+    email: r.email,
+    full_name: r.full_name,
+    role: r.role,
+    created_at: r.created_at,
+    last_login_at: r.last_login_at,
+    status: confirmedMap.get(r.id) ? "active" : "pending",
+  }));
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-8">

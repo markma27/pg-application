@@ -27,6 +27,7 @@ export type PortalUserRow = {
   role: string;
   created_at: string;
   last_login_at: string | null;
+  status: "active" | "pending";
 };
 
 type Props = {
@@ -57,6 +58,24 @@ function formatLastLogin(iso: string | null): string {
     timeZone: PORTAL_TIMEZONE,
     hour12: true,
   });
+}
+
+function StatusBadge({ status }: { status: PortalUserRow["status"] }) {
+  if (status === "active") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+        active
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900"
+      title="Invitation sent — not accepted yet"
+    >
+      pending
+    </span>
+  );
 }
 
 type RoleConfirm = {
@@ -298,7 +317,7 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
       )}
 
       <div className="overflow-x-auto overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
             <tr>
               <th className="px-4 py-3">Name</th>
@@ -306,6 +325,7 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Added</th>
               <th className="px-4 py-3">Last login</th>
+              <th className="px-4 py-3">Status</th>
               {isAdmin ? <th className="px-4 py-3 text-right">Actions</th> : null}
             </tr>
           </thead>
@@ -333,6 +353,9 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
                 </td>
                 <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatAddedDate(u.created_at)}</td>
                 <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatLastLogin(u.last_login_at)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <StatusBadge status={u.status} />
+                </td>
                 {isAdmin ? (
                   <td className="px-4 py-3 text-right">
                     {u.id !== currentUserId ? (

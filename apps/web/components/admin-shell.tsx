@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { AdminIdleLogout } from "@/components/admin-idle-logout";
 import { AdminProfileMenu } from "@/components/admin-profile-menu";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ export function AdminShell({
 
   return (
     <div className="h-dvh overflow-hidden bg-[#f4f6f9] font-[family-name:var(--font-montserrat)]">
+      <AdminIdleLogout />
       <aside className="fixed inset-y-0 left-0 z-30 flex w-[198px] flex-col overflow-y-auto border-r border-[#dce6f7] bg-[#eef4ff] px-2 py-5">
         <Link href="/admin" className="mb-6 flex w-full shrink-0 justify-center">
           <div className="relative h-[86px] w-full max-w-[288px]">
