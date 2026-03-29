@@ -2,10 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
+import { ChevronDown } from "lucide-react";
 import { assignApplicationToAdmin } from "@/lib/admin/assign-application-actions";
 import { Input } from "@/components/ui/input";
 import { ApplicationStatusBadges } from "@/components/admin-application-status-badges";
 import { normalizeWorkflowStatus, type WorkflowStatus } from "@/lib/admin/application-workflow-status";
+
+/** Matches Users `PortalRoleSelect` / application form select styling; height stays compact for table rows. */
+const assigneeSelectClass =
+  "flex h-9 w-full appearance-none rounded-lg border border-slate-300 bg-white py-1.5 pl-4 pr-10 text-sm text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:border-emerald-600 focus-visible:ring-emerald-600 [&::-ms-expand]:hidden disabled:cursor-not-allowed disabled:opacity-60";
 
 export type AdminAssignableUser = {
   id: string;
@@ -198,23 +203,29 @@ export function AdminApplicationsTable({
                     onKeyDown={(e) => e.stopPropagation()}
                   >
                     {canAssign ? (
-                      <select
-                        aria-label={`Assignee for ${r.reference}`}
-                        disabled={isPending || !!r.deleted_at}
-                        value={r.assignee_id ?? ""}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          onAssigneeChange(r.id, e.target.value);
-                        }}
-                        className="h-9 w-full max-w-[220px] rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 shadow-none focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <option value="">— Unassigned —</option>
-                        {assignableUsers.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.full_name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative w-full max-w-[220px]">
+                        <select
+                          aria-label={`Assignee for ${r.reference}`}
+                          disabled={isPending || !!r.deleted_at}
+                          value={r.assignee_id ?? ""}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            onAssigneeChange(r.id, e.target.value);
+                          }}
+                          className={assigneeSelectClass}
+                        >
+                          <option value="">— Unassigned —</option>
+                          {assignableUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.full_name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          aria-hidden
+                          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                        />
+                      </div>
                     ) : (
                       <span>{r.assignee_name ?? "—"}</span>
                     )}
