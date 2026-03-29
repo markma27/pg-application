@@ -1,4 +1,7 @@
-import { finalizeApplicationPortfolioUploads, portfolioFinalizeRequestSchema } from "@pg/submission";
+import {
+  finalizeApplicationPortfolioUploads,
+  portfolioFinalizeRequestSchema,
+} from "@pg/submission/portfolio-routes";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { consumePortfolioUploadRateLimit } from "@/lib/rate-limit";

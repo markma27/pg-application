@@ -33,6 +33,19 @@ function resolveMonorepoRoot() {
 }
 
 const monorepoRoot = resolveMonorepoRoot();
+const isVercel = process.env.VERCEL === "1";
+
+/**
+ * On Vercel (Linux glibc), only `@img/sharp-*linux-x64*` / `sharp-libvips-linux-x64` are needed.
+ * NFT often still lists darwin, win32, arm, wasm, musl — drop those entries from *.nft.json.
+ */
+function shouldKeepImgSharpOnVercel(relFromNft) {
+  const raw = relFromNft.replace(/\\/g, "/");
+  if (!raw.includes("node_modules/@img/")) return true;
+  if (raw.includes("linuxmusl")) return false;
+  if (raw.includes("linux-x64")) return true;
+  return false;
+}
 
 function walk(dir, out = []) {
   for (const name of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -62,6 +75,10 @@ function shouldKeepTraceFile(nftPath, relFromNft) {
     if (rel.startsWith("apps/web/components/")) return false;
     if (rel.startsWith("apps/web/app/")) return false;
     if (rel === "apps/web/components.json") return false;
+  }
+
+  if (isVercel && !shouldKeepImgSharpOnVercel(relFromNft)) {
+    return false;
   }
 
   return true;

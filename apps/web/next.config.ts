@@ -41,26 +41,34 @@ function resolveMonorepoRoot(): string {
 
 const monorepoRoot = resolveMonorepoRoot();
 
-/** Vercel Linux builds only need one sharp/libvips arch; shipping all optional @img/* targets blows past the 250MB serverless limit. */
-const vercelSharpTraceExcludes =
+/**
+ * Paths are relative to `outputFileTracingRoot` (monorepo root). Using `../../node_modules`
+ * from apps/web was unreliable; wrong excludes let every @img/sharp-* platform into the bundle.
+ */
+const vercelSharpTraceExcludeBase =
   process.env.VERCEL === "1"
     ? ([
-        "../../node_modules/@img/sharp-darwin-*/**/*",
-        "../../node_modules/@img/sharp-libvips-darwin-*/**/*",
-        "../../node_modules/@img/sharp-linux-arm*/**/*",
-        "../../node_modules/@img/sharp-libvips-linux-arm*/**/*",
-        "../../node_modules/@img/sharp-linux-ppc64/**/*",
-        "../../node_modules/@img/sharp-libvips-linux-ppc64/**/*",
-        "../../node_modules/@img/sharp-linux-riscv64/**/*",
-        "../../node_modules/@img/sharp-libvips-linux-riscv64/**/*",
-        "../../node_modules/@img/sharp-linux-s390x/**/*",
-        "../../node_modules/@img/sharp-libvips-linux-s390x/**/*",
-        "../../node_modules/@img/sharp-linuxmusl-*/**/*",
-        "../../node_modules/@img/sharp-libvips-linuxmusl-*/**/*",
-        "../../node_modules/@img/sharp-wasm32/**/*",
-        "../../node_modules/@img/sharp-win32-*/**/*",
+        "node_modules/@img/sharp-darwin-*/**/*",
+        "node_modules/@img/sharp-libvips-darwin-*/**/*",
+        "node_modules/@img/sharp-linux-arm*/**/*",
+        "node_modules/@img/sharp-libvips-linux-arm*/**/*",
+        "node_modules/@img/sharp-linux-ppc64/**/*",
+        "node_modules/@img/sharp-libvips-linux-ppc64/**/*",
+        "node_modules/@img/sharp-linux-riscv64/**/*",
+        "node_modules/@img/sharp-libvips-linux-riscv64/**/*",
+        "node_modules/@img/sharp-linux-s390x/**/*",
+        "node_modules/@img/sharp-libvips-linux-s390x/**/*",
+        "node_modules/@img/sharp-linuxmusl-*/**/*",
+        "node_modules/@img/sharp-libvips-linuxmusl-*/**/*",
+        "node_modules/@img/sharp-wasm32/**/*",
+        "node_modules/@img/sharp-win32-*/**/*",
       ] as const)
     : [];
+
+/** Same globs from `apps/web` (NFT sometimes emits `../../node_modules/...`). */
+const vercelSharpTraceExcludes = vercelSharpTraceExcludeBase.flatMap((p) =>
+  p.startsWith("node_modules/") ? [p, `../../${p}`] : [p],
+);
 
 // `loadEnvConfig` from @next/env can miss root `.env.local` in monorepos; load explicitly so
 // `process.env` is populated before the `env` block (required for client-side NEXT_PUBLIC_*).
@@ -86,7 +94,8 @@ const nextConfig: NextConfig = {
    * routes only need `@pg/submission` subpaths.
    */
   outputFileTracingExcludes: {
-    "*": ["../api/**/*", ...vercelSharpTraceExcludes],
+    /** `apps/api/*` when tracing root is repo root; `../api/*` when resolved from `apps/web`. */
+    "*": ["apps/api/**/*", "../api/**/*", ...vercelSharpTraceExcludes],
   },
   /** Server actions read the logo from disk for Resend CID attachments; ensure it is deployed. */
   outputFileTracingIncludes: {

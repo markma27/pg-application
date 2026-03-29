@@ -9,12 +9,6 @@ import {
   type IndividualDbRow,
 } from "@/components/admin-legacy-application-details";
 import {
-  AdminReviewFieldGrid,
-  AdminSectionHeader,
-  ReviewRow,
-  ReviewRowAlways,
-} from "@/components/admin-application-review-layout";
-import {
   AdminApplicationAuditSection,
   type ApplicationAuditEventRow,
 } from "@/components/admin-application-audit-section";
@@ -24,7 +18,6 @@ import { AdminApplicationStatusFlow } from "@/components/admin-application-statu
 import type { PortfolioDocRow } from "@/components/admin-portfolio-documents";
 import { createClient } from "@/lib/supabase/server";
 import { updateApplicationWorkflowStatus } from "./actions";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 type EntityServiceRow = {
   id: string;
@@ -105,13 +98,6 @@ function outcomeLabel(outcome: string) {
   }
 }
 
-function formatMoney(v: string | number | null | undefined) {
-  if (v == null || v === "") return "—";
-  const n = typeof v === "string" ? parseFloat(v) : v;
-  if (Number.isNaN(n)) return "—";
-  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 export default async function AdminApplicationDetailPage({
   params,
 }: Readonly<{
@@ -167,12 +153,6 @@ export default async function AdminApplicationDetailPage({
     )
     .eq("application_id", id)
     .order("entity_name");
-
-  const { data: pricing } = await supabase
-    .from("application_pricing_summary")
-    .select("*")
-    .eq("application_id", id)
-    .maybeSingle();
 
   const { data: kycRows } = await supabase
     .from("application_individuals")
@@ -268,31 +248,11 @@ export default async function AdminApplicationDetailPage({
       </div>
 
       {submission.success ? (
-        <>
-          <AdminFormSubmissionDetails
-            data={submission.data}
-            applicationId={id}
-            portfolioDocumentsByEntityId={entityPortfolioDocs}
-          />
-          {entityRows.length > 0 ? (
-            <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-              <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
-                <AdminSectionHeader title="Entity routing (system)" />
-              </CardHeader>
-              <CardContent className="px-6 py-4">
-                <AdminReviewFieldGrid>
-                  {entityRows.map((e) => (
-                    <ReviewRow
-                      key={e.id}
-                      label={e.entity_name}
-                      value={outcomeLabel(e.routing_outcome)}
-                    />
-                  ))}
-                </AdminReviewFieldGrid>
-              </CardContent>
-            </Card>
-          ) : null}
-        </>
+        <AdminFormSubmissionDetails
+          data={submission.data}
+          applicationId={id}
+          portfolioDocumentsByEntityId={entityPortfolioDocs}
+        />
       ) : (
         <AdminLegacyApplicationDetails
           primaryContactName={app.primary_contact_name}
@@ -308,55 +268,6 @@ export default async function AdminApplicationDetailPage({
           adviserRelational={adviserRelational}
         />
       )}
-
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
-          <AdminSectionHeader
-            title="Indicative pricing"
-            subtitle="GST exclusive · from assessment at submission"
-          />
-        </CardHeader>
-        <CardContent className="px-6 py-4">
-          {pricing ? (
-            <AdminReviewFieldGrid>
-              <ReviewRowAlways label="Annual subtotal" value={formatMoney(pricing.pg_annual_subtotal)} />
-              <ReviewRowAlways label="Onboarding subtotal" value={formatMoney(pricing.pg_onboarding_subtotal)} />
-              <ReviewRowAlways label="Group discount" value={formatMoney(pricing.group_discount_amount)} />
-              <ReviewRowAlways label="Total estimate" value={formatMoney(pricing.pg_total_estimate)} />
-              <ReviewRowAlways
-                label="Contains JM entities"
-                value={pricing.contains_jm_entities ? "Yes" : "No"}
-              />
-              <ReviewRowAlways
-                label="Manual review required"
-                value={pricing.manual_review_required ? "Yes" : "No"}
-              />
-            </AdminReviewFieldGrid>
-          ) : (
-            <p className="py-2 text-sm text-slate-500">No pricing summary stored for this application.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
-          <AdminSectionHeader title="Notifications" subtitle="Email confirmation to operations" />
-        </CardHeader>
-        <CardContent className="px-6 py-4">
-          <AdminReviewFieldGrid>
-            <ReviewRowAlways label="Email sent" value={app.notification_email_sent ? "Yes" : "No"} />
-            {app.notification_email_sent_at ? (
-              <ReviewRow
-                label="Sent at"
-                value={new Date(app.notification_email_sent_at).toLocaleString()}
-              />
-            ) : null}
-            {app.notification_email_error ? (
-              <ReviewRowAlways label="Error" value={app.notification_email_error} />
-            ) : null}
-          </AdminReviewFieldGrid>
-        </CardContent>
-      </Card>
 
       <AdminApplicationAuditSection
         events={auditEvents}

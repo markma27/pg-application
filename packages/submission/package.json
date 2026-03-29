@@ -18,6 +18,10 @@
     "./submit": {
       "types": "./dist/services/submission.service.d.ts",
       "import": "./dist/services/submission.service.js"
+    },
+    "./portfolio-routes": {
+      "types": "./dist/portfolio-routes.d.ts",
+      "import": "./dist/portfolio-routes.js"
     }
   },
   "scripts": {
