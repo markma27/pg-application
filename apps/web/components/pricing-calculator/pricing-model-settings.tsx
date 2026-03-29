@@ -17,42 +17,58 @@ export function PricingModelSettings({
   model,
   setPricingModel,
   onSave,
+  saveBusy = false,
   saveStatus = "idle",
+  saveError = null,
+  persistenceHint,
 }: {
   model: PricingModel;
   setPricingModel: Dispatch<SetStateAction<PricingModel>>;
-  onSave?: () => void;
+  onSave?: () => void | Promise<void>;
+  saveBusy?: boolean;
   saveStatus?: "idle" | "saved";
+  saveError?: string | null;
+  persistenceHint?: string;
 }) {
+  const hint =
+    persistenceHint ??
+    "Adjust numbers to explore scenarios. The Calculate tab updates live. Use Save when available to persist the shared model.";
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-600">
-          Adjust numbers to explore scenarios. The Calculate tab updates live. Use Save to persist this
-          model in your browser.
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {onSave && (
+        <p className="text-sm text-slate-600">{hint}</p>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {onSave && (
+              <button
+                type="button"
+                disabled={saveBusy}
+                onClick={() => void onSave()}
+                className={cn(
+                  "cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                  saveBusy && "cursor-wait opacity-80",
+                  saveStatus === "saved"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                    : "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800",
+                )}
+              >
+                {saveBusy ? "Saving…" : saveStatus === "saved" ? "Saved" : "Save"}
+              </button>
+            )}
             <button
               type="button"
-              onClick={onSave}
-              className={cn(
-                "cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                saveStatus === "saved"
-                  ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                  : "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800",
-              )}
+              onClick={() => setPricingModel(createDefaultPricingModel())}
+              className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
             >
-              {saveStatus === "saved" ? "Saved" : "Save"}
+              Reset all to defaults
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setPricingModel(createDefaultPricingModel())}
-            className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
-          >
-            Reset all to defaults
-          </button>
+          </div>
+          {saveError ? (
+            <p className="max-w-md text-right text-xs text-red-600" role="alert">
+              {saveError}
+            </p>
+          ) : null}
         </div>
       </div>
 

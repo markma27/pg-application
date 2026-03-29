@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   assessApplication,
   createDefaultPricingModel,
@@ -9,27 +9,18 @@ import {
   type EntityInput,
   type PricingModel,
 } from "@pg/shared";
+import { savePricingCalculatorModel } from "@/lib/admin/pricing-calculator-model-actions";
+import {
+  parsePricingModelJson,
+  PRICING_CALCULATOR_STORAGE_KEY,
+  stringifyPricingModel,
+} from "@/lib/pricing-calculator/model-serialization";
 import { STANDARD_SERVICE_CODES } from "@/lib/application-form/constants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { PricingModelSettings } from "./pricing-model-settings";
 import { PricingNativeSelect } from "./pricing-native-select";
-
-const STORAGE_KEY = "pg-pricing-calculator-model";
-
-function stringifyModel(m: PricingModel): string {
-  return JSON.stringify(m, (_, v) => (v === Number.POSITIVE_INFINITY ? "__INF__" : v));
-}
-
-function parseStoredModel(raw: string): PricingModel | null {
-  try {
-    const p = JSON.parse(raw, (_, v) => (v === "__INF__" ? Number.POSITIVE_INFINITY : v));
-    return mergePricingModelWithDefaults(p);
-  } catch {
-    return null;
-  }
-}
 
 function aud(n: number) {
   return new Intl.NumberFormat("en-AU", {
@@ -81,30 +72,69 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
   const [activeTab, setActiveTab] = useState<Tab>("calculate");
   const [pricingModel, setPricingModel] = useState<PricingModel>(() => createDefaultPricingModel());
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const m = parseStoredModel(raw);
-        if (m) setPricingModel(m);
+    let cancelled = false;
+
+    async function loadModel() {
+      try {
+        const res = await fetch("/api/pricing-calculator-model", { cache: "no-store" });
+        const body = (await res.json()) as { model?: PricingModel };
+        if (cancelled) return;
+        if (body?.model) {
+          setPricingModel(body.model);
+          try {
+            localStorage.setItem(PRICING_CALCULATOR_STORAGE_KEY, stringifyPricingModel(body.model));
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+      } catch {
+        /* fall through to local */
       }
-    } catch {
-      /* ignore */
+
+      try {
+        const raw = localStorage.getItem(PRICING_CALCULATOR_STORAGE_KEY);
+        if (raw) {
+          const m = parsePricingModelJson(raw);
+          if (m && !cancelled) setPricingModel(m);
+        }
+      } catch {
+        /* ignore */
+      }
     }
+
+    void loadModel();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function savePricingModelToStorage() {
+  const savePricingModelRemote = useCallback(async () => {
+    setSaveError(null);
+    setSaveBusy(true);
     try {
       const normalized = mergePricingModelWithDefaults(pricingModel);
-      localStorage.setItem(STORAGE_KEY, stringifyModel(normalized));
-      setPricingModel(normalized);
-      setSaveStatus("saved");
-      window.setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch {
-      /* ignore */
+      const result = await savePricingCalculatorModel(normalized);
+      if (result.ok) {
+        setPricingModel(normalized);
+        try {
+          localStorage.setItem(PRICING_CALCULATOR_STORAGE_KEY, stringifyPricingModel(normalized));
+        } catch {
+          /* ignore */
+        }
+        setSaveStatus("saved");
+        window.setTimeout(() => setSaveStatus("idle"), 2000);
+      } else {
+        setSaveError(result.error);
+      }
+    } finally {
+      setSaveBusy(false);
     }
-  }
+  }, [pricingModel]);
 
   const [entityType, setEntityType] = useState<EntityInput["entityType"]>("individual");
   const [portfolioStatus, setPortfolioStatus] = useState<EntityInput["portfolioStatus"]>("new");
@@ -257,8 +287,15 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
           <PricingModelSettings
             model={pricingModel}
             setPricingModel={setPricingModel}
-            onSave={savePricingModelToStorage}
+            onSave={embedded ? savePricingModelRemote : undefined}
+            saveBusy={saveBusy}
             saveStatus={saveStatus}
+            saveError={saveError}
+            persistenceHint={
+              embedded
+                ? "Adjust numbers to explore scenarios. The Calculate tab updates live. Save stores the shared model for everyone in the portal (Supabase)."
+                : "Adjust numbers to explore scenarios. The Calculate tab updates live. Shared model is loaded from the server; sign in to the admin portal to save changes for everyone."
+            }
           />
         </div>
       ) : (
