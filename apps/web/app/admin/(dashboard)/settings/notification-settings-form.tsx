@@ -9,10 +9,28 @@ import { updateNotificationRecipientEmail } from "./actions";
 type Props = {
   initialEmail: string | null;
   envFallbackHint: string;
+  /** Only portal `admin` role may change the global notification address (server-enforced). */
+  canManageNotifications: boolean;
 };
 
-export function NotificationSettingsForm({ initialEmail, envFallbackHint }: Props) {
+export function NotificationSettingsForm({
+  initialEmail,
+  envFallbackHint,
+  canManageNotifications,
+}: Props) {
   const [state, formAction, isPending] = useActionState(updateNotificationRecipientEmail, null);
+
+  if (!canManageNotifications) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-slate-600">
+          Notification recipient is managed by a portal administrator. Current effective recipient uses the value below
+          when set, otherwise the server default ({envFallbackHint}).
+        </p>
+        <p className="text-sm font-medium text-[#0c2742]">{initialEmail?.trim() || `Default: ${envFallbackHint}`}</p>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-4">

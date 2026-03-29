@@ -1,14 +1,41 @@
 import cors from "cors";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { ZodError } from "zod";
 import { publicApplicationsRouter } from "./routes/public/applications.js";
-import { adminApplicationsRouter } from "./routes/admin/applications.js";
+
+function parseCorsOrigin(): string | string[] | boolean {
+  const raw = process.env.CORS_ORIGIN?.trim();
+  if (!raw) {
+    return false;
+  }
+  if (raw === "*") {
+    return true;
+  }
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
 
 export function createApp() {
   const app = express();
+  app.set("trust proxy", 1);
 
-  app.use(cors());
-  app.use(express.json());
+  app.use(
+    cors({
+      origin: parseCorsOrigin(),
+      methods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type"],
+      maxAge: 86400,
+    }),
+  );
+  app.use(express.json({ limit: "512kb" }));
+
+  const submitLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many requests. Please try again shortly." },
+  });
 
   app.get("/", (_req, res) => {
     res.json({
@@ -16,7 +43,6 @@ export function createApp() {
       status: "running",
       health: "/health",
       applications: "/applications",
-      admin: "/admin/applications",
     });
   });
 
@@ -24,25 +50,20 @@ export function createApp() {
     res.json({ ok: true });
   });
 
-  app.use("/applications", publicApplicationsRouter);
-  app.use("/admin/applications", adminApplicationsRouter);
+  app.use("/applications", submitLimiter, publicApplicationsRouter);
 
   app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     if (error instanceof ZodError) {
       return res.status(400).json({
-        message: "Validation failed",
-        issues: error.flatten(),
+        message: "Validation failed.",
       });
     }
 
-    console.error(error);
+    console.error(error instanceof Error ? error.message : "Unexpected server error");
     return res.status(500).json({
-      message: "Unexpected server error",
+      message: "Something went wrong. Please try again later.",
     });
   });
 
   return app;
 }
-
-// Default export for Vercel serverless: platform invokes this per request.
-export default createApp();

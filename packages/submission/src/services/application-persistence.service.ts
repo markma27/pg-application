@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   ApplicationAssessment,
   ApplicationInput,
@@ -30,12 +31,13 @@ export async function persistApplicationToSupabase(params: {
   applicationId: string;
   payload: FullApplicationSubmission;
   assessment: ApplicationAssessment;
-}): Promise<{ reference: string | null }> {
+}): Promise<{ reference: string | null; portfolioUploadToken: string | null }> {
   if (!supabaseAdmin) {
-    return { reference: null };
+    return { reference: null, portfolioUploadToken: null };
   }
 
   const { applicationId, payload, assessment } = params;
+  const portfolioUploadToken = randomUUID();
 
   const core: ApplicationInput = {
     primaryContactName: payload.primaryContactName,
@@ -52,6 +54,7 @@ export async function persistApplicationToSupabase(params: {
     .from("applications")
     .insert({
       id: applicationId,
+      portfolio_upload_token: portfolioUploadToken,
       primary_contact_name: payload.primaryContactName,
       email: payload.email,
       phone: payload.phone,
@@ -201,7 +204,7 @@ export async function persistApplicationToSupabase(params: {
     console.warn("Could not record application_audit_events row.", auditErr);
   }
 
-  return { reference };
+  return { reference, portfolioUploadToken };
 }
 
 export async function markNotificationPersisted(params: {

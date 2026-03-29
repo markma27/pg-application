@@ -454,10 +454,17 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
       );
 
       if (portfolioEntities.length > 0 && data.applicationId) {
+        const uploadToken = data.portfolioUploadToken as string | undefined;
+        if (!uploadToken) {
+          throw new Error(
+            "Application was saved but portfolio uploads are unavailable. Please contact us with your reference number.",
+          );
+        }
         const prepareRes = await fetch(`/api/applications/${data.applicationId}/portfolio/prepare`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            uploadToken,
             uploads: portfolioEntities.map((e) => ({
               entityFormId: e.id,
               files: (e.existingPortfolioReportFiles ?? []).map((f) => ({
@@ -516,7 +523,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         const finalizeRes = await fetch(`/api/applications/${data.applicationId}/portfolio/finalize`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ documents: documentsPayload }),
+          body: JSON.stringify({ uploadToken, documents: documentsPayload }),
         });
         const finalizeData = (await finalizeRes.json()) as { message?: string };
         if (!finalizeRes.ok) {
@@ -533,6 +540,7 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
         step: s.step + 1,
         submitResult: {
           applicationId: data.applicationId,
+          portfolioUploadToken: data.portfolioUploadToken ?? null,
           reference: data.reference ?? null,
           submissionSuccess: data.submissionSuccess,
           overallOutcome: data.overallOutcome,

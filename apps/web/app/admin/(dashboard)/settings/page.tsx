@@ -6,8 +6,24 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
   let initialEmail: string | null = null;
+  let canManageNotifications = false;
   if (supabase) {
-    const { data } = await supabase.from("portal_settings").select("notification_recipient_email").eq("id", 1).maybeSingle();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: au } = await supabase
+        .from("admin_users")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      canManageNotifications = au?.role === "admin";
+    }
+    const { data } = await supabase
+      .from("portal_settings")
+      .select("notification_recipient_email")
+      .eq("id", 1)
+      .maybeSingle();
     initialEmail = (data?.notification_recipient_email as string | null) ?? null;
   }
 
@@ -22,7 +38,11 @@ export default async function AdminSettingsPage() {
       </p>
 
       <div className="mt-8 border-t border-slate-100 pt-8">
-        <NotificationSettingsForm initialEmail={initialEmail} envFallbackHint={envFallback} />
+        <NotificationSettingsForm
+          initialEmail={initialEmail}
+          envFallbackHint={envFallback}
+          canManageNotifications={canManageNotifications}
+        />
       </div>
     </div>
   );

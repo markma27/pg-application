@@ -15,6 +15,7 @@
     "@pg/submission": "0.1.0",
     "cors": "latest",
     "express": "latest",
+    "express-rate-limit": "^8.3.1",
     "tsx": "latest",
     "zod": "latest"
   },

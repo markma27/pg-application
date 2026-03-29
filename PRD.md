@@ -276,7 +276,7 @@ Internal users should be able to:
 
 ---
 
-## 10. Information Architecture
+## 10a. Information Architecture
 
 ### Shared application-level section
 This information is captured once per application:
@@ -677,40 +677,28 @@ This logic should be stored in a way that is easy to configure later, not hard-c
 ### Suggested project structure
 - frontend app separated from backend API
 - shared types/schemas where possible
-- pricing and routing logic extracted into se## 19. API Requirements (Initial)
+- pricing and routing logic extracted into shared packages (`@pg/shared`, `@pg/submission`)
 
-### Public endpoints
-- `POST /applications` — submit application
-- `GET /applications/:id/result` — optional future endpoint for confirmation/result lookup
+---
 
-### Internal/admin endpoints
-- `POST /admin/auth/login`
-- `POST /admin/auth/logout`
-- `GET /admin/applications`
-- `GET /admin/applications/:id`
-- `PATCH /admin/applications/:id/status`
-- `PATCH /admin/applications/:id/notes`
+## 19. API Requirements
 
-### Submission response should return
-- application id
-- submission success
-- high-level outcome
-- whether indicative pricing is available
-- any PG estimated totals
-- whether JM follow-up is required
+### Public endpoints (implemented)
+- `POST /applications` (Express, `apps/api`) — submit a full application payload validated with `fullApplicationSubmissionSchema` from `@pg/shared`; persistence, pricing/routing, and notification email orchestration live in `@pg/submission`.
 
-### Notification email trigger
+### Internal/admin endpoints (PRD vs implementation)
+- **Authentication** is **Supabase Auth** (email/password, recovery, invite links) via the Next.js app. There is no separate Express `POST /admin/auth/login` in production use.
+- **Admin CRUD and reads** are implemented through **Next.js** (Server Components, Server Actions) with the **Supabase** client and **RLS** policies, not through the Express `admin` router stubs in `apps/api` (those routes return placeholder JSON).
+
+### Submission response (implemented)
+The API returns structured JSON including application identifiers, routing/pricing outcomes, and related metadata consistent with `submitApplication` in `@pg/submission`.
+
+### Notification email trigger (implemented)
 After successful `POST /applications` processing:
-1. persist application data
+1. persist application data in Supabase
 2. calculate routing/pricing outcome
-3. attempt to send notification email via Resend
-4. return success response to frontend
-
-## 20.ion success
-- high-level outcome
-- whether indicative pricing is available
-- any PG estimated totals
-- whether JM follow-up is required
+3. attempt to send notification email via Resend (failure is recorded; submission still succeeds)
+4. return success response to the client
 
 ---
 
@@ -812,4 +800,50 @@ That principle should guide:
 - pricing rules
 - routing logic
 - internal follow-up workflows
+
+---
+
+## 26. Implementation status (codebase snapshot)
+
+This section reflects what is **implemented today** in the repository, so the PRD stays aligned with the product. Earlier sections remain the **design intent**; where they differ, this section takes precedence for current behaviour.
+
+### Architecture
+- **Monorepo:** `apps/web` (Next.js App Router, public site + admin UI), `apps/api` (Express, public submission API), `packages/shared` (Zod schemas, types, pricing/routing rules), `packages/submission` (submit pipeline, Supabase writes, Resend notifications).
+- **Database:** Supabase (Postgres + Auth + Storage) with RLS for authenticated admin access to applications and related tables.
+- **Email:** Resend (`RESEND_API_KEY`, `RESEND_FROM`, optional `APPLICATION_NOTIFICATION_EMAIL` / portal setting for notification recipient).
+
+### Public application experience
+- **Routes:** `/` landing page (PortfolioGuardian client copy, Jaquillard Minns lockup, CTA), `/apply` multi-step application wizard (contact and group details, entity count, per-entity details and services, individuals, adviser, review, confirmation).
+- **Submission:** Browser posts to **`POST /applications`** on the Express API; server validates with `fullApplicationSubmissionSchema`, runs `@pg/submission` (persist, pricing/routing, notification email). Submission succeeds even if email fails (error recorded in DB).
+- **Browser UI metadata:** Default document title **PortfolioGuardian - Application** on public routes.
+
+### Admin portal authentication and session
+- **Supabase Auth** (email/password). Routes under `/admin` require a valid session and an **`admin_users`** row with **`is_active = true`**.
+- **Pages:** `/admin/login`, `/admin/forgot-password`, `/admin/update-password` (invite/recovery set-password flow). **Auth callback** at `/auth/callback` completes magic/invite links.
+- **Security UX:** After a successful password set on the invite/recovery screen, the user is **signed out** and sent to `/admin/login` so they sign in explicitly. **Idle logout** after **15 minutes** without activity (dashboard) signs out and returns to login.
+- **Browser UI metadata:** Default document title **PortfolioGuardian - Application Admin Portal** for `/admin` routes.
+
+### Admin portal features
+- **Shell:** Left sidebar navigation, header with profile and sign out, Montserrat styling, PortfolioGuardian logo.
+- **Applications (default dashboard):** Table of applications with reference, contact, **workflow status**, assignee, created date; stat filters (e.g. today, pending, in progress, documents sent, completed); assignment to team members.
+- **Workflow statuses (canonical in UI):** `pending`, `in_progress`, `documents_sent`, `completed` (older DB labels may be normalised for display). *This differs from the illustrative status list in §9 (“New”, “Under Review”, etc.); the live workflow is the canonical set above.*
+- **Application detail:** Structured review of submission, entities, services, pricing/routing, portfolio documents where present, workflow controls, assignee, audit event timeline, delete/hide application as implemented.
+- **Users:** Directory with role; **Admin** users can invite (email link), remove users, and change roles (with protection for the last admin). **General user** can view the directory but cannot invite, remove, or change roles. **Status** column: **pending** (auth email not yet confirmed) vs **active**. In-app copy explains Admin vs General user capabilities.
+- **Audit Log:** Page listing **application audit events** (as stored in the database).
+- **Settings:** Configure **notification recipient email** for new-application emails via `portal_settings` (with server default from environment when unset).
+- **Report:** Placeholder page (“under construction”).
+
+### Data model and storage (high level)
+- Tables include **`applications`**, **`application_entities`**, **`entity_services`**, **`application_pricing_summary`**, **`application_audit_events`**, **`portal_settings`**, **`admin_users`**, plus migrations for individuals/adviser fields, form submission snapshots, portfolio document metadata, and Storage policies.
+- **Portfolio files:** Private Storage bucket for uploaded portfolio reports (PDF/Excel/CSV etc.) associated with entities where the flow is enabled.
+
+### Gaps and drift vs earlier PRD sections
+- **Admin API:** Express routes under `apps/api` for admin applications are **stubs**; real admin operations use **Next.js + Supabase**, not the illustrative Express `PATCH /admin/...` list in §19.
+- **Statuses:** Operational workflow uses the four states above, not the longer §9 suggestion list (unless extended later).
+- **Dashboard “queues”:** PG Review / JM Referral / Manual Review as separate nav items are **not** implemented as such; triage relies on list filters, routing fields, and manual review flags in data.
+- **Form stack:** Multi-step UI uses the shared application form module with Zod; **React Hook Form** appears in minor components, not necessarily the main wizard (see codebase for detail).
+- **Save and resume:** No persistent “save and return later” for applicants unless added later.
+
+### Deployment and domains
+- Production typically uses a dedicated hostname (e.g. `applications.portfolioguardian.com.au`) with environment variables such as **`NEXT_PUBLIC_SITE_ORIGIN`** and related URLs for Supabase redirect allowlists and email links.
 

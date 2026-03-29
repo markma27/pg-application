@@ -11,7 +11,8 @@ const emailSchema = z.string().email("Enter a valid email address.");
 const nameSchema = z.string().trim().min(1, "Enter a name.").max(200);
 const roleSchema = z.enum(["admin", "general"]);
 
-async function requirePortalAdmin(): Promise<
+/** Ensures the caller is a signed-in portal user with `admin` role (user management, sensitive settings). */
+export async function requirePortalAdmin(): Promise<
   | { ok: true; userId: string }
   | { ok: false; error: string }
 > {

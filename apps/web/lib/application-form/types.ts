@@ -106,6 +106,8 @@ export interface PartialEntity {
 
 export interface SubmitResult {
   applicationId: string;
+  /** Opaque token for portfolio file upload APIs (only when persistence succeeded). */
+  portfolioUploadToken?: string | null;
   /** Human-readable reference from Supabase (e.g. PG-100001). */
   reference: string | null;
   submissionSuccess: boolean;

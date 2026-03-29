@@ -58,7 +58,7 @@ export async function sendApplicationNotification(params: {
     }
 
     if (data?.id) {
-      console.info("Notification email queued.", { resendEmailId: data.id, to });
+      console.info("Notification email queued.", { resendEmailId: data.id });
     }
 
     return { sent: true, error: null };

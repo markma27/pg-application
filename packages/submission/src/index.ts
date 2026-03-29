@@ -7,3 +7,4 @@ export {
   MAX_PORTFOLIO_DOCS_PER_ENTITY,
   MAX_PORTFOLIO_FILE_BYTES,
 } from "./services/portfolio-upload.service.js";
+export { portfolioPrepareRequestSchema, portfolioFinalizeRequestSchema } from "./portfolio-api.schema.js";

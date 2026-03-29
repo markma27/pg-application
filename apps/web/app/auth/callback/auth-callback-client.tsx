@@ -1,6 +1,7 @@
 "use client";
 
 import { recordPortalLogin } from "@/lib/admin/users-actions";
+import { resolveSafeInternalPath } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/client";
 import { createImplicitAuthClient } from "@/lib/supabase/implicit-auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -77,7 +78,7 @@ export function AuthCallbackClient() {
 
     const run = async () => {
       const nextRaw = searchParams.get("next") ?? "/admin/update-password";
-      const next = nextRaw.startsWith("/") ? nextRaw : "/admin";
+      const next = resolveSafeInternalPath(nextRaw, "/admin/update-password");
 
       const oauthError = searchParams.get("error");
       const oauthDesc = searchParams.get("error_description");

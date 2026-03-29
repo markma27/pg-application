@@ -1,5 +1,15 @@
+import { timingSafeEqual } from "node:crypto";
 import type { FullApplicationSubmission } from "@pg/shared";
 import { supabaseAdmin } from "../supabase.js";
+
+function uploadTokensEqual(stored: string | null | undefined, presented: string): boolean {
+  if (!stored || stored.length !== presented.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(stored, "utf8"), Buffer.from(presented, "utf8"));
+  } catch {
+    return false;
+  }
+}
 
 export const PORTFOLIO_STORAGE_BUCKET = "application-portfolio" as const;
 export const MAX_PORTFOLIO_DOCS_PER_ENTITY = 5;
@@ -49,25 +59,31 @@ export type PortfolioPrepareSlot = {
 
 export async function prepareApplicationPortfolioUploads(params: {
   applicationId: string;
+  /** Returned only to the client that submitted the application; required to authorize uploads. */
+  uploadToken: string;
   uploads: { entityFormId: string; files: PortfolioPrepareFile[] }[];
 }): Promise<{ slots: PortfolioPrepareSlot[] }> {
   if (!supabaseAdmin) {
     throw new Error("Storage is not configured.");
   }
 
-  const { applicationId, uploads } = params;
+  const { applicationId, uploadToken, uploads } = params;
   if (!uploads.length) {
     return { slots: [] };
   }
 
   const { data: appRow, error: appErr } = await supabaseAdmin
     .from("applications")
-    .select("id, form_submission")
+    .select("id, form_submission, portfolio_upload_token")
     .eq("id", applicationId)
     .maybeSingle();
 
   if (appErr || !appRow) {
     throw new Error(appErr?.message ?? "Application not found.");
+  }
+
+  if (!uploadTokensEqual(appRow.portfolio_upload_token as string | null, uploadToken)) {
+    throw new Error("Invalid or expired upload session.");
   }
 
   const submission = appRow.form_submission as FullApplicationSubmission | null;
@@ -166,14 +182,28 @@ export type PortfolioFinalizeFile = {
 
 export async function finalizeApplicationPortfolioUploads(params: {
   applicationId: string;
+  uploadToken: string;
   documents: { entityFormId: string; files: PortfolioFinalizeFile[] }[];
 }): Promise<void> {
   if (!supabaseAdmin) {
     throw new Error("Storage is not configured.");
   }
 
-  const { applicationId, documents } = params;
+  const { applicationId, uploadToken, documents } = params;
   if (!documents.length) return;
+
+  const { data: appAuth, error: appAuthErr } = await supabaseAdmin
+    .from("applications")
+    .select("portfolio_upload_token")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (appAuthErr || !appAuth) {
+    throw new Error(appAuthErr?.message ?? "Application not found.");
+  }
+  if (!uploadTokensEqual(appAuth.portfolio_upload_token as string | null, uploadToken)) {
+    throw new Error("Invalid or expired upload session.");
+  }
 
   const { data: entityRows, error: entErr } = await supabaseAdmin
     .from("application_entities")

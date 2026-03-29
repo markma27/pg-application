@@ -25,9 +25,8 @@ export function LandingCtaForm() {
     defaultValues: { email: "", name: "" },
   });
 
-  function onSubmit(values: LandingCtaValues) {
+  function onSubmit(_values: LandingCtaValues) {
     // Placeholder: wire to API or mailto later
-    console.log("Landing CTA submitted", values);
     reset();
   }
 
@@ -50,7 +49,7 @@ export function LandingCtaForm() {
         <Input
           id="landing-email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="your.email@email.com"
           {...register("email")}
           aria-invalid={!!errors.email}
         />

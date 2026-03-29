@@ -15,7 +15,7 @@ export async function submitApplication(payload: FullApplicationSubmission) {
   const core = toApplicationInput(payload);
   const assessment = assessApplication(core);
 
-  const { reference } = await persistApplicationToSupabase({
+  const { reference, portfolioUploadToken } = await persistApplicationToSupabase({
     applicationId,
     payload,
     assessment,
@@ -36,6 +36,7 @@ export async function submitApplication(payload: FullApplicationSubmission) {
   return {
     applicationId,
     reference,
+    portfolioUploadToken,
     submissionSuccess: true,
     overallOutcome: assessment.overallOutcome,
     indicativePricingAvailable: assessment.indicativePricingAvailable,
