@@ -33,7 +33,6 @@
     "@supabase/supabase-js": "latest",
     "dotenv": "latest",
     "resend": "latest",
-    "sharp": "^0.34.5",
     "zod": "latest"
   },
   "devDependencies": {

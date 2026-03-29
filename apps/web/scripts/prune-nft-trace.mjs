@@ -33,7 +33,8 @@ function resolveMonorepoRoot() {
 }
 
 const monorepoRoot = resolveMonorepoRoot();
-const isVercel = process.env.VERCEL === "1";
+/** Vercel sets VERCEL=1; CI is set on most build pipelines — prune extra @img/sharp targets. */
+const isVercelLike = process.env.VERCEL === "1" || process.env.CI === "1";
 
 /**
  * On Vercel (Linux glibc), only `@img/sharp-*linux-x64*` / `sharp-libvips-linux-x64` are needed.
@@ -77,7 +78,7 @@ function shouldKeepTraceFile(nftPath, relFromNft) {
     if (rel === "apps/web/components.json") return false;
   }
 
-  if (isVercel && !shouldKeepImgSharpOnVercel(relFromNft)) {
+  if (isVercelLike && !shouldKeepImgSharpOnVercel(relFromNft)) {
     return false;
   }
 

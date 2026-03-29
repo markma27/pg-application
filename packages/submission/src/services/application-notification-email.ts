@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { ApplicationInput } from "@pg/shared";
 import type { Attachment } from "resend";
-import sharp from "sharp";
 
 /** Emerald CTA aligned with apply form / admin accents */
 const CTA_GREEN = "#059669";
@@ -48,8 +47,8 @@ function logoTextFallback(): { attachments: Attachment[]; imgHtml: string } {
 }
 
 /**
- * Gmail blocks many remote URLs (e.g. localhost) and often blocks SVG/data URLs.
- * Inline PNG via CID attachment; Resend expects base64 `content`, not a Buffer JSON blob.
+ * Inline logo via CID (SVG). Resend expects base64 `content` strings.
+ * PNG rasterization via `sharp` was removed to keep serverless bundles under Vercel size limits.
  */
 async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment[]; imgHtml: string }> {
   const svgPath = findLogoSvgPath();
@@ -66,37 +65,21 @@ async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment
     return logoTextFallback();
   }
 
-  try {
-    const pngBuf = await sharp(svgBuf).resize(440, null, { fit: "inside" }).png().toBuffer();
-    return {
-      attachments: [
-        {
-          filename: "logo.png",
-          content: pngBuf.toString("base64"),
-          contentType: "image/png",
-          contentId: LOGO_CID,
-        },
-      ],
-      imgHtml: `<img src="cid:${LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
-    };
-  } catch (err) {
-    console.warn("Email logo: sharp rasterize failed; trying inline SVG attachment.", err);
-    return {
-      attachments: [
-        {
-          filename: "logo.svg",
-          content: svgBuf.toString("base64"),
-          contentType: "image/svg+xml",
-          contentId: LOGO_CID,
-        },
-      ],
-      imgHtml: `<img src="cid:${LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
-    };
-  }
+  return {
+    attachments: [
+      {
+        filename: "logo.svg",
+        content: svgBuf.toString("base64"),
+        contentType: "image/svg+xml",
+        contentId: LOGO_CID,
+      },
+    ],
+    imgHtml: `<img src="cid:${LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
+  };
 }
 
 /**
- * Branded HTML + plain text for Resend (logo as inline PNG attachment when possible).
+ * Branded HTML + plain text for Resend (logo as inline SVG CID attachment).
  */
 export async function buildApplicationNotificationEmail(params: {
   applicationId: string;

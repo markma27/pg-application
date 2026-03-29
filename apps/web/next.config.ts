@@ -42,8 +42,8 @@ function resolveMonorepoRoot(): string {
 const monorepoRoot = resolveMonorepoRoot();
 
 /**
- * Paths are relative to `outputFileTracingRoot` (monorepo root). Using `../../node_modules`
- * from apps/web was unreliable; wrong excludes let every @img/sharp-* platform into the bundle.
+ * Next.js keeps `sharp` for `next/image`. NFT can still list every optional `@img/*` platform;
+ * exclude non-Linux targets so the serverless bundle stays small (paths relative to tracing root).
  */
 const vercelSharpTraceExcludeBase =
   process.env.VERCEL === "1"
@@ -65,7 +65,6 @@ const vercelSharpTraceExcludeBase =
       ] as const)
     : [];
 
-/** Same globs from `apps/web` (NFT sometimes emits `../../node_modules/...`). */
 const vercelSharpTraceExcludes = vercelSharpTraceExcludeBase.flatMap((p) =>
   p.startsWith("node_modules/") ? [p, `../../${p}`] : [p],
 );
@@ -84,8 +83,6 @@ if (existsSync(path.join(monorepoRoot, ".env.local"))) {
  */
 const nextConfig: NextConfig = {
   transpilePackages: ["@pg/shared", "@pg/submission"],
-  /** Native module used by @pg/submission to rasterize the logo for CID inline images. */
-  serverExternalPackages: ["sharp"],
   /** Monorepo root so server traces include `packages/*` correctly on Vercel. */
   outputFileTracingRoot: path.join(__dirname, "..", ".."),
   /**
@@ -94,7 +91,6 @@ const nextConfig: NextConfig = {
    * routes only need `@pg/submission` subpaths.
    */
   outputFileTracingExcludes: {
-    /** `apps/api/*` when tracing root is repo root; `../api/*` when resolved from `apps/web`. */
     "*": ["apps/api/**/*", "../api/**/*", ...vercelSharpTraceExcludes],
   },
   /** Server actions read the logo from disk for Resend CID attachments; ensure it is deployed. */

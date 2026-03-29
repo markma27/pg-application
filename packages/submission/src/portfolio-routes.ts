@@ -1,6 +1,6 @@
 /**
  * Entry used by Next.js API routes for portfolio uploads only — avoids tracing the full
- * `@pg/submission` barrel (submit + notification + sharp) into those handlers.
+ * `@pg/submission` barrel (submit + notification email stack) into those handlers.
  */
 export {
   prepareApplicationPortfolioUploads,

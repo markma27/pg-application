@@ -1,9 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { Attachment } from "resend";
-import sharp from "sharp";
 
-/** CID used across Resend HTML emails for inline PNG logo. */
+/** CID used across Resend HTML emails for inline logo (SVG attachment; avoids native `sharp` in serverless). */
 export const EMAIL_LOGO_CID = "pg-logo";
 
 const LOGO_SVG = "PortfolioGuardian_OriginalLogo.svg";
@@ -35,8 +34,8 @@ function textFallback(): { attachments: Attachment[]; imgHtml: string } {
 }
 
 /**
- * Gmail blocks many remote URLs; inline image via CID attachment.
- * Resend's JSON API expects attachment `content` as a base64 string (Buffer serializes wrongly).
+ * Inline logo via CID attachment (SVG). Resend expects base64 `content` strings.
+ * PNG via `sharp` was removed to keep Vercel serverless bundles under the 250MB limit.
  */
 export async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment[]; imgHtml: string }> {
   const svgPath = findLogoSvgPath();
@@ -53,31 +52,15 @@ export async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Att
     return textFallback();
   }
 
-  try {
-    const pngBuf = await sharp(svgBuf).resize(440, null, { fit: "inside" }).png().toBuffer();
-    return {
-      attachments: [
-        {
-          filename: "logo.png",
-          content: pngBuf.toString("base64"),
-          contentType: "image/png",
-          contentId: EMAIL_LOGO_CID,
-        },
-      ],
-      imgHtml: `<img src="cid:${EMAIL_LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
-    };
-  } catch (err) {
-    console.warn("Email logo: sharp rasterize failed; trying inline SVG attachment.", err);
-    return {
-      attachments: [
-        {
-          filename: "logo.svg",
-          content: svgBuf.toString("base64"),
-          contentType: "image/svg+xml",
-          contentId: EMAIL_LOGO_CID,
-        },
-      ],
-      imgHtml: `<img src="cid:${EMAIL_LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
-    };
-  }
+  return {
+    attachments: [
+      {
+        filename: "logo.svg",
+        content: svgBuf.toString("base64"),
+        contentType: "image/svg+xml",
+        contentId: EMAIL_LOGO_CID,
+      },
+    ],
+    imgHtml: `<img src="cid:${EMAIL_LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
+  };
 }
