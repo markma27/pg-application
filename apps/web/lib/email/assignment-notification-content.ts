@@ -1,14 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import type { Attachment } from "resend";
-import sharp from "sharp";
-import { resolveMonorepoRoot } from "@/lib/email/repo-root";
+import { buildLogoAttachmentAndImgTag } from "@/lib/email/logo-inline";
 
 /** Aligned with `packages/submission/.../application-notification-email.ts` */
 const CTA_GREEN = "#059669";
 const CTA_GREEN_HOVER_BORDER = "#047857";
-
-const LOGO_CID = "pg-logo";
 
 function escapeHtml(s: string): string {
   return s
@@ -16,40 +11,6 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment[]; imgHtml: string }> {
-  try {
-    const root = resolveMonorepoRoot();
-    const svgPath = path.join(root, "apps", "web", "public", "PortfolioGuardian_OriginalLogo.svg");
-    if (!existsSync(svgPath)) {
-      return {
-        attachments: [],
-        imgHtml: `<p style="margin:0;font-size:20px;font-weight:700;color:#0c2742;letter-spacing:-0.02em;">PortfolioGuardian</p>`,
-      };
-    }
-
-    const svgBuf = readFileSync(svgPath);
-    const pngBuf = await sharp(svgBuf).resize(440, null, { fit: "inside" }).png().toBuffer();
-
-    return {
-      attachments: [
-        {
-          filename: "logo.png",
-          content: pngBuf,
-          contentType: "image/png",
-          contentId: LOGO_CID,
-        },
-      ],
-      imgHtml: `<img src="cid:${LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
-    };
-  } catch (err) {
-    console.warn("Assignment email: logo inline failed; using text fallback.", err);
-    return {
-      attachments: [],
-      imgHtml: `<p style="margin:0;font-size:20px;font-weight:700;color:#0c2742;letter-spacing:-0.02em;">PortfolioGuardian</p>`,
-    };
-  }
 }
 
 /**

@@ -33,7 +33,7 @@ export async function sendPasswordResetEmail(to: string, actionLink: string): Pr
     return { ok: false, error: "Email is not configured (RESEND_API_KEY)." };
   }
   const origin = getSiteOrigin();
-  const html = buildBrandedAuthEmailHtml({
+  const { html, attachments } = await buildBrandedAuthEmailHtml({
     title: "Reset your admin password",
     paragraphs: [
       "We received a request to reset the password for your PortfolioGuardian admin portal account.",
@@ -49,6 +49,7 @@ export async function sendPasswordResetEmail(to: string, actionLink: string): Pr
     to: [to],
     subject: "Reset your PortfolioGuardian admin password",
     html,
+    attachments: attachments.length > 0 ? attachments : undefined,
     text: [
       "We received a request to reset the password for your PortfolioGuardian admin portal account.",
       "",
@@ -74,7 +75,7 @@ export async function sendUserInvitationEmail(
   }
   const origin = getSiteOrigin();
   const greeting = fullName.trim() ? `Hello ${fullName.trim()},` : "Hello,";
-  const html = buildBrandedAuthEmailHtml({
+  const { html, attachments } = await buildBrandedAuthEmailHtml({
     title: "You’re invited to the admin portal",
     paragraphs: [
       greeting,
@@ -91,6 +92,7 @@ export async function sendUserInvitationEmail(
     to: [to],
     subject: "You’re invited to the PortfolioGuardian admin portal",
     html,
+    attachments: attachments.length > 0 ? attachments : undefined,
     text: [
       greeting,
       "You have been invited to the PortfolioGuardian admin portal.",
