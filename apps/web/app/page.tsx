@@ -25,22 +25,26 @@ export default function HomePage() {
 
         {/* Intro */}
         <p className="mt-4 text-sm text-slate-600 leading-relaxed">
-          Welcome to PortfolioGuardian&apos;s application portal. Use this form to tell us about your
-          investment entities—trusts, companies, SMSFs, individuals—and the services you need. We
-          assess each entity for fit and give indicative pricing where we can; anything that needs
-          tailored or compliance-heavy work is referred to our partners at Jaquillard Minns.
+          Welcome to PortfolioGuardian&apos;s client application portal. This form is how you tell us
+          about the investment structures you wish to include and the portfolio administration and
+          reporting services you are seeking. We use your answers to assess suitability and plan next steps.
+        </p>
+        <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+          Structures may include trusts, companies, self managed super funds, individuals, private
+          ancillary funds, or public ancillary funds. Work that needs specialised compliance or is
+          outside our standard services may be referred to our parent company - Jaquillard Minns.
         </p>
         <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-          Have the following information ready before you begin:
+          Please have the following ready before you start.
         </p>
 
         {/* Pre-application checklist */}
         <ul className="mt-4 list-inside list-disc space-y-1 text-xs leading-snug text-slate-600">
-          <li>Your contact details (name, email, phone)</li>
-          <li>How many entities you want to include and their types (e.g. trust, company, SMSF)</li>
-          <li>For each entity: name, portfolio status (new or existing), and basic asset and service details</li>
-          <li>Personal details for each individual (e.g. trustees, directors) linked to the application</li>
-          <li>Your investment adviser&apos;s details, if you have one</li>
+          <li>Primary contact details: full name, email address, and phone number</li>
+          <li>How many entities you wish to onboard and the type of each (trust, company, individual etc.)</li>
+          <li>For each entity: legal name, ABN, TFN, new or existing portfolio, estimated number of assets</li>
+          <li>Personal details (name, date of birth, TFN etc.) for each individual linked to the application</li>
+          <li>Your investment adviser&apos;s name and contact details, if you work with an adviser</li>
         </ul>
 
         {/* Security box */}
@@ -48,11 +52,11 @@ export default function HomePage() {
           <div className="flex gap-3">
             <Info className="h-5 w-5 shrink-0 text-blue-600" aria-hidden />
             <div>
-              <h2 className="text-xs font-semibold text-blue-900">Enterprise-level security</h2>
+              <h2 className="text-xs font-semibold text-blue-900">Security and privacy</h2>
               <p className="mt-1 text-xs text-slate-700 leading-relaxed">
-                Your information is protected with enterprise-level encryption and strict privacy
-                compliance. Data is secure, confidential, and handled in line with Australian
-                financial services and privacy regulations.
+                Your information is protected with strong encryption and handled under strict privacy
+                standards. Data you provide is treated as confidential and managed in line with
+                Australian financial services and privacy requirements.
               </p>
             </div>
           </div>
@@ -66,7 +70,17 @@ export default function HomePage() {
           >
             Start application
           </Link>
-          <p className="mt-3 text-xs text-slate-500">Typical completion time: 10–15 minutes</p>
+          <p className="mt-3 text-xs text-slate-500">Typical completion time: 10 to 15 minutes</p>
+          <div className="mt-8 flex flex-col items-center px-2">
+            <Image
+              src="/pg-jm-logo.png"
+              alt="Jaquillard Minns and PortfolioGuardian lockup"
+              width={364}
+              height={112}
+              className="h-auto w-full max-w-[358px] object-contain"
+            />
+            <p className="mt-3 text-xs text-slate-500">PortfolioGuardian is a Jaquillard Minns Business</p>
+          </div>
         </div>
       </div>
     </main>

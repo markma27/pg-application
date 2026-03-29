@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import {
   invitePortalUser,
   removePortalUser,
@@ -12,13 +13,27 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PortalModal } from "@/components/ui/portal-modal";
+import { cn } from "@/lib/utils";
 
-/** Native select: no shadow, generous right padding so the OS chevron is inset from the border. */
-const portalNativeSelectClass =
-  "h-10 w-full rounded-md border border-slate-300 bg-white py-2 pl-3 pr-14 text-sm text-slate-800 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[#1e4a7a]/30";
+/** Same pattern as `ContactStep` contact-role select: custom chevron + application form focus ring. */
+const portalSelectClass =
+  "flex h-11 w-full appearance-none rounded-lg border border-slate-300 bg-white py-2 pl-4 pr-10 text-sm capitalize text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:border-emerald-600 focus-visible:ring-emerald-600 [&::-ms-expand]:hidden";
 
-const portalTableSelectClass =
-  "h-9 w-full min-w-[7.5rem] max-w-[11rem] rounded-md border border-slate-300 bg-white py-1.5 pl-3 pr-14 text-sm capitalize text-slate-800 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[#1e4a7a]/30";
+function PortalRoleSelect({
+  wrapperClassName,
+  className,
+  ...props
+}: ComponentProps<"select"> & { wrapperClassName?: string }) {
+  return (
+    <div className={cn("relative w-full min-w-0", wrapperClassName)}>
+      <select className={cn(portalSelectClass, className)} {...props} />
+      <ChevronDown
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+      />
+    </div>
+  );
+}
 
 export type PortalUserRow = {
   id: string;
@@ -101,8 +116,8 @@ function RoleChangeConfirmDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const fromLabel = pending ? (pending.fromRole === "admin" ? "Admin" : "General user") : "";
-  const toLabel = pending ? (pending.toRole === "admin" ? "Admin" : "General user") : "";
+  const fromLabel = pending ? (pending.fromRole === "admin" ? "Admin" : "General User") : "";
+  const toLabel = pending ? (pending.toRole === "admin" ? "Admin" : "General User") : "";
   const effectiveOpen = open && !!pending;
 
   return (
@@ -267,7 +282,7 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
                 type="email"
                 autoComplete="off"
                 required
-                className="h-10 w-full min-w-0"
+                className="h-11 w-full min-w-0 rounded-lg border-slate-300 px-4"
               />
             </div>
             <div className="space-y-2 md:col-span-3 min-w-0">
@@ -278,26 +293,21 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
                 type="text"
                 autoComplete="off"
                 required
-                className="h-10 w-full min-w-0"
+                className="h-11 w-full min-w-0 rounded-lg border-slate-300 px-4"
               />
             </div>
             <div className="space-y-2 md:col-span-2 min-w-0">
               <Label htmlFor="invite-role">Role</Label>
-              <select
-                id="invite-role"
-                name="role"
-                className={portalNativeSelectClass}
-                defaultValue="general"
-              >
-                <option value="general">General user</option>
+              <PortalRoleSelect id="invite-role" name="role" defaultValue="general">
+                <option value="general">General User</option>
                 <option value="admin">Admin</option>
-              </select>
+              </PortalRoleSelect>
             </div>
             <div className="md:col-span-4 md:flex md:items-end">
               <Button
                 type="submit"
                 disabled={invitePending}
-                className="h-10 w-full rounded-lg border-0 bg-emerald-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 md:w-auto md:min-w-[10.5rem]"
+                className="h-11 w-full rounded-lg border-0 bg-emerald-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 md:w-auto md:min-w-[10.5rem]"
               >
                 {invitePending ? "Sending…" : "Send invitation"}
               </Button>
@@ -336,17 +346,17 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
                 <td className="px-4 py-3 text-slate-600">{u.email}</td>
                 <td className="px-4 py-3">
                   {isAdmin ? (
-                    <select
-                      className={portalTableSelectClass}
+                    <PortalRoleSelect
+                      wrapperClassName="min-w-[7.5rem] max-w-[11rem]"
                       value={selectRoles[u.id] ?? (u.role === "admin" ? "admin" : "general")}
                       onChange={(e) =>
                         onRoleSelectChange(u, e.target.value === "admin" ? "admin" : "general")
                       }
                       aria-label={`Role for ${u.full_name}`}
                     >
-                      <option value="general">General user</option>
+                      <option value="general">General User</option>
                       <option value="admin">Admin</option>
-                    </select>
+                    </PortalRoleSelect>
                   ) : (
                     <span className="capitalize text-slate-700">{u.role}</span>
                   )}
