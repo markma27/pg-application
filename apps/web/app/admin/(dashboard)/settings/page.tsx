@@ -22,15 +22,7 @@ export default async function AdminSettingsPage() {
       </p>
 
       <div className="mt-8 border-t border-slate-100 pt-8">
-        <h3 className="text-sm font-semibold text-[#0c2742]">Email notifications</h3>
-        <p className="mt-1 text-sm text-slate-600">
-          Ensure <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">RESEND_API_KEY</code> and{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">RESEND_FROM</code> are set in the deployment
-          environment.
-        </p>
-        <div className="mt-6">
-          <NotificationSettingsForm initialEmail={initialEmail} envFallbackHint={envFallback} />
-        </div>
+        <NotificationSettingsForm initialEmail={initialEmail} envFallbackHint={envFallback} />
       </div>
     </div>
   );

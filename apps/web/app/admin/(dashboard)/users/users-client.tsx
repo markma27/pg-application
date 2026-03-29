@@ -13,12 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PortalModal } from "@/components/ui/portal-modal";
 
-/** Native select: no shadow, extra right padding so the chevron is not flush to the edge. */
+/** Native select: no shadow, generous right padding so the OS chevron is inset from the border. */
 const portalNativeSelectClass =
-  "h-10 w-full rounded-md border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm text-slate-800 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[#1e4a7a]/30";
+  "h-10 w-full rounded-md border border-slate-300 bg-white py-2 pl-3 pr-14 text-sm text-slate-800 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[#1e4a7a]/30";
 
 const portalTableSelectClass =
-  "h-9 w-full min-w-[7.5rem] max-w-[11rem] rounded-md border border-slate-300 bg-white py-1.5 pl-3 pr-10 text-sm capitalize text-slate-800 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[#1e4a7a]/30";
+  "h-9 w-full min-w-[7.5rem] max-w-[11rem] rounded-md border border-slate-300 bg-white py-1.5 pl-3 pr-14 text-sm capitalize text-slate-800 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[#1e4a7a]/30";
 
 export type PortalUserRow = {
   id: string;

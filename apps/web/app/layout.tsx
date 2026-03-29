@@ -17,7 +17,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "PortfolioGuardian",
+  title: "PortfolioGuardian - Application",
   description: "PortfolioGuardian application and internal admin portal",
 };
 
