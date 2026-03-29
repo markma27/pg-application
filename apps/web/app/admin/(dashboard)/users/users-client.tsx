@@ -273,12 +273,12 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
           <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-3 text-xs leading-relaxed text-slate-600">
             <p className="font-semibold text-slate-800">Roles</p>
             <p className="mt-2">
-              <span className="font-medium text-slate-800">Admin.</span> Can invite and remove portal users,
+              <span className="font-medium text-slate-800">Admin:</span> Can invite and remove portal users,
               assign roles, and access all areas of this portal, including applications, audit log, report, and
               settings.
             </p>
             <p className="mt-2">
-              <span className="font-medium text-slate-800">General user.</span> Can work with client applications
+              <span className="font-medium text-slate-800">General user: </span> Can work with client applications
               and use audit log, report, and settings. Cannot invite or remove users or change anyone else&apos;s
               role.
             </p>
