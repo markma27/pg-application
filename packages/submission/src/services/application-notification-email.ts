@@ -3,7 +3,6 @@ import path from "node:path";
 import type { ApplicationInput } from "@pg/shared";
 import type { Attachment } from "resend";
 import sharp from "sharp";
-import { resolveMonorepoRoot } from "../load-root-env.js";
 
 /** Emerald CTA aligned with apply form / admin accents */
 const CTA_GREEN = "#059669";
@@ -24,30 +23,56 @@ function optionalLine(label: string, value: string | undefined | null): string {
 }
 
 const LOGO_CID = "pg-logo";
+const LOGO_SVG = "PortfolioGuardian_OriginalLogo.svg";
+
+/** Same rules as `apps/web/lib/email/logo-inline.ts` (Vercel cwd often `apps/web`). */
+function findLogoSvgPath(): string | null {
+  let dir = process.cwd();
+  for (let i = 0; i < 16; i++) {
+    const inPublic = path.join(dir, "public", LOGO_SVG);
+    if (existsSync(inPublic)) return inPublic;
+    const inAppsWeb = path.join(dir, "apps", "web", "public", LOGO_SVG);
+    if (existsSync(inAppsWeb)) return inAppsWeb;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
+function logoTextFallback(): { attachments: Attachment[]; imgHtml: string } {
+  return {
+    attachments: [],
+    imgHtml: `<p style="margin:0;font-size:20px;font-weight:700;color:#0c2742;letter-spacing:-0.02em;">PortfolioGuardian</p>`,
+  };
+}
 
 /**
  * Gmail blocks many remote URLs (e.g. localhost) and often blocks SVG/data URLs.
- * Inline PNG via CID attachment is the most reliable approach.
+ * Inline PNG via CID attachment; Resend expects base64 `content`, not a Buffer JSON blob.
  */
 async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment[]; imgHtml: string }> {
+  const svgPath = findLogoSvgPath();
+  if (!svgPath) {
+    console.warn("Email logo: SVG not found (checked cwd/public and parents apps/web/public).");
+    return logoTextFallback();
+  }
+
+  let svgBuf: Buffer;
   try {
-    const root = resolveMonorepoRoot();
-    const svgPath = path.join(root, "apps", "web", "public", "PortfolioGuardian_OriginalLogo.svg");
-    if (!existsSync(svgPath)) {
-      return {
-        attachments: [],
-        imgHtml: `<p style="margin:0;font-size:20px;font-weight:700;color:#0c2742;letter-spacing:-0.02em;">PortfolioGuardian</p>`,
-      };
-    }
+    svgBuf = readFileSync(svgPath);
+  } catch (err) {
+    console.warn("Email logo: could not read SVG file.", err);
+    return logoTextFallback();
+  }
 
-    const svgBuf = readFileSync(svgPath);
+  try {
     const pngBuf = await sharp(svgBuf).resize(440, null, { fit: "inside" }).png().toBuffer();
-
     return {
       attachments: [
         {
           filename: "logo.png",
-          content: pngBuf,
+          content: pngBuf.toString("base64"),
           contentType: "image/png",
           contentId: LOGO_CID,
         },
@@ -55,10 +80,17 @@ async function buildLogoAttachmentAndImgTag(): Promise<{ attachments: Attachment
       imgHtml: `<img src="cid:${LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
     };
   } catch (err) {
-    console.warn("Email inline logo (PNG/CID) failed; using text fallback.", err);
+    console.warn("Email logo: sharp rasterize failed; trying inline SVG attachment.", err);
     return {
-      attachments: [],
-      imgHtml: `<p style="margin:0;font-size:20px;font-weight:700;color:#0c2742;letter-spacing:-0.02em;">PortfolioGuardian</p>`,
+      attachments: [
+        {
+          filename: "logo.svg",
+          content: svgBuf.toString("base64"),
+          contentType: "image/svg+xml",
+          contentId: LOGO_CID,
+        },
+      ],
+      imgHtml: `<img src="cid:${LOGO_CID}" alt="PortfolioGuardian" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;" />`,
     };
   }
 }

@@ -88,6 +88,10 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "*": ["../api/**/*", ...vercelSharpTraceExcludes],
   },
+  /** Server actions read the logo from disk for Resend CID attachments; ensure it is deployed. */
+  outputFileTracingIncludes: {
+    "*": ["./public/PortfolioGuardian_OriginalLogo.svg"],
+  },
   /**
    * Next 16+ defaults `lockDistDir` to true (writes `.next/lock` during build). The lock is
    * removed after the build; Vercel's trace step can still try to `lstat` it and fail with ENOENT.
