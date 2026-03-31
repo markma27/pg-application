@@ -80,7 +80,7 @@ export default function HomePage() {
               className="h-auto w-full max-w-[358px] object-contain"
               priority
             />
-            <p className="mt-3 text-xs text-slate-500">PortfolioGuardian is a Jaquillard Minns Business</p>
+            <p className="mt-3 text-xs text-slate-500">PortfolioGuardian is a Jaquillard Minns business</p>
           </div>
         </div>
       </div>
