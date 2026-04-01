@@ -6,6 +6,7 @@ import {
   ENTITY_TYPE_OPTIONS,
   PORTFOLIO_STATUS_OPTIONS,
 } from "@/lib/application-form/constants";
+import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE } from "@pg/shared";
 import { formatDocumentSendToDisplay } from "@/lib/application-form/format-document-send";
 import {
   Card,
@@ -92,7 +93,11 @@ export function ReviewStep() {
             <ReviewRow label="Name" value={state.primaryContactName} />
             <ReviewRow label="Email" value={state.email} />
             <ReviewRow label="Phone" value={state.phone} />
+            <ReviewRow label="Postal address" value={state.postalAddress?.trim() || undefined} />
             <ReviewRow label="Role" value={state.applicantRole} />
+            {state.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE && state.representativeAuthorityConfirmed ? (
+              <ReviewRow label="Representative authority" value="Confirmed — authority to submit on behalf of the client" />
+            ) : null}
             <ReviewRow label="Group name" value={state.groupName || undefined} />
             <ReviewRow label="Adviser (intro)" value={state.adviserDetails || undefined} />
           </CardContent>
@@ -138,6 +143,21 @@ export function ReviewStep() {
                   value={entity.registeredForGst === true ? "Yes" : entity.registeredForGst === false ? "No" : undefined}
                 />
                 <ReviewRow
+                  label="Primary bank account"
+                  value={entity.hasPrimaryBankAccount === true ? "Yes" : entity.hasPrimaryBankAccount === false ? "No" : undefined}
+                />
+                {entity.hasPrimaryBankAccount === true ? (
+                  <>
+                    <ReviewRow label="Bank name" value={entity.primaryBankName?.trim() || undefined} />
+                    <ReviewRow label="Account name" value={entity.primaryBankAccountName?.trim() || undefined} />
+                    <ReviewRow label="BSB" value={entity.primaryBankBsb?.replace(/\s/g, "") || undefined} />
+                    <ReviewRow
+                      label="Account number"
+                      value={entity.primaryBankAccountNumber?.replace(/\s/g, "") || undefined}
+                    />
+                  </>
+                ) : null}
+                <ReviewRow
                   label="Listed investments"
                   value={entity.listedInvestmentCount != null ? String(entity.listedInvestmentCount) : undefined}
                 />
@@ -150,6 +170,19 @@ export function ReviewStep() {
                   value={entity.propertyCount != null ? String(entity.propertyCount) : undefined}
                 />
                 <ReviewRow label="Wrap" value={entity.wrapCount != null ? String(entity.wrapCount) : undefined} />
+                <ReviewRow
+                  label="Bank accounts"
+                  value={entity.bankAccountCount != null ? String(entity.bankAccountCount) : undefined}
+                />
+                <ReviewRow
+                  label="Foreign bank accounts"
+                  value={entity.foreignBankAccountCount != null ? String(entity.foreignBankAccountCount) : undefined}
+                />
+                <ReviewRow label="Loans" value={entity.loanCount != null ? String(entity.loanCount) : undefined} />
+                <ReviewRow
+                  label="Cryptocurrencies"
+                  value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
+                />
                 <ReviewRow
                   label="Other assets"
                   value={

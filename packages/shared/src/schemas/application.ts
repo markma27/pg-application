@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Contact step dropdown value; requires authority confirmation on step 0. */
+export const APPLICANT_ROLE_ADVISER_REPRESENTATIVE = "Adviser / representative" as const;
+
 export const entityTypeSchema = z.enum([
   "individual",
   "company",
@@ -51,17 +54,63 @@ export const entityInputSchema = z.object({
   unlistedInvestmentCount: z.number().int().min(0),
   propertyCount: z.number().int().min(0),
   wrapCount: z.number().int().min(0),
+  bankAccountCount: z.number().int().min(0).default(0),
+  foreignBankAccountCount: z.number().int().min(0).default(0),
+  loanCount: z.number().int().min(0).default(0),
+  cryptocurrencyCount: z.number().int().min(0).default(0),
   otherAssetsText: z.string().optional().default(""),
   hasCrypto: z.boolean().default(false),
   hasForeignInvestments: z.boolean().default(false),
+  /** When true, primary bank account fields are required (validated in superRefine). */
+  hasPrimaryBankAccount: z.boolean().default(false),
+  primaryBankName: z.string().optional().default(""),
+  primaryBankAccountName: z.string().optional().default(""),
+  primaryBankBsb: z.string().optional().default(""),
+  primaryBankAccountNumber: z.string().optional().default(""),
   serviceCodes: z.array(serviceCodeSchema).min(1, "At least one service is required"),
   commencementDate: z.string().min(1, "Commencement date is required"),
-});
+})
+  .superRefine((e, ctx) => {
+    if (!e.hasPrimaryBankAccount) return;
+    const name = e.primaryBankName?.trim();
+    const accName = e.primaryBankAccountName?.trim();
+    const bsb = e.primaryBankBsb?.replace(/\s/g, "") ?? "";
+    const accNum = e.primaryBankAccountNumber?.replace(/\s/g, "") ?? "";
+    if (!name) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Bank name is required.", path: ["primaryBankName"] });
+    }
+    if (!accName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account name is required.",
+        path: ["primaryBankAccountName"],
+      });
+    }
+    if (!/^\d{6}$/.test(bsb)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "BSB must be 6 digits.", path: ["primaryBankBsb"] });
+    }
+    if (!accNum || accNum.length < 3 || accNum.length > 20) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account number must be 3–20 characters (digits).",
+        path: ["primaryBankAccountNumber"],
+      });
+    }
+    if (!/^\d+$/.test(accNum)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account number must contain digits only.",
+        path: ["primaryBankAccountNumber"],
+      });
+    }
+  });
 
 export const applicationInputSchema = z.object({
   primaryContactName: z.string().min(1, "Contact name is required"),
   email: z.email("Valid email is required"),
   phone: z.string().min(1, "Phone is required").regex(/^\d{8,15}$/, "Phone must be 8–15 digits"),
+  /** Primary applicant postal address (Australia; collected on contact step). */
+  postalAddress: z.string().min(1, "Postal address is required"),
   applicantRole: z.string().min(1, "Applicant role is required"),
   adviserDetails: z.string().optional().default(""),
   groupName: z.string().optional().default(""),
@@ -121,6 +170,8 @@ export const fullApplicationSubmissionSchema = applicationInputSchema.extend({
   meetingProxySendTo: documentSendToValueSchema.optional().default(""),
   investmentOffersSendTo: documentSendToValueSchema.optional().default(""),
   dividendPreference: z.union([z.literal("cash"), z.literal("reinvest"), z.literal("")]).optional().default(""),
+  /** When applicantRole is Adviser / representative, submit-time validation requires this to be true (see API routes). */
+  representativeAuthorityConfirmed: z.boolean().optional(),
 });
 
 export type EntityInput = z.infer<typeof entityInputSchema>;
@@ -128,12 +179,19 @@ export type ApplicationInput = z.infer<typeof applicationInputSchema>;
 export type IndividualInput = z.infer<typeof individualInputSchema>;
 export type FullApplicationSubmission = z.infer<typeof fullApplicationSubmissionSchema>;
 
+/** Submit-time rule: adviser/representative role must explicitly confirm authority. */
+export function isRepresentativeAuthoritySatisfied(full: FullApplicationSubmission): boolean {
+  if (full.applicantRole !== APPLICANT_ROLE_ADVISER_REPRESENTATIVE) return true;
+  return full.representativeAuthorityConfirmed === true;
+}
+
 /** Strip extended fields for pricing / assessment (unchanged behaviour). */
 export function toApplicationInput(full: FullApplicationSubmission): ApplicationInput {
   return {
     primaryContactName: full.primaryContactName,
     email: full.email,
     phone: full.phone,
+    postalAddress: full.postalAddress,
     applicantRole: full.applicantRole,
     adviserDetails: full.adviserDetails,
     groupName: full.groupName,

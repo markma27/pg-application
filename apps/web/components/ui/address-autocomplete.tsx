@@ -37,7 +37,8 @@ function loadMapsBootstrap(apiKey: string): Promise<void> {
 }
 
 export interface AddressAutocompleteProps {
-  value: string;
+  /** May be undefined from callers before state hydrates — coerced to "" internally. */
+  value: string | undefined;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
@@ -106,6 +107,7 @@ export function AddressAutocomplete({
   id,
   disabled,
 }: AddressAutocompleteProps) {
+  const text = value ?? "";
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
@@ -312,10 +314,10 @@ export function AddressAutocomplete({
         id={id}
         type="text"
         name="places-address"
-        value={value}
+        value={text}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => value.trim() && scriptReady && fetchSuggestions(value)}
+        onFocus={() => text.trim() && scriptReady && fetchSuggestions(text)}
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"

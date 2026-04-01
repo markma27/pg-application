@@ -1,4 +1,4 @@
-import type { EntityInput } from "@pg/shared";
+import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type EntityInput } from "@pg/shared";
 
 /** Service codes always included for all entities (portfolio standard) */
 export const STANDARD_SERVICE_CODES: EntityInput["serviceCodes"][number][] = [
@@ -95,7 +95,7 @@ export const APPLICANT_ROLE_OPTIONS = [
   "Owner",
   "Director",
   "Trustee",
-  "Adviser / representative",
+  APPLICANT_ROLE_ADVISER_REPRESENTATIVE,
   "Other",
 ];
 

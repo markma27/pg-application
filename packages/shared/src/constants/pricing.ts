@@ -10,6 +10,10 @@ export const COMPLEXITY_POINTS = {
   unlistedInvestment: 3,
   investmentProperty: 6,
   wrapAccount: 5,
+  bankAccount: 1,
+  foreignBankAccount: 3,
+  loan: 3,
+  cryptocurrency: 5,
 } as const;
 
 export const COMPLEXITY_BANDS = [

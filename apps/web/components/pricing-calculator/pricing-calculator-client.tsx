@@ -142,6 +142,10 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
   const [unlisted, setUnlisted] = useState("0");
   const [property, setProperty] = useState("0");
   const [wrap, setWrap] = useState("0");
+  const [bankAccounts, setBankAccounts] = useState("0");
+  const [foreignBanks, setForeignBanks] = useState("0");
+  const [loans, setLoans] = useState("0");
+  const [crypto, setCrypto] = useState("0");
   const [reportingTier, setReportingTier] = useState<ReportingTier>("annual_only");
   const [bas, setBas] = useState(false);
   const [asicAgent, setAsicAgent] = useState(false);
@@ -150,6 +154,10 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
   const unlistedN = parseCount(unlisted);
   const propertyN = parseCount(property);
   const wrapN = parseCount(wrap);
+  const bankN = parseCount(bankAccounts);
+  const foreignBankN = parseCount(foreignBanks);
+  const loanN = parseCount(loans);
+  const cryptoN = parseCount(crypto);
 
   const pricingModelResolved = useMemo(
     () => mergePricingModelWithDefaults(pricingModel),
@@ -162,9 +170,31 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
     const unlistedPts = unlistedN * p.unlistedInvestment;
     const propPts = propertyN * p.investmentProperty;
     const wrapPts = wrapN * p.wrapAccount;
-    const total = listedPts + unlistedPts + propPts + wrapPts;
-    return { listedPts, unlistedPts, propPts, wrapPts, total };
-  }, [listedN, unlistedN, propertyN, wrapN, pricingModelResolved]);
+    const bankPts = bankN * p.bankAccount;
+    const foreignBankPts = foreignBankN * p.foreignBankAccount;
+    const loanPts = loanN * p.loan;
+    const cryptoPts = cryptoN * p.cryptocurrency;
+    const total =
+      listedPts +
+      unlistedPts +
+      propPts +
+      wrapPts +
+      bankPts +
+      foreignBankPts +
+      loanPts +
+      cryptoPts;
+    return {
+      listedPts,
+      unlistedPts,
+      propPts,
+      wrapPts,
+      bankPts,
+      foreignBankPts,
+      loanPts,
+      cryptoPts,
+      total,
+    };
+  }, [listedN, unlistedN, propertyN, wrapN, bankN, foreignBankN, loanN, cryptoN, pricingModelResolved]);
 
   const assessment = useMemo(() => {
     const serviceCodes = buildServiceCodes(reportingTier, bas, asicAgent);
@@ -181,9 +211,18 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
         unlistedInvestmentCount: unlistedN,
         propertyCount: propertyN,
         wrapCount: wrapN,
+        bankAccountCount: bankN,
+        foreignBankAccountCount: foreignBankN,
+        loanCount: loanN,
+        cryptocurrencyCount: cryptoN,
         otherAssetsText: "",
         hasCrypto: false,
         hasForeignInvestments: false,
+        hasPrimaryBankAccount: false,
+        primaryBankName: "",
+        primaryBankAccountName: "",
+        primaryBankBsb: "",
+        primaryBankAccountNumber: "",
         serviceCodes,
         commencementDate: "2026-01-01",
       },
@@ -193,6 +232,7 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
       primaryContactName: "Calculator",
       email: "calc@example.com",
       phone: "0400000000",
+      postalAddress: "1 Example St, Sydney NSW 2000",
       applicantRole: "Test",
       adviserDetails: "",
       groupName: "",
@@ -208,6 +248,10 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
     unlistedN,
     propertyN,
     wrapN,
+    bankN,
+    foreignBankN,
+    loanN,
+    cryptoN,
     reportingTier,
     bas,
     asicAgent,
@@ -335,25 +379,52 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
               </PricingNativeSelect>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                { id: "listed", label: "Listed investments", value: listed, set: setListed },
-                { id: "unlisted", label: "Unlisted investments", value: unlisted, set: setUnlisted },
-                { id: "property", label: "Investment properties", value: property, set: setProperty },
-                { id: "wrap", label: "Wrap accounts", value: wrap, set: setWrap },
-              ].map((f) => (
-                <div key={f.id} className="space-y-2">
-                  <Label htmlFor={f.id}>{f.label}</Label>
-                  <Input
-                    id={f.id}
-                    type="number"
-                    min={0}
-                    value={f.value}
-                    onChange={(e) => f.set(e.target.value)}
-                    className="cursor-text"
-                  />
-                </div>
-              ))}
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { id: "listed", label: "Listed investments", value: listed, set: setListed },
+                  { id: "unlisted", label: "Unlisted investments", value: unlisted, set: setUnlisted },
+                  { id: "property", label: "Investment properties", value: property, set: setProperty },
+                  { id: "wrap", label: "Wrap accounts", value: wrap, set: setWrap },
+                ].map((f) => (
+                  <div key={f.id} className="space-y-2">
+                    <Label htmlFor={f.id}>{f.label}</Label>
+                    <Input
+                      id={f.id}
+                      type="number"
+                      min={0}
+                      value={f.value}
+                      onChange={(e) => f.set(e.target.value)}
+                      className="cursor-text"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { id: "banks", label: "Bank accounts", value: bankAccounts, set: setBankAccounts },
+                  {
+                    id: "foreign-banks",
+                    label: "Foreign bank accounts",
+                    value: foreignBanks,
+                    set: setForeignBanks,
+                  },
+                  { id: "loans", label: "Loans", value: loans, set: setLoans },
+                  { id: "crypto", label: "Cryptocurrencies", value: crypto, set: setCrypto },
+                ].map((f) => (
+                  <div key={f.id} className="space-y-2">
+                    <Label htmlFor={f.id}>{f.label}</Label>
+                    <Input
+                      id={f.id}
+                      type="number"
+                      min={0}
+                      value={f.value}
+                      onChange={(e) => f.set(e.target.value)}
+                      className="cursor-text"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3 border-t border-slate-100 pt-4">
@@ -452,6 +523,30 @@ export function PricingCalculatorClient({ embedded = false }: { embedded?: boole
                     Wrap × {pricingModelResolved.complexityPoints.wrapAccount}
                   </span>
                   <span className="tabular-nums">{pointsBreakdown.wrapPts} pts</span>
+                </li>
+                <li className="flex justify-between gap-4">
+                  <span>
+                    Bank accounts × {pricingModelResolved.complexityPoints.bankAccount}
+                  </span>
+                  <span className="tabular-nums">{pointsBreakdown.bankPts} pts</span>
+                </li>
+                <li className="flex justify-between gap-4">
+                  <span>
+                    Foreign bank × {pricingModelResolved.complexityPoints.foreignBankAccount}
+                  </span>
+                  <span className="tabular-nums">{pointsBreakdown.foreignBankPts} pts</span>
+                </li>
+                <li className="flex justify-between gap-4">
+                  <span>
+                    Loans × {pricingModelResolved.complexityPoints.loan}
+                  </span>
+                  <span className="tabular-nums">{pointsBreakdown.loanPts} pts</span>
+                </li>
+                <li className="flex justify-between gap-4">
+                  <span>
+                    Crypto × {pricingModelResolved.complexityPoints.cryptocurrency}
+                  </span>
+                  <span className="tabular-nums">{pointsBreakdown.cryptoPts} pts</span>
                 </li>
                 <li className="flex justify-between gap-4 border-t border-slate-100 pt-2 font-medium">
                   <span>Total complexity points</span>

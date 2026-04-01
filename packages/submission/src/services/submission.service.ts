@@ -24,7 +24,7 @@ export async function submitApplication(payload: FullApplicationSubmission) {
   const notification = await sendApplicationNotification({
     applicationId,
     reference,
-    payload: core,
+    payload,
   });
 
   await markNotificationPersisted({

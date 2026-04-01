@@ -20,6 +20,10 @@ export type PricingModel = {
     unlistedInvestment: number;
     investmentProperty: number;
     wrapAccount: number;
+    bankAccount: number;
+    foreignBankAccount: number;
+    loan: number;
+    cryptocurrency: number;
   };
   complexityBands: Array<{
     min: number;
@@ -124,6 +128,19 @@ export function mergePricingModelWithDefaults(partial: unknown): PricingModel {
       wrapAccount: toFiniteNumber(
         p.complexityPoints?.wrapAccount ?? d.complexityPoints.wrapAccount,
         d.complexityPoints.wrapAccount,
+      ),
+      bankAccount: toFiniteNumber(
+        p.complexityPoints?.bankAccount ?? d.complexityPoints.bankAccount,
+        d.complexityPoints.bankAccount,
+      ),
+      foreignBankAccount: toFiniteNumber(
+        p.complexityPoints?.foreignBankAccount ?? d.complexityPoints.foreignBankAccount,
+        d.complexityPoints.foreignBankAccount,
+      ),
+      loan: toFiniteNumber(p.complexityPoints?.loan ?? d.complexityPoints.loan, d.complexityPoints.loan),
+      cryptocurrency: toFiniteNumber(
+        p.complexityPoints?.cryptocurrency ?? d.complexityPoints.cryptocurrency,
+        d.complexityPoints.cryptocurrency,
       ),
     },
     complexityBands: bands,

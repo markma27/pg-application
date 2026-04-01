@@ -1,4 +1,4 @@
-import type { EntityInput, FullApplicationSubmission } from "@pg/shared";
+import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type EntityInput, type FullApplicationSubmission } from "@pg/shared";
 import {
   ADD_ON_SERVICE_CODES,
   ADD_ON_SERVICE_LABELS,
@@ -95,7 +95,11 @@ export function AdminFormSubmissionDetails({
             <ReviewRow label="Name" value={data.primaryContactName} />
             <ReviewRow label="Email" value={data.email} />
             <ReviewRow label="Phone" value={data.phone} />
+            <ReviewRow label="Postal address" value={data.postalAddress?.trim() || undefined} />
             <ReviewRow label="Role" value={data.applicantRole} />
+            {data.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE && data.representativeAuthorityConfirmed ? (
+              <ReviewRow label="Representative authority" value="Confirmed — authority to submit on behalf of the client" />
+            ) : null}
             <ReviewRow label="Group name" value={data.groupName?.trim() || undefined} />
             <ReviewRow label="Adviser (intro)" value={data.adviserDetails?.trim() || undefined} />
           </AdminReviewFieldGrid>
@@ -128,6 +132,23 @@ export function AdminFormSubmissionDetails({
                 }
               />
               <ReviewRow
+                label="Primary bank account"
+                value={
+                  entity.hasPrimaryBankAccount === true ? "Yes" : entity.hasPrimaryBankAccount === false ? "No" : undefined
+                }
+              />
+              {entity.hasPrimaryBankAccount === true ? (
+                <>
+                  <ReviewRow label="Bank name" value={entity.primaryBankName?.trim() || undefined} />
+                  <ReviewRow label="Account name" value={entity.primaryBankAccountName?.trim() || undefined} />
+                  <ReviewRow label="BSB" value={entity.primaryBankBsb?.replace(/\s/g, "") || undefined} />
+                  <ReviewRow
+                    label="Account number"
+                    value={entity.primaryBankAccountNumber?.replace(/\s/g, "") || undefined}
+                  />
+                </>
+              ) : null}
+              <ReviewRow
                 label="Listed investments"
                 value={entity.listedInvestmentCount != null ? String(entity.listedInvestmentCount) : undefined}
               />
@@ -140,6 +161,19 @@ export function AdminFormSubmissionDetails({
                 value={entity.propertyCount != null ? String(entity.propertyCount) : undefined}
               />
               <ReviewRow label="Wrap" value={entity.wrapCount != null ? String(entity.wrapCount) : undefined} />
+              <ReviewRow
+                label="Bank accounts"
+                value={entity.bankAccountCount != null ? String(entity.bankAccountCount) : undefined}
+              />
+              <ReviewRow
+                label="Foreign bank accounts"
+                value={entity.foreignBankAccountCount != null ? String(entity.foreignBankAccountCount) : undefined}
+              />
+              <ReviewRow label="Loans" value={entity.loanCount != null ? String(entity.loanCount) : undefined} />
+              <ReviewRow
+                label="Cryptocurrencies"
+                value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
+              />
               <ReviewRow label="Other assets" value={formatOtherAssets(entity)} />
             </AdminReviewFieldGrid>
             {entityDocs && entityDocs.length > 0 ? (

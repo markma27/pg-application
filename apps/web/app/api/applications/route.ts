@@ -1,4 +1,4 @@
-import { fullApplicationSubmissionSchema } from "@pg/shared";
+import { fullApplicationSubmissionSchema, isRepresentativeAuthoritySatisfied } from "@pg/shared";
 import { submitApplication } from "@pg/submission/submit";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -28,6 +28,15 @@ export async function POST(request: Request) {
 
   try {
     const payload = fullApplicationSubmissionSchema.parse(body);
+    if (!isRepresentativeAuthoritySatisfied(payload)) {
+      return NextResponse.json(
+        {
+          message:
+            "When your role is Adviser / representative, you must confirm that you have authority to submit on behalf of the client.",
+        },
+        { status: 400 },
+      );
+    }
     const result = await submitApplication(payload);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

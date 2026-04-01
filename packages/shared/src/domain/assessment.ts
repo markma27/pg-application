@@ -16,7 +16,11 @@ function calculateComplexityPoints(entity: EntityInput, model: PricingModel) {
     entity.listedInvestmentCount * p.listedInvestment +
     entity.unlistedInvestmentCount * p.unlistedInvestment +
     entity.propertyCount * p.investmentProperty +
-    entity.wrapCount * p.wrapAccount
+    entity.wrapCount * p.wrapAccount +
+    entity.bankAccountCount * p.bankAccount +
+    entity.foreignBankAccountCount * p.foreignBankAccount +
+    entity.loanCount * p.loan +
+    entity.cryptocurrencyCount * p.cryptocurrency
   );
 }
 

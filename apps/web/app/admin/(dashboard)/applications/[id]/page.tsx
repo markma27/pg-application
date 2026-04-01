@@ -34,10 +34,19 @@ type EntityRow = {
   abn: string | null;
   tfn: string | null;
   registered_for_gst: boolean | null;
+  has_primary_bank_account?: boolean | null;
+  primary_bank_name?: string | null;
+  primary_bank_account_name?: string | null;
+  primary_bank_bsb?: string | null;
+  primary_bank_account_number?: string | null;
   listed_investment_count: number;
   unlisted_investment_count: number;
   property_count: number;
   wrap_count: number;
+  bank_account_count?: number;
+  foreign_bank_account_count?: number;
+  loan_count?: number;
+  cryptocurrency_count?: number;
   other_assets_text: string | null;
   has_crypto: boolean;
   has_foreign_investments: boolean;
@@ -133,10 +142,19 @@ export default async function AdminApplicationDetailPage({
       abn,
       tfn,
       registered_for_gst,
+      has_primary_bank_account,
+      primary_bank_name,
+      primary_bank_account_name,
+      primary_bank_bsb,
+      primary_bank_account_number,
       listed_investment_count,
       unlisted_investment_count,
       property_count,
       wrap_count,
+      bank_account_count,
+      foreign_bank_account_count,
+      loan_count,
+      cryptocurrency_count,
       other_assets_text,
       has_crypto,
       has_foreign_investments,
@@ -258,6 +276,7 @@ export default async function AdminApplicationDetailPage({
           primaryContactName={app.primary_contact_name}
           email={app.email}
           phone={app.phone}
+          postalAddress={(app as { postal_address?: string | null }).postal_address ?? null}
           applicantRole={app.applicant_role}
           groupName={app.group_name}
           adviserDetails={app.adviser_details}

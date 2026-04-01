@@ -2,6 +2,8 @@
 
 import { useApplicationForm } from "@/lib/application-form";
 import { APPLICANT_ROLE_OPTIONS } from "@/lib/application-form/constants";
+import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE } from "@pg/shared";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronDown } from "lucide-react";
@@ -10,6 +12,7 @@ import { cn } from "@/lib/utils";
 export function ContactStep() {
   const { state, setContact } = useApplicationForm();
   const err = (field: string) => state.stepErrorField === field;
+  const showRepresentativeAuthority = state.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE;
 
   return (
     <>
@@ -75,6 +78,19 @@ export function ContactStep() {
           </div>
 
           <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="contact-postal" className="text-slate-700">
+              Postal address <span className="text-red-500">*</span>
+            </Label>
+            <AddressAutocomplete
+              id="contact-postal"
+              value={state.postalAddress}
+              onChange={(v) => setContact({ postalAddress: v })}
+              placeholder="Type or select an address in Australia"
+              className={cn("h-11 rounded-lg border-slate-300 px-4", err("postalAddress") && "border-red-500 ring-2 ring-red-500/20")}
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="contact-role" className="text-slate-700">Role / relationship to client <span className="text-red-500">*</span></Label>
             <div className="relative">
               <select
@@ -99,6 +115,38 @@ export function ContactStep() {
                 aria-hidden
                 className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
               />
+            </div>
+            <div
+              className={cn(
+                "overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out",
+                showRepresentativeAuthority ? "max-h-48 opacity-100" : "max-h-0 opacity-0 pointer-events-none",
+              )}
+              aria-hidden={!showRepresentativeAuthority}
+            >
+              <div
+                className={cn(
+                  "pt-1",
+                  err("representativeAuthorityConfirmed") && "rounded-lg border-2 border-red-500 bg-red-50/30 p-3",
+                )}
+              >
+                <label
+                  htmlFor="contact-representative-authority"
+                  className="flex cursor-pointer items-start gap-3 text-sm text-slate-700"
+                >
+                  <input
+                    id="contact-representative-authority"
+                    type="checkbox"
+                    checked={state.representativeAuthorityConfirmed ?? false}
+                    onChange={(e) => setContact({ representativeAuthorityConfirmed: e.target.checked })}
+                    aria-invalid={err("representativeAuthorityConfirmed")}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span>
+                    I confirm I am authorised to submit this application on behalf of the client 
+                    <span className="text-red-600"> *</span>
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
 

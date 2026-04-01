@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { ApplicationInput } from "@pg/shared";
+import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type FullApplicationSubmission } from "@pg/shared";
 import type { Attachment } from "resend";
 
 /** Emerald CTA aligned with apply form / admin accents */
@@ -105,7 +105,7 @@ export async function buildApplicationNotificationEmail(params: {
   applicationId: string;
   reference: string | null | undefined;
   adminAppUrl: string;
-  payload: ApplicationInput;
+  payload: FullApplicationSubmission;
 }): Promise<{ html: string; text: string; attachments: Attachment[] }> {
   const { applicationId, reference, adminAppUrl, payload } = params;
 
@@ -114,11 +114,19 @@ export async function buildApplicationNotificationEmail(params: {
 
   const { attachments, imgHtml } = await buildLogoAttachmentAndImgTag();
 
+  const repAuthorityConfirmed =
+    payload.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE && payload.representativeAuthorityConfirmed === true;
+
   const contactRows = [
     optionalLine("Name:", payload.primaryContactName),
     optionalLine("Email:", payload.email),
     optionalLine("Phone:", payload.phone),
+    optionalLine("Postal address:", payload.postalAddress),
     optionalLine("Applicant role:", payload.applicantRole),
+    optionalLine(
+      "Authority to submit on behalf of client:",
+      repAuthorityConfirmed ? "Confirmed" : undefined,
+    ),
     optionalLine("Group / account name:", payload.groupName),
     optionalLine("Adviser details:", payload.adviserDetails),
   ].join("");
@@ -178,7 +186,9 @@ export async function buildApplicationNotificationEmail(params: {
     `Name: ${payload.primaryContactName}`,
     `Email: ${payload.email}`,
     `Phone: ${payload.phone}`,
+    payload.postalAddress?.trim() ? `Postal address: ${payload.postalAddress.trim()}` : null,
     `Applicant role: ${payload.applicantRole}`,
+    repAuthorityConfirmed ? "Authority to submit on behalf of client: Confirmed" : null,
     payload.groupName?.trim() ? `Group / account name: ${payload.groupName}` : null,
     payload.adviserDetails?.trim() ? `Adviser details: ${payload.adviserDetails}` : null,
     "",

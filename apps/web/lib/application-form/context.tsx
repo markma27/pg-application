@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
-import { fullApplicationSubmissionSchema } from "@pg/shared";
+import {
+  APPLICANT_ROLE_ADVISER_REPRESENTATIVE,
+  fullApplicationSubmissionSchema,
+  isRepresentativeAuthoritySatisfied,
+} from "@pg/shared";
 import type { ApplicationFormState, PartialEntity, PartialIndividual, SubmitResult } from "./types";
 import { formStateToPayload } from "./types";
 import { uploadPreparedPortfolioFiles } from "./portfolio-client-upload";
@@ -46,11 +50,20 @@ function createEmptyEntity(id: string): PartialEntity {
     unlistedInvestmentCount: 0,
     propertyCount: 0,
     wrapCount: 0,
+    bankAccountCount: 0,
+    foreignBankAccountCount: 0,
+    loanCount: 0,
+    cryptocurrencyCount: 0,
     otherAssetsText: "",
     hasCrypto: false,
     hasForeignInvestments: false,
     serviceCodes: [],
     commencementDate: "",
+    hasPrimaryBankAccount: false,
+    primaryBankName: "",
+    primaryBankAccountName: "",
+    primaryBankBsb: "",
+    primaryBankAccountNumber: "",
     existingPortfolioReportFiles: [],
   };
 }
@@ -60,7 +73,9 @@ const initialState: ApplicationFormState = {
   primaryContactName: "",
   email: "",
   phone: "",
+  postalAddress: "",
   applicantRole: "",
+  representativeAuthorityConfirmed: false,
   adviserDetails: "",
   groupName: "",
   entityCount: 1,
@@ -104,7 +119,21 @@ type ApplicationFormContextValue = {
   confirmationStepIndex: number;
   currentStepLabel: string;
   currentStepDescription: string;
-  setContact: (data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => void;
+  setContact: (
+    data: Partial<
+      Pick<
+        ApplicationFormState,
+        | "primaryContactName"
+        | "email"
+        | "phone"
+        | "postalAddress"
+        | "applicantRole"
+        | "representativeAuthorityConfirmed"
+        | "adviserDetails"
+        | "groupName"
+      >
+    >,
+  ) => void;
   setGroupServices: (data: Partial<Pick<ApplicationFormState, "groupCommencementDate" | "selectedAddOnServiceCodes" | "pafPuafServiceToggles" | "servicesComments">>) => void;
   setEntityCount: (count: number) => void;
   setEntity: (index: number, data: Partial<PartialEntity>) => void;
@@ -169,9 +198,32 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     return "Your application has been submitted.";
   }, [state.step, state.entityCount, servicesStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex, reviewStepIndex, entityStepsStart, entityStepsPerEntity]);
 
-  const setContact = useCallback((data: Partial<Pick<ApplicationFormState, "primaryContactName" | "email" | "phone" | "applicantRole" | "adviserDetails" | "groupName">>) => {
-    setState((s) => ({ ...s, ...data, stepError: null, stepErrorField: null }));
-  }, []);
+  const setContact = useCallback(
+    (
+      data: Partial<
+        Pick<
+          ApplicationFormState,
+          | "primaryContactName"
+          | "email"
+          | "phone"
+          | "postalAddress"
+          | "applicantRole"
+          | "representativeAuthorityConfirmed"
+          | "adviserDetails"
+          | "groupName"
+        >
+      >,
+    ) => {
+      setState((s) => {
+        const next = { ...s, ...data, stepError: null, stepErrorField: null } as ApplicationFormState;
+        if (data.applicantRole !== undefined && data.applicantRole !== APPLICANT_ROLE_ADVISER_REPRESENTATIVE) {
+          next.representativeAuthorityConfirmed = false;
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const setGroupServices = useCallback((data: Partial<Pick<ApplicationFormState, "groupCommencementDate" | "selectedAddOnServiceCodes" | "pafPuafServiceToggles" | "servicesComments">>) => {
     setState((s) => ({
@@ -262,12 +314,22 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
           return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "email" };
         if (!s.phone?.trim())
           return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "phone" };
+        if (!s.postalAddress?.trim())
+          return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "postalAddress" };
         if (!s.applicantRole?.trim())
           return { ...s, stepError: "Please complete all required contact fields.", stepErrorField: "applicantRole" };
         if (!EMAIL_RE.test(s.email.trim()))
           return { ...s, stepError: "Please enter a valid email address.", stepErrorField: "email" };
         if (!/^\d{8,15}$/.test(s.phone))
           return { ...s, stepError: "Phone number must be 8–15 digits.", stepErrorField: "phone" };
+        if (s.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE && !s.representativeAuthorityConfirmed) {
+          return {
+            ...s,
+            stepError:
+              "Please confirm that you have the appropriate authority to submit this application on behalf of the client.",
+            stepErrorField: "representativeAuthorityConfirmed",
+          };
+        }
       }
       if (s.step >= entityStart && s.step < entityStart + s.entityCount * stepsPerEntity) {
         const entityIndex = Math.floor((s.step - entityStart) / stepsPerEntity);
@@ -288,6 +350,22 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
             return { ...s, stepError: "TFN must be 8 or 9 digits.", stepErrorField: entityField("tfn") };
           if (entity.abn?.trim() && !/^\d{11}$/.test(entity.abn))
             return { ...s, stepError: "ABN must be exactly 11 digits.", stepErrorField: entityField("abn") };
+          if (entity.hasPrimaryBankAccount === true) {
+            if (!entity.primaryBankName?.trim())
+              return { ...s, stepError: "Please complete primary bank details.", stepErrorField: entityField("primaryBankName") };
+            if (!entity.primaryBankAccountName?.trim())
+              return { ...s, stepError: "Please complete primary bank details.", stepErrorField: entityField("primaryBankAccountName") };
+            const bsb = entity.primaryBankBsb?.replace(/\s/g, "") ?? "";
+            if (!/^\d{6}$/.test(bsb))
+              return { ...s, stepError: "BSB must be 6 digits.", stepErrorField: entityField("primaryBankBsb") };
+            const acc = entity.primaryBankAccountNumber?.replace(/\s/g, "") ?? "";
+            if (!/^\d{3,20}$/.test(acc))
+              return {
+                ...s,
+                stepError: "Account number must be 3–20 digits.",
+                stepErrorField: entityField("primaryBankAccountNumber"),
+              };
+          }
         }
       }
       const servicesStep = entityStart + s.entityCount * stepsPerEntity;
@@ -436,6 +514,16 @@ export function ApplicationFormProvider({ children }: { children: React.ReactNod
     const parsed = fullApplicationSubmissionSchema.safeParse(payload);
     if (!parsed.success) {
       setState((s) => ({ ...s, stepError: "Validation failed. Please check all required fields." }));
+      return;
+    }
+    if (!isRepresentativeAuthoritySatisfied(parsed.data)) {
+      setState((s) => ({
+        ...s,
+        step: 0,
+        stepError:
+          "Please confirm that you have the appropriate authority to submit this application on behalf of the client.",
+        stepErrorField: "representativeAuthorityConfirmed",
+      }));
       return;
     }
     setState((s) => ({ ...s, isSubmitting: true, stepError: null }));

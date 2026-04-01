@@ -78,6 +78,47 @@ function AnimateSectionIn({
   );
 }
 
+/** Same Yes/No switch pattern as `InvestmentAdviserPresenceToggle` on the adviser step */
+function PrimaryBankPresenceToggle({
+  label,
+  checked,
+  onChange,
+  "aria-label": ariaLabel,
+}: {
+  label: string;
+  checked: boolean | undefined;
+  onChange: (checked: boolean) => void;
+  "aria-label"?: string;
+}) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_4.83rem] items-center gap-x-4 py-1.5">
+      <span className="min-w-0 text-sm text-slate-700">{label}</span>
+      <label
+        className="relative inline-flex shrink-0 cursor-pointer items-center justify-self-end"
+        aria-label={ariaLabel}
+      >
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer sr-only"
+          role="switch"
+        />
+        <div
+          className={cn(
+            "peer relative inline-block h-[2.415rem] w-[4.83rem] shrink-0 rounded-full bg-emerald-200 outline-none transition-colors duration-100 after:duration-300",
+            "peer-checked:bg-emerald-600",
+            "peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500/50",
+            "after:pointer-events-none after:absolute after:left-[0.1725rem] after:top-[0.1725rem] after:flex after:h-[2.07rem] after:w-[2.07rem] after:items-center after:justify-center after:rounded-full after:bg-white after:text-[9px] after:font-bold after:text-emerald-900 after:shadow-md after:outline-none after:transition-transform",
+            "after:content-['No']",
+            "peer-checked:after:translate-x-[2.415rem] peer-checked:after:content-['Yes'] peer-checked:after:border peer-checked:after:border-white",
+          )}
+        />
+      </label>
+    </div>
+  );
+}
+
 function PortfolioReportSection({
   entityIndex,
   entity,
@@ -187,6 +228,21 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
 
   const update = (data: Partial<typeof entity>) => setEntity(entityIndex, data);
   const err = (field: string) => state.stepErrorField === `entity_${entityIndex}_${field}`;
+  const showPrimaryBankFields = entity.hasPrimaryBankAccount === true;
+
+  const handlePrimaryBankToggle = (yes: boolean) => {
+    if (!yes) {
+      update({
+        hasPrimaryBankAccount: false,
+        primaryBankName: "",
+        primaryBankAccountName: "",
+        primaryBankBsb: "",
+        primaryBankAccountNumber: "",
+      });
+    } else {
+      update({ hasPrimaryBankAccount: true });
+    }
+  };
 
   return (
     <>
@@ -333,16 +389,121 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
           </div>
         </div>
 
-        <div className="space-y-4">
+        <section className="space-y-3">
+          <Label className="text-base font-semibold text-slate-900">
+            Primary bank account details <span className="text-red-500">*</span>
+          </Label>
+          <PrimaryBankPresenceToggle
+            label="Does the entity have a primary bank account?"
+            checked={entity.hasPrimaryBankAccount}
+            onChange={handlePrimaryBankToggle}
+            aria-label="Does the entity have a primary bank account"
+          />
+          <div
+            className={cn(
+              "grid transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none",
+              showPrimaryBankFields ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+            )}
+          >
+            <div className="min-h-0 overflow-hidden px-2 py-1 sm:px-2.5">
+              <div
+                className={cn(
+                  "space-y-6 transition-opacity duration-300 ease-in-out motion-reduce:transition-none",
+                  showPrimaryBankFields ? "opacity-100" : "pointer-events-none opacity-0",
+                )}
+                aria-hidden={!showPrimaryBankFields}
+              >
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">
+                      Bank name <span className="text-red-600">*</span>
+                    </Label>
+                    <Input
+                      value={entity.primaryBankName ?? ""}
+                      onChange={(e) => update({ primaryBankName: e.target.value })}
+                      placeholder="e.g. Macquarie, NAB, CBA etc."
+                      autoComplete="organization"
+                      aria-invalid={err("primaryBankName")}
+                      className={cn(
+                        "h-11 rounded-lg border-slate-300 px-4",
+                        err("primaryBankName") && "border-red-500 ring-2 ring-red-500/20",
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">
+                      Account name <span className="text-red-600">*</span>
+                    </Label>
+                    <Input
+                      value={entity.primaryBankAccountName ?? ""}
+                      onChange={(e) => update({ primaryBankAccountName: e.target.value })}
+                      placeholder="Account name"
+                      autoComplete="off"
+                      aria-invalid={err("primaryBankAccountName")}
+                      className={cn(
+                        "h-11 rounded-lg border-slate-300 px-4",
+                        err("primaryBankAccountName") && "border-red-500 ring-2 ring-red-500/20",
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">
+                      BSB <span className="text-red-600">*</span>
+                    </Label>
+                    <Input
+                      value={entity.primaryBankBsb ?? ""}
+                      onChange={(e) =>
+                        update({ primaryBankBsb: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                      }
+                      placeholder="BSB number"
+                      inputMode="numeric"
+                      maxLength={6}
+                      autoComplete="off"
+                      aria-invalid={err("primaryBankBsb")}
+                      className={cn(
+                        "h-11 rounded-lg border-slate-300 px-4",
+                        err("primaryBankBsb") && "border-red-500 ring-2 ring-red-500/20",
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">
+                      Account number <span className="text-red-600">*</span>
+                    </Label>
+                    <Input
+                      value={entity.primaryBankAccountNumber ?? ""}
+                      onChange={(e) =>
+                        update({ primaryBankAccountNumber: e.target.value.replace(/\D/g, "").slice(0, 20) })
+                      }
+                      placeholder="Account number"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      aria-invalid={err("primaryBankAccountNumber")}
+                      className={cn(
+                        "h-11 rounded-lg border-slate-300 px-4",
+                        err("primaryBankAccountNumber") && "border-red-500 ring-2 ring-red-500/20",
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="-mt-5 space-y-4">
           <div>
             <Label className="text-base font-semibold text-slate-900">Asset counts (estimates)</Label>
             <p className="text-sm text-slate-500">
               Please provide your best estimate of the number of investments in each category. Approximate figures are sufficient and will be used for complexity assessment.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label className="text-slate-700">Listed</Label>
+          <div className="flex flex-col gap-0">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Listed</Label>
+              </div>
               <Input
                 type="number"
                 min={0}
@@ -352,8 +513,10 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                 className="h-11 rounded-lg border-slate-300"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-slate-700">Unlisted</Label>
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Unlisted</Label>
+              </div>
               <Input
                 type="number"
                 min={0}
@@ -363,8 +526,10 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                 className="h-11 rounded-lg border-slate-300"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-slate-700">Properties</Label>
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Properties</Label>
+              </div>
               <Input
                 type="number"
                 min={0}
@@ -374,8 +539,12 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                 className="h-11 rounded-lg border-slate-300"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-slate-700">Wrap / platform</Label>
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">
+                  Wrap / platform<span className="text-slate-400"> *</span>
+                </Label>
+              </div>
               <Input
                 type="number"
                 min={0}
@@ -386,13 +555,71 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
               />
             </div>
           </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Bank accounts</Label>
+              </div>
+              <Input
+                type="number"
+                min={0}
+                value={entity.bankAccountCount === 0 ? "" : entity.bankAccountCount}
+                onChange={(e) => update({ bankAccountCount: parseInt(e.target.value, 10) || 0 })}
+                placeholder="0"
+                className="h-11 rounded-lg border-slate-300"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Foreign bank accounts</Label>
+              </div>
+              <Input
+                type="number"
+                min={0}
+                value={entity.foreignBankAccountCount === 0 ? "" : entity.foreignBankAccountCount}
+                onChange={(e) => update({ foreignBankAccountCount: parseInt(e.target.value, 10) || 0 })}
+                placeholder="0"
+                className="h-11 rounded-lg border-slate-300"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Loans</Label>
+              </div>
+              <Input
+                type="number"
+                min={0}
+                value={entity.loanCount === 0 ? "" : entity.loanCount}
+                onChange={(e) => update({ loanCount: parseInt(e.target.value, 10) || 0 })}
+                placeholder="0"
+                className="h-11 rounded-lg border-slate-300"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex min-h-[3rem] flex-col justify-end">
+                <Label className="text-slate-700">Cryptocurrencies</Label>
+              </div>
+              <Input
+                type="number"
+                min={0}
+                value={entity.cryptocurrencyCount === 0 ? "" : entity.cryptocurrencyCount}
+                onChange={(e) => update({ cryptocurrencyCount: parseInt(e.target.value, 10) || 0 })}
+                placeholder="0"
+                className="h-11 rounded-lg border-slate-300"
+              />
+            </div>
+          </div>
+            <p className="my-4 max-w-3xl text-xs leading-relaxed text-slate-500">
+              <span className="font-medium text-slate-600">* Wrap / platform:</span> If you enter a count here, do not include the same investments under Listed, Unlisted, Properties, etc. Each holding should be counted once only. Please also provide wrap / platform details in the Other Details & Notes field below.
+            </p>
+          </div>
           <div className="mt-4">
             <div className="space-y-2">
               <Label className="text-slate-700">Other Details & Notes</Label>
               <textarea
                 value={entity.otherAssetsText}
                 onChange={(e) => update({ otherAssetsText: e.target.value })}
-                placeholder="e.g. other assets such as crypto, gold, etc. or asset type, platform or wrap, approximate value, or any other notes…"
+                placeholder="e.g. other assets such as gold, silver, etc. or asset type, approximate value, or any other notes…"
                 rows={4}
                 className="w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white px-4 py-3 text-base transition-colors outline-none placeholder:text-slate-400 focus:border-emerald-600 focus:ring-3 focus:ring-emerald-600/30"
               />

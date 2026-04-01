@@ -1,4 +1,4 @@
-import type { ApplicationInput } from "@pg/shared";
+import type { FullApplicationSubmission } from "@pg/shared";
 import { env, resolveAdminAppUrl } from "../env.js";
 import { resend } from "../resend.js";
 import { buildApplicationNotificationEmail } from "./application-notification-email.js";
@@ -19,7 +19,7 @@ export async function sendApplicationNotification(params: {
   applicationId: string;
   /** Human-readable reference from DB (e.g. PG-100001) when persisted. */
   reference?: string | null;
-  payload: ApplicationInput;
+  payload: FullApplicationSubmission;
 }) {
   if (!resend) {
     console.warn("Resend is not configured. Skipping notification email.");

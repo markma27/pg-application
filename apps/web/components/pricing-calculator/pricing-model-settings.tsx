@@ -81,6 +81,10 @@ export function PricingModelSettings({
               ["unlistedInvestment", "Unlisted investment"],
               ["investmentProperty", "Investment property"],
               ["wrapAccount", "Wrap account"],
+              ["bankAccount", "Bank account"],
+              ["foreignBankAccount", "Foreign bank account"],
+              ["loan", "Loan"],
+              ["cryptocurrency", "Cryptocurrency"],
             ] as const
           ).map(([key, label]) => (
             <div key={key} className="space-y-1.5">

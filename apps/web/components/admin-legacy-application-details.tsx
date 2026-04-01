@@ -103,10 +103,19 @@ export type LegacyEntityRow = {
   abn: string | null;
   tfn: string | null;
   registered_for_gst: boolean | null;
+  has_primary_bank_account?: boolean | null;
+  primary_bank_name?: string | null;
+  primary_bank_account_name?: string | null;
+  primary_bank_bsb?: string | null;
+  primary_bank_account_number?: string | null;
   listed_investment_count: number;
   unlisted_investment_count: number;
   property_count: number;
   wrap_count: number;
+  bank_account_count?: number;
+  foreign_bank_account_count?: number;
+  loan_count?: number;
+  cryptocurrency_count?: number;
   other_assets_text: string | null;
   has_crypto: boolean;
   has_foreign_investments: boolean;
@@ -152,6 +161,7 @@ export function AdminLegacyApplicationDetails({
   primaryContactName,
   email,
   phone,
+  postalAddress,
   applicantRole,
   groupName,
   adviserDetails,
@@ -164,6 +174,8 @@ export function AdminLegacyApplicationDetails({
   primaryContactName: string;
   email: string;
   phone: string;
+  /** From `applications.postal_address` when present. */
+  postalAddress?: string | null;
   applicantRole: string;
   groupName: string | null;
   adviserDetails: string | null;
@@ -213,6 +225,7 @@ export function AdminLegacyApplicationDetails({
             <ReviewRow label="Name" value={primaryContactName} />
             <ReviewRow label="Email" value={email} />
             <ReviewRow label="Phone" value={phone} />
+            <ReviewRow label="Postal address" value={postalAddress?.trim() || undefined} />
             <ReviewRow label="Role" value={applicantRole} />
             <ReviewRowAlways label="Group name" value={groupName?.trim() || "—"} />
             <ReviewRowAlways
@@ -250,6 +263,27 @@ export function AdminLegacyApplicationDetails({
                 }
               />
               <ReviewRow
+                label="Primary bank account"
+                value={
+                  entity.has_primary_bank_account === true
+                    ? "Yes"
+                    : entity.has_primary_bank_account === false
+                      ? "No"
+                      : undefined
+                }
+              />
+              {entity.has_primary_bank_account === true ? (
+                <>
+                  <ReviewRow label="Bank name" value={entity.primary_bank_name?.trim() || undefined} />
+                  <ReviewRow label="Account name" value={entity.primary_bank_account_name?.trim() || undefined} />
+                  <ReviewRow label="BSB" value={entity.primary_bank_bsb?.replace(/\s/g, "") || undefined} />
+                  <ReviewRow
+                    label="Account number"
+                    value={entity.primary_bank_account_number?.replace(/\s/g, "") || undefined}
+                  />
+                </>
+              ) : null}
+              <ReviewRow
                 label="Listed investments"
                 value={String(entity.listed_investment_count)}
               />
@@ -259,6 +293,10 @@ export function AdminLegacyApplicationDetails({
               />
               <ReviewRow label="Property" value={String(entity.property_count)} />
               <ReviewRow label="Wrap" value={String(entity.wrap_count)} />
+              <ReviewRow label="Bank accounts" value={String(entity.bank_account_count ?? 0)} />
+              <ReviewRow label="Foreign bank accounts" value={String(entity.foreign_bank_account_count ?? 0)} />
+              <ReviewRow label="Loans" value={String(entity.loan_count ?? 0)} />
+              <ReviewRow label="Cryptocurrencies" value={String(entity.cryptocurrency_count ?? 0)} />
               <ReviewRow label="Other assets" value={formatOtherAssetsDb(entity)} />
               <ReviewRow
                 label="Pricing (system)"

@@ -1,4 +1,4 @@
-import type { EntityInput, FullApplicationSubmission } from "@pg/shared";
+import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type EntityInput, type FullApplicationSubmission } from "@pg/shared";
 import { ADD_ON_SERVICE_CODES, STANDARD_SERVICE_CODES } from "./constants";
 
 /** Single option for where to send a document type */
@@ -13,7 +13,11 @@ export interface ApplicationFormState {
   primaryContactName: string;
   email: string;
   phone: string;
+  /** Primary applicant postal address (required; contact step). */
+  postalAddress: string;
   applicantRole: string;
+  /** Required when applicantRole is Adviser / representative */
+  representativeAuthorityConfirmed: boolean;
   adviserDetails: string;
   groupName: string;
   /** How many entities (step 1). Drives steps 2..2+3N-1 (3 sub-steps per entity) */
@@ -97,11 +101,21 @@ export interface PartialEntity {
   unlistedInvestmentCount: number;
   propertyCount: number;
   wrapCount: number;
+  bankAccountCount: number;
+  foreignBankAccountCount: number;
+  loanCount: number;
+  cryptocurrencyCount: number;
   otherAssetsText: string;
   hasCrypto: boolean;
   hasForeignInvestments: boolean;
   serviceCodes: EntityInput["serviceCodes"][number][];
   commencementDate: string;
+  /** Primary bank — toggle; if true, bank detail fields are required */
+  hasPrimaryBankAccount: boolean;
+  primaryBankName: string;
+  primaryBankAccountName: string;
+  primaryBankBsb: string;
+  primaryBankAccountNumber: string;
 }
 
 export interface SubmitResult {
@@ -155,11 +169,20 @@ export function formStateToPayload(state: ApplicationFormState): FullApplication
       unlistedInvestmentCount: e.unlistedInvestmentCount ?? 0,
       propertyCount: e.propertyCount ?? 0,
       wrapCount: e.wrapCount ?? 0,
+      bankAccountCount: e.bankAccountCount ?? 0,
+      foreignBankAccountCount: e.foreignBankAccountCount ?? 0,
+      loanCount: e.loanCount ?? 0,
+      cryptocurrencyCount: e.cryptocurrencyCount ?? 0,
       otherAssetsText: e.otherAssetsText ?? "",
       hasCrypto: e.hasCrypto ?? false,
       hasForeignInvestments: e.hasForeignInvestments ?? false,
       serviceCodes,
       commencementDate: state.groupCommencementDate,
+      hasPrimaryBankAccount: e.hasPrimaryBankAccount ?? false,
+      primaryBankName: e.primaryBankName ?? "",
+      primaryBankAccountName: e.primaryBankAccountName ?? "",
+      primaryBankBsb: e.primaryBankBsb ?? "",
+      primaryBankAccountNumber: e.primaryBankAccountNumber ?? "",
     } as EntityInput;
   });
   const entities = raw.filter((e): e is EntityInput => e !== null);
@@ -183,12 +206,17 @@ export function formStateToPayload(state: ApplicationFormState): FullApplication
   }));
 
   const hasAdv = state.hasInvestmentAdviser === true;
+  const isAdviserRepresentative = state.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE;
   return {
     hasInvestmentAdviser: hasAdv,
     primaryContactName: state.primaryContactName,
     email: state.email,
     phone: state.phone,
+    postalAddress: state.postalAddress ?? "",
     applicantRole: state.applicantRole,
+    representativeAuthorityConfirmed: isAdviserRepresentative
+      ? state.representativeAuthorityConfirmed === true
+      : undefined,
     adviserDetails: state.adviserDetails ?? "",
     groupName: state.groupName ?? "",
     servicesComments: state.servicesComments ?? "",
