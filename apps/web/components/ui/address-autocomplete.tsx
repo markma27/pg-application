@@ -36,8 +36,8 @@ function loadMapsApi(apiKey: string): Promise<void> {
     if (maps?.importLibrary) { resolve(); return; }
 
     // Expose a global callback that Google Maps calls once loaded.
-    (window as Record<string, unknown>)[CALLBACK] = () => {
-      delete (window as Record<string, unknown>)[CALLBACK];
+    (window as unknown as Record<string, unknown>)[CALLBACK] = () => {
+      delete (window as unknown as Record<string, unknown>)[CALLBACK];
       resolve();
     };
 
@@ -47,7 +47,7 @@ function loadMapsApi(apiKey: string): Promise<void> {
     script.async = true;
     script.defer = true;
     script.onerror = () => {
-      delete (window as Record<string, unknown>)[CALLBACK];
+      delete (window as unknown as Record<string, unknown>)[CALLBACK];
       mapsReadyPromise = null;
       reject(new Error("Google Maps script failed to load"));
     };
