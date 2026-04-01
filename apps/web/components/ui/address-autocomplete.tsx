@@ -3,37 +3,58 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Bootstrap loader sets up google.maps.importLibrary (Maps JavaScript API dynamic loading).
-// See: https://developers.google.com/maps/documentation/javascript/load-maps-js-api
-const BOOTSTRAP_SCRIPT_ID = "google-maps-bootstrap";
+/**
+ * Load the Maps JS API as a real external <script src="..."> so that onload/onerror fire reliably.
+ * The inline bootstrap snippet approach (script.textContent) has an unreliable onload on production
+ * because inline scripts never fire onload — we were resolving before the real API script loaded.
+ *
+ * Strategy: inject a single <script src="https://maps.googleapis.com/maps/api/js?key=...&loading=async&callback=__mapsReady">
+ * and resolve the promise when the callback fires (or reject on onerror / timeout).
+ */
+const MAPS_SCRIPT_ID = "google-maps-api";
 
 type MapsWithLoader = { importLibrary?: (name: string) => Promise<unknown> };
 
-function loadMapsBootstrap(apiKey: string): Promise<void> {
-  if (typeof window === "undefined") return Promise.reject(new Error("Window undefined"));
+// Module-level promise so concurrent callers share one load.
+let mapsReadyPromise: Promise<void> | null = null;
 
-  const existing = document.getElementById(BOOTSTRAP_SCRIPT_ID);
-  if (existing) {
+function loadMapsApi(apiKey: string): Promise<void> {
+  if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
+
+  // Already loaded — google.maps.importLibrary is available.
+  const existing = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
+  if (existing?.importLibrary) return Promise.resolve();
+
+  // Script already injected — wait for the shared promise.
+  if (mapsReadyPromise) return mapsReadyPromise;
+
+  mapsReadyPromise = new Promise<void>((resolve, reject) => {
+    const CALLBACK = "__googleMapsReady";
+
+    // Guard: if another script somehow already populated google.maps before we run, resolve now.
     const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
-    if (maps?.importLibrary) return Promise.resolve();
-    return new Promise((resolve) => {
-      const check = () => {
-        const m = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
-        if (m?.importLibrary) resolve();
-        else requestAnimationFrame(check);
-      };
-      check();
-    });
-  }
+    if (maps?.importLibrary) { resolve(); return; }
 
-  return new Promise((resolve, reject) => {
+    // Expose a global callback that Google Maps calls once loaded.
+    (window as Record<string, unknown>)[CALLBACK] = () => {
+      delete (window as Record<string, unknown>)[CALLBACK];
+      resolve();
+    };
+
     const script = document.createElement("script");
-    script.id = BOOTSTRAP_SCRIPT_ID;
-    script.textContent = `(g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src="https://maps."+c+"apis.com/maps/api/js?"+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({key:"${apiKey.replace(/"/g, '\\"')}",v:"weekly"});`;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Google Maps bootstrap"));
+    script.id = MAPS_SCRIPT_ID;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async&libraries=places&callback=${CALLBACK}`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      delete (window as Record<string, unknown>)[CALLBACK];
+      mapsReadyPromise = null;
+      reject(new Error("Google Maps script failed to load"));
+    };
     document.head.appendChild(script);
   });
+
+  return mapsReadyPromise;
 }
 
 export interface AddressAutocompleteProps {
@@ -46,13 +67,9 @@ export interface AddressAutocompleteProps {
   disabled?: boolean;
 }
 
-/** @deprecated Use loadMapsBootstrap + importLibrary('places') for Places API (New). */
+/** Kept for any existing callers in apply-shell — delegates to the new loader. */
 export function loadGooglePlacesScript(apiKey: string): Promise<void> {
-  return loadMapsBootstrap(apiKey).then(() => {
-    const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
-    if (!maps?.importLibrary) throw new Error("importLibrary not available");
-    return maps.importLibrary("places") as Promise<unknown>;
-  }).then(() => undefined);
+  return loadMapsApi(apiKey);
 }
 
 const AU_REGION = "au";
@@ -297,7 +314,9 @@ export function AddressAutocomplete({
 
   useEffect(() => {
     if (!apiKey) return;
-    loadMapsBootstrap(apiKey)
+    // loadMapsApi already requests &libraries=places in the URL, so places is available once the
+    // script callback fires. We still call importLibrary("places") to get the typed library object.
+    loadMapsApi(apiKey)
       .then(() => {
         const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
         if (!maps?.importLibrary) throw new Error("importLibrary not available");
