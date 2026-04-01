@@ -58,6 +58,28 @@ export function loadGooglePlacesScript(apiKey: string): Promise<void> {
 const AU_REGION = "au";
 const DEBOUNCE_MS = 200;
 
+/** Shapes returned by `google.maps.importLibrary("places")` (Places API / Autocomplete Data). */
+type PlacesLibrary = {
+  AutocompleteSessionToken: new () => unknown;
+  AutocompleteSuggestion: {
+    fetchAutocompleteSuggestions: (req: {
+      input: string;
+      sessionToken?: unknown;
+      includedRegionCodes?: string[];
+    }) => Promise<{
+      suggestions: Array<{
+        placePrediction: {
+          toPlace: () => Promise<{
+            fetchFields: (opts: { fields: string[] }) => Promise<{ formattedAddress?: string }>;
+          }>;
+          placeId: string;
+          text?: { text?: string };
+        };
+      }>;
+    }>;
+  };
+};
+
 /** Strip ", Australia" from the end of addresses (all clients are Australia-based). */
 function dropCountrySuffix(address: string): string {
   return (address ?? "").replace(/,?\s*Australia\s*$/i, "").trim();
@@ -122,37 +144,26 @@ export function AddressAutocomplete({
   latestSuggestionsDisplayRef.current = suggestions;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionRequestIdRef = useRef(0);
+  /** Set when `importLibrary("places")` resolves — do not use `window.google.maps.places` (undefined with dynamic loader). */
+  const placesLibRef = useRef<PlacesLibrary | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
 
   const fetchSuggestions = useCallback(async (input: string) => {
-    if (!input.trim() || !window.google?.maps?.places) {
+    const places = placesLibRef.current;
+    if (!input.trim() || !places) {
       setSuggestions([]);
       suggestionsRef.current = [];
       setOpen(false);
       return;
     }
-    const g = window.google as unknown as {
-      maps: {
-        places: {
-          AutocompleteSessionToken: new () => unknown;
-          AutocompleteSuggestion: {
-            fetchAutocompleteSuggestions: (req: {
-              input: string;
-              sessionToken?: unknown;
-              includedRegionCodes?: string[];
-            }) => Promise<{ suggestions: Array<{ placePrediction: { toPlace: () => Promise<{ fetchFields: (opts: { fields: string[] }) => Promise<{ formattedAddress?: string }> }>; placeId: string; text?: { text?: string } } }> }>;
-          };
-        };
-      };
-    };
-    const places = g.maps.places;
+    const { AutocompleteSessionToken, AutocompleteSuggestion } = places;
     let token = sessionTokenRef.current;
     if (!token) {
-      token = new places.AutocompleteSessionToken();
+      token = new AutocompleteSessionToken();
       sessionTokenRef.current = token;
     }
     try {
-      const { suggestions: list } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      const { suggestions: list } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input: input.trim(),
         sessionToken: token,
         includedRegionCodes: [AU_REGION],
@@ -290,11 +301,27 @@ export function AddressAutocomplete({
       .then(() => {
         const maps = (window as { google?: { maps?: MapsWithLoader } }).google?.maps;
         if (!maps?.importLibrary) throw new Error("importLibrary not available");
-        return maps.importLibrary("places") as Promise<unknown>;
+        return maps.importLibrary("places") as Promise<PlacesLibrary>;
       })
-      .then(() => setScriptReady(true))
+      .then((lib) => {
+        placesLibRef.current = lib;
+        setScriptReady(true);
+      })
       .catch(() => setScriptError(true));
   }, [apiKey]);
+
+  /** If the user typed before Places finished loading, fetch once the library is ready. */
+  const scriptReadyOnceRef = useRef(false);
+  useEffect(() => {
+    if (!scriptReady) {
+      scriptReadyOnceRef.current = false;
+      return;
+    }
+    if (scriptReadyOnceRef.current) return;
+    scriptReadyOnceRef.current = true;
+    const t = text.trim();
+    if (t) void fetchSuggestions(t);
+  }, [scriptReady, text, fetchSuggestions]);
 
   useEffect(() => {
     return () => {
@@ -309,6 +336,17 @@ export function AddressAutocomplete({
 
   return (
     <div ref={wrapperRef} className="relative">
+      {!apiKey ? (
+        <p className="mb-2 text-xs text-amber-800/90">
+          Address search is unavailable (missing <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_GOOGLE_PLACES_API_KEY</code>
+          ). Enter your full postal address manually.
+        </p>
+      ) : null}
+      {apiKey && scriptError ? (
+        <p className="mb-2 text-xs text-amber-800/90">
+          Address suggestions could not be loaded. Enter your full postal address manually.
+        </p>
+      ) : null}
       <input
         ref={inputRef}
         id={id}
