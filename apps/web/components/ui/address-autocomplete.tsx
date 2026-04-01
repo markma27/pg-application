@@ -163,6 +163,9 @@ export function AddressAutocomplete({
   const suggestionRequestIdRef = useRef(0);
   /** Set when `importLibrary("places")` resolves — do not use `window.google.maps.places` (undefined with dynamic loader). */
   const placesLibRef = useRef<PlacesLibrary | null>(null);
+  /** True only after the user has actually focused or typed in this field instance.
+   * Prevents the dropdown auto-opening when navigating back/forward to a pre-filled step. */
+  const userHasInteractedRef = useRef(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
 
   const fetchSuggestions = useCallback(async (input: string) => {
@@ -236,6 +239,7 @@ export function AddressAutocomplete({
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      userHasInteractedRef.current = true;
       const v = e.target.value;
       onChange(v);
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -329,7 +333,11 @@ export function AddressAutocomplete({
       .catch(() => setScriptError(true));
   }, [apiKey]);
 
-  /** If the user typed before Places finished loading, fetch once the library is ready. */
+  /**
+   * If the user started typing before Places finished loading, resume suggestions once ready.
+   * Guard with userHasInteractedRef so navigating back to a pre-filled step never auto-opens
+   * the dropdown — only a deliberate focus/keystroke from the user should trigger it.
+   */
   const scriptReadyOnceRef = useRef(false);
   useEffect(() => {
     if (!scriptReady) {
@@ -339,7 +347,7 @@ export function AddressAutocomplete({
     if (scriptReadyOnceRef.current) return;
     scriptReadyOnceRef.current = true;
     const t = text.trim();
-    if (t) void fetchSuggestions(t);
+    if (t && userHasInteractedRef.current) void fetchSuggestions(t);
   }, [scriptReady, text, fetchSuggestions]);
 
   useEffect(() => {
@@ -382,7 +390,10 @@ export function AddressAutocomplete({
         value={text}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => text.trim() && scriptReady && fetchSuggestions(text)}
+        onFocus={() => {
+          userHasInteractedRef.current = true;
+          if (text.trim() && scriptReady) void fetchSuggestions(text);
+        }}
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
