@@ -335,7 +335,15 @@ export function AddressAutocomplete({
   );
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div
+      ref={wrapperRef}
+      className={cn(
+        "relative",
+        // Later siblings in the same grid (e.g. role select below postal on step 1) paint on top by
+        // default; lift this cell while the list is open so suggestions stay visible.
+        open && suggestions.length > 0 && "z-50",
+      )}
+    >
       {!apiKey ? (
         <p className="mb-2 text-xs text-amber-800/90">
           Address search is unavailable (missing <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_GOOGLE_PLACES_API_KEY</code>
