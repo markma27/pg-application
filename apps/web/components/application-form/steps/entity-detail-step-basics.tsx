@@ -473,10 +473,11 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
                     <Input
                       value={entity.primaryBankAccountNumber ?? ""}
                       onChange={(e) =>
-                        update({ primaryBankAccountNumber: e.target.value.replace(/\D/g, "").slice(0, 20) })
+                        update({ primaryBankAccountNumber: e.target.value.replace(/\D/g, "").slice(0, 10) })
                       }
                       placeholder="Account number"
                       inputMode="numeric"
+                      maxLength={10}
                       autoComplete="off"
                       aria-invalid={err("primaryBankAccountNumber")}
                       className={cn(

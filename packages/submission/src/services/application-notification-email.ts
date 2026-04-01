@@ -315,13 +315,6 @@ export async function buildApplicantConfirmationEmail(params: {
               </table>
             </td>
           </tr>
-          <tr>
-            <td align="center" style="padding:8px 28px 28px 28px;text-align:center;">
-              <a href="${escapeHtml(site)}/" style="display:inline-block;background:${CTA_GREEN};color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 22px;border-radius:8px;border:1px solid ${CTA_GREEN_HOVER_BORDER};">
-                Return to home
-              </a>
-            </td>
-          </tr>
         </table>
       </td>
     </tr>
@@ -349,7 +342,6 @@ export async function buildApplicantConfirmationEmail(params: {
     "Email: applications@portfolioguardian.com.au",
     "Phone: 1300 722 942",
     "",
-    `Return home: ${site}/`,
   ].join("\n");
 
   return { html, text, attachments };
