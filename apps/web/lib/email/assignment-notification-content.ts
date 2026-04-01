@@ -78,7 +78,7 @@ export async function buildApplicationAssigneeNotificationEmail(params: {
 </html>`.trim();
 
   const text = [
-    "PortfolioGuardian — application assignment",
+    "PortfolioGuardian - application assignment",
     refLine ? `Reference: ${refLine}` : "",
     "",
     `Hello ${greetingFirst},`,

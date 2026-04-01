@@ -135,7 +135,7 @@ export async function sendApplicationAssigneeNotificationEmail(
   const { error } = await resend.emails.send({
     from: fromAddress(),
     to: [to],
-    subject: `Assigned to you: ${ref} — PortfolioGuardian admin`,
+    subject: `Assigned to you: ${ref} - PortfolioGuardian admin`,
     html,
     text,
     attachments: attachments.length > 0 ? attachments : undefined,

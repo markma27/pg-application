@@ -57,7 +57,7 @@ export async function sendApplicationNotification(params: {
       const { data, error } = await resend.emails.send({
         from,
         to,
-        subject: `New PortfolioGuardian application — ${subjectRef}`,
+        subject: `New PortfolioGuardian application - ${subjectRef}`,
         html,
         text,
         attachments: attachments.length > 0 ? attachments : undefined,
@@ -98,7 +98,7 @@ export async function sendApplicationNotification(params: {
       const { data, error } = await resend.emails.send({
         from,
         to: applicantTo,
-        subject: `Your PortfolioGuardian application — ${subjectRef}`,
+        subject: `Your PortfolioGuardian application - ${subjectRef}`,
         html,
         text,
         attachments: attachments.length > 0 ? attachments : undefined,

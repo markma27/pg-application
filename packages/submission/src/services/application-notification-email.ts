@@ -221,7 +221,7 @@ export async function buildApplicantConfirmationEmail(params: {
   const { applicationId, reference, primaryContactName, publicSiteUrl } = params;
   const refDisplay = referenceDisplayForEmail(reference, applicationId);
   const site = publicSiteUrl.replace(/\/$/, "");
-  const mailtoHelp = `mailto:applications@portfolioguardian.com.au?subject=${encodeURIComponent(`Application inquiry — Reference ${refDisplay}`)}`;
+  const mailtoHelp = `mailto:applications@portfolioguardian.com.au?subject=${encodeURIComponent(`Application inquiry - Reference ${refDisplay}`)}`;
 
   const { attachments, imgHtml } = await buildLogoAttachmentAndImgTag();
 
@@ -295,7 +295,7 @@ export async function buildApplicantConfirmationEmail(params: {
             </td>
           </tr>
           <tr>
-            <td style="padding:12px 28px 8px 28px;">
+            <td style="padding:12px 28px 40px 28px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e2e8f0;border-radius:12px;background:linear-gradient(to bottom right,#f8fafc,#f1f5f9);">
                 <tr>
                   <td style="padding:18px 20px;text-align:center;">
@@ -324,7 +324,7 @@ export async function buildApplicantConfirmationEmail(params: {
 
   const name = primaryContactName.trim() || "there";
   const text = [
-    "PortfolioGuardian — Application submitted",
+    "PortfolioGuardian - Application submitted",
     "",
     `Hello ${name},`,
     "",
