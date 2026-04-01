@@ -36,6 +36,15 @@ Users only ever see the **landing page and the form** on your main domain. The f
 
 You do **not** need `API_URL` for the public form; that was only for proxying to a separate Express server.
 
+### Address autocomplete works locally but not on Vercel
+
+1. **Redeploy after env changes** — `NEXT_PUBLIC_*` values are baked in at **build time**. After adding or changing `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`, trigger a new deployment (Redeploy on Vercel).
+
+2. **Google Cloud API key restrictions** — In [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → your key → **Application restrictions**:
+   - If using **HTTP referrers**, add your production origin(s), e.g. `https://yourdomain.com/*`, `https://www.yourdomain.com/*`, and for Vercel previews `https://*.vercel.app/*`. `http://localhost:3000/*` alone will not allow production.
+
+3. **CSP** — `apps/web/next.config.ts` sets headers that allow Google Maps/Places (`*.googleapis.com`, `*.gstatic.com`, etc.). If you customize CSP elsewhere, align with [Maps JavaScript API CSP](https://developers.google.com/maps/documentation/javascript/content-security-policy).
+
 ---
 
 ## Optional: separate API server (`apps/api`)

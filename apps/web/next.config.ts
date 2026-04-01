@@ -135,13 +135,19 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname, "../.."),
   },
   async headers() {
+    /**
+     * Maps / Places JS API (address autocomplete) loads scripts and workers from `*.gstatic.com` and
+     * connects to `*.googleapis.com` / `*.google.com`. Omitting these breaks production when CSP is
+     * enforced (see https://developers.google.com/maps/documentation/javascript/content-security-policy).
+     */
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.googleapis.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com blob:",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com https://*.googleapis.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com data: blob:",
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
