@@ -224,16 +224,21 @@ export async function markNotificationPersisted(params: {
   applicationId: string;
   sent: boolean;
   error: string | null;
+  applicantConfirmationSent: boolean;
+  applicantConfirmationError: string | null;
 }): Promise<void> {
   if (!supabaseAdmin) return;
 
-  const { applicationId, sent, error } = params;
+  const { applicationId, sent, error, applicantConfirmationSent, applicantConfirmationError } = params;
   const { error: upError } = await supabaseAdmin
     .from("applications")
     .update({
       notification_email_sent: sent,
       notification_email_sent_at: sent ? new Date().toISOString() : null,
       notification_email_error: error,
+      applicant_confirmation_email_sent: applicantConfirmationSent,
+      applicant_confirmation_email_sent_at: applicantConfirmationSent ? new Date().toISOString() : null,
+      applicant_confirmation_email_error: applicantConfirmationError,
     })
     .eq("id", applicationId);
 

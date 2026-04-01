@@ -31,6 +31,8 @@ export async function submitApplication(payload: FullApplicationSubmission) {
     applicationId,
     sent: notification.sent,
     error: notification.error,
+    applicantConfirmationSent: notification.applicantConfirmationSent,
+    applicantConfirmationError: notification.applicantConfirmationError,
   });
 
   return {

@@ -179,6 +179,10 @@ export function ServicesCommencementStep() {
           <Label className="text-sm font-semibold text-slate-900">
             Preferred commencement date <span className="text-red-500">*</span>
           </Label>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            This is the date from which we will begin portfolio processing for your entities, including transaction
+            reconciliation and related administration, unless otherwise agreed.
+          </p>
           <Input
             type="date"
             value={commencementDate}

@@ -1,7 +1,10 @@
 import type { FullApplicationSubmission } from "@pg/shared";
-import { env, resolveAdminAppUrl } from "../env.js";
+import { env, resolveAdminAppUrl, resolvePublicSiteUrl } from "../env.js";
 import { resend } from "../resend.js";
-import { buildApplicationNotificationEmail } from "./application-notification-email.js";
+import {
+  buildApplicantConfirmationEmail,
+  buildApplicationNotificationEmail,
+} from "./application-notification-email.js";
 import { getNotificationRecipientEmail } from "./portal-settings.service.js";
 
 const DISPLAY_NAME = "PortfolioGuardian";
@@ -20,53 +23,111 @@ export async function sendApplicationNotification(params: {
   /** Human-readable reference from DB (e.g. PG-100001) when persisted. */
   reference?: string | null;
   payload: FullApplicationSubmission;
-}) {
+}): Promise<{
+  sent: boolean;
+  error: string | null;
+  applicantConfirmationSent: boolean;
+  applicantConfirmationError: string | null;
+}> {
+  const none = {
+    sent: false,
+    error: "Resend is not configured." as string | null,
+    applicantConfirmationSent: false,
+    applicantConfirmationError: "Resend is not configured." as string | null,
+  };
+
   if (!resend) {
-    console.warn("Resend is not configured. Skipping notification email.");
-    return { sent: false, error: "Resend is not configured." };
+    console.warn("Resend is not configured. Skipping notification emails.");
+    return none;
   }
 
   const { applicationId, reference, payload } = params;
-  const to = await getNotificationRecipientEmail();
-
-  const { html, text, attachments } = await buildApplicationNotificationEmail({
-    applicationId,
-    reference,
-    adminAppUrl: resolveAdminAppUrl(),
-    payload,
-  });
-
   const subjectRef = reference?.trim() || applicationId;
+  const from = formatResendFromAddress(env.RESEND_FROM);
 
-  try {
-    const { data, error } = await resend.emails.send({
-      from: formatResendFromAddress(env.RESEND_FROM),
-      to,
-      subject: `New PortfolioGuardian application — ${subjectRef}`,
-      html,
-      text,
-      attachments: attachments.length > 0 ? attachments : undefined,
+  const staff = await (async () => {
+    const to = await getNotificationRecipientEmail();
+    const { html, text, attachments } = await buildApplicationNotificationEmail({
+      applicationId,
+      reference,
+      adminAppUrl: resolveAdminAppUrl(),
+      payload,
     });
-
-    if (error) {
-      const msg =
-        typeof error === "object" && error !== null && "message" in error
-          ? String((error as { message: unknown }).message)
-          : JSON.stringify(error);
-      console.error("Resend API rejected notification email.", error);
-      return { sent: false, error: msg };
+    try {
+      const { data, error } = await resend.emails.send({
+        from,
+        to,
+        subject: `New PortfolioGuardian application — ${subjectRef}`,
+        html,
+        text,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      });
+      if (error) {
+        const msg =
+          typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message: unknown }).message)
+            : JSON.stringify(error);
+        console.error("Resend API rejected staff notification email.", error);
+        return { sent: false, error: msg };
+      }
+      if (data?.id) {
+        console.info("Staff notification email queued.", { resendEmailId: data.id });
+      }
+      return { sent: true, error: null as string | null };
+    } catch (error) {
+      console.error("Staff notification email failed.", error);
+      return {
+        sent: false,
+        error: error instanceof Error ? error.message : "Unknown email failure",
+      };
     }
+  })();
 
-    if (data?.id) {
-      console.info("Notification email queued.", { resendEmailId: data.id });
+  const applicantTo = payload.email?.trim();
+  const applicant = await (async () => {
+    if (!applicantTo) {
+      return { sent: false, error: "Applicant email is missing." };
     }
+    const { html, text, attachments } = await buildApplicantConfirmationEmail({
+      applicationId,
+      reference,
+      primaryContactName: payload.primaryContactName,
+      publicSiteUrl: resolvePublicSiteUrl(),
+    });
+    try {
+      const { data, error } = await resend.emails.send({
+        from,
+        to: applicantTo,
+        subject: `Your PortfolioGuardian application — ${subjectRef}`,
+        html,
+        text,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      });
+      if (error) {
+        const msg =
+          typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message: unknown }).message)
+            : JSON.stringify(error);
+        console.error("Resend API rejected applicant confirmation email.", error);
+        return { sent: false, error: msg };
+      }
+      if (data?.id) {
+        console.info("Applicant confirmation email queued.", { resendEmailId: data.id, to: applicantTo });
+      }
+      return { sent: true, error: null as string | null };
+    } catch (error) {
+      console.error("Applicant confirmation email failed.", error);
+      return {
+        sent: false,
+        error: error instanceof Error ? error.message : "Unknown email failure",
+      };
+    }
+  })();
 
-    return { sent: true, error: null };
-  } catch (error) {
-    console.error("Notification email failed.", error);
-    return {
-      sent: false,
-      error: error instanceof Error ? error.message : "Unknown email failure",
-    };
-  }
+  return {
+    sent: staff.sent,
+    error: staff.error,
+    applicantConfirmationSent: applicant.sent,
+    applicantConfirmationError: applicant.error,
+  };
 }
