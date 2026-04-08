@@ -22,7 +22,11 @@ export const COMPLEXITY_BANDS = [
   { min: 21, max: 30, annualFee: 1300, pricingStatus: "indicative" },
   { min: 31, max: 40, annualFee: 2000, pricingStatus: "indicative" },
   { min: 41, max: 50, annualFee: 2800, pricingStatus: "indicative" },
-  { min: 51, max: Number.POSITIVE_INFINITY, annualFee: 0, pricingStatus: "manual_review" },
+  { min: 51, max: 60, annualFee: 3600, pricingStatus: "indicative" },
+  { min: 61, max: 70, annualFee: 4500, pricingStatus: "indicative" },
+  { min: 71, max: 80, annualFee: 5500, pricingStatus: "indicative" },
+  { min: 81, max: 90, annualFee: 6600, pricingStatus: "indicative" },
+  { min: 91, max: Number.POSITIVE_INFINITY, annualFee: 0, pricingStatus: "manual_review" },
 ] as const;
 
 export const REPORTING_ADD_ONS = {

@@ -67,33 +67,59 @@ function toFiniteNumber(v: unknown, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+type ComplexityBand = PricingModel["complexityBands"][number];
+
+/** True when stored band matches the default row’s min/max (open-ended last row uses +∞). */
+function complexityBandStructurallyMatches(
+  b: Partial<{ min: number; max: number }>,
+  def: ComplexityBand,
+  isLast: boolean,
+): boolean {
+  if (typeof b.min !== "number" || !Number.isFinite(b.min) || b.min !== def.min) return false;
+  if (isLast) {
+    return b.max === Number.POSITIVE_INFINITY || b.max === Infinity;
+  }
+  return typeof b.max === "number" && Number.isFinite(b.max) && b.max === def.max;
+}
+
+/**
+ * Merge stored bands onto current defaults. Rows are matched by index when min/max align with the
+ * default template so legacy saves (e.g. fewer bands before the open-ended row started at 51) pick
+ * up new middle tiers without discarding customized fees for unchanged ranges.
+ */
+function mergeComplexityBandsFromPartial(
+  saved: unknown[] | undefined,
+  defaults: ComplexityBand[],
+): ComplexityBand[] {
+  if (!Array.isArray(saved)) return defaults;
+  return defaults.map((def, i) => {
+    const isLast = i === defaults.length - 1;
+    const b = saved[i];
+    if (!b || typeof b !== "object") return def;
+    const partial = b as Partial<ComplexityBand>;
+    if (!complexityBandStructurallyMatches(partial, def, isLast)) return def;
+    return {
+      min: def.min,
+      max: isLast ? Number.POSITIVE_INFINITY : def.max,
+      annualFee:
+        typeof partial.annualFee === "number" && Number.isFinite(partial.annualFee)
+          ? partial.annualFee
+          : def.annualFee,
+      pricingStatus:
+        partial.pricingStatus === "manual_review" || partial.pricingStatus === "indicative"
+          ? partial.pricingStatus
+          : def.pricingStatus,
+    };
+  });
+}
+
 /** Merge partial or legacy stored JSON into a complete model so assessment always has valid numbers. */
 export function mergePricingModelWithDefaults(partial: unknown): PricingModel {
   const d = createDefaultPricingModel();
   if (!partial || typeof partial !== "object") return d;
   const p = partial as Partial<PricingModel>;
 
-  const bands =
-    Array.isArray(p.complexityBands) && p.complexityBands.length === d.complexityBands.length
-      ? p.complexityBands.map((b, i) => {
-          const def = d.complexityBands[i]!;
-          const last = i === p.complexityBands!.length - 1;
-          return {
-            min: typeof b.min === "number" && Number.isFinite(b.min) ? b.min : def.min,
-            max: last
-              ? Number.POSITIVE_INFINITY
-              : typeof b.max === "number" && Number.isFinite(b.max)
-                ? b.max
-                : def.max,
-            annualFee:
-              typeof b.annualFee === "number" && Number.isFinite(b.annualFee) ? b.annualFee : def.annualFee,
-            pricingStatus:
-              b.pricingStatus === "manual_review" || b.pricingStatus === "indicative"
-                ? b.pricingStatus
-                : def.pricingStatus,
-          };
-        })
-      : d.complexityBands;
+  const bands = mergeComplexityBandsFromPartial(p.complexityBands, d.complexityBands);
 
   const ob = p.onboardingFees;
   const onboardingFees = {
