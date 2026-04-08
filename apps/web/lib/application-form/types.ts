@@ -118,6 +118,13 @@ export interface PartialEntity {
   primaryBankAccountNumber: string;
 }
 
+/** True when any entity in the group (first `entityCount` drafts) is PAF or PuAF — entity type is chosen on the entity-type sub-step. */
+export function groupHasPafOrPuafEntity(state: ApplicationFormState): boolean {
+  return state.entities
+    .slice(0, Math.max(0, state.entityCount))
+    .some((e) => e.entityType === "paf" || e.entityType === "puaf");
+}
+
 export interface SubmitResult {
   applicationId: string;
   /** Opaque token for portfolio file upload APIs (only when persistence succeeded). */
@@ -144,10 +151,12 @@ export function formStateToPayload(state: ApplicationFormState): FullApplication
     puafSubFundMonthlyStatements: false,
   };
   const pafPuafCodes: EntityInput["serviceCodes"][number][] = [];
-  if (toggles.annualFinancialStatements || toggles.annualInformationStatement) pafPuafCodes.push("acnc_ais");
-  if (toggles.frankingCreditRefundApplication) pafPuafCodes.push("franking_credit_refund_support");
-  if (toggles.pafResponsiblePersonServices) pafPuafCodes.push("responsible_person");
-  if (toggles.puafSubFundMonthlyStatements) pafPuafCodes.push("sub_fund_monthly_statements");
+  if (groupHasPafOrPuafEntity(state)) {
+    if (toggles.annualFinancialStatements || toggles.annualInformationStatement) pafPuafCodes.push("acnc_ais");
+    if (toggles.frankingCreditRefundApplication) pafPuafCodes.push("franking_credit_refund_support");
+    if (toggles.pafResponsiblePersonServices) pafPuafCodes.push("responsible_person");
+    if (toggles.puafSubFundMonthlyStatements) pafPuafCodes.push("sub_fund_monthly_statements");
+  }
 
   const serviceCodes = [
     ...STANDARD_SERVICE_CODES,

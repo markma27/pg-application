@@ -2,7 +2,7 @@
 
 import type { EntityInput } from "@pg/shared";
 import { useApplicationForm } from "@/lib/application-form";
-import type { ApplicationFormState } from "@/lib/application-form/types";
+import { groupHasPafOrPuafEntity, type ApplicationFormState } from "@/lib/application-form/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -84,6 +84,7 @@ export function ServicesCommencementStep() {
     puafSubFundMonthlyStatements: false,
   };
   const servicesComments = state.servicesComments ?? "";
+  const showPafPuafSection = groupHasPafOrPuafEntity(state);
 
   const toggleAddOn = (code: EntityInput["serviceCodes"][number], checked: boolean) => {
     const next = checked
@@ -141,26 +142,27 @@ export function ServicesCommencementStep() {
           </ul>
         </div>
 
-        {/* PAF & PuAF services */}
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <h2 className="text-lg font-bold tracking-tight text-emerald-700 sm:text-xl">PAF &amp; PuAF services</h2>
-            <p className="text-base font-semibold text-slate-900">
-              Our PAF &amp; PuAF services will be provided by Jaquillard Minns, including:
-            </p>
+        {showPafPuafSection && (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-bold tracking-tight text-emerald-700 sm:text-xl">PAF &amp; PuAF services</h2>
+              <p className="text-base font-semibold text-slate-900">
+                Our PAF &amp; PuAF services will be provided by Jaquillard Minns, including:
+              </p>
+            </div>
+            <ul className="list-none space-y-0 rounded-lg border border-slate-200 bg-white px-4 py-2 shadow-sm">
+              {PAF_PUAF_SERVICES.map(({ label, key }) => (
+                <ServiceRowToggle
+                  key={key}
+                  label={label}
+                  checked={pafPuafToggles[key]}
+                  onChange={(checked) => togglePafPuaf(key, checked)}
+                  aria-label={`${label}, PAF PuAF service`}
+                />
+              ))}
+            </ul>
           </div>
-          <ul className="list-none space-y-0 rounded-lg border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            {PAF_PUAF_SERVICES.map(({ label, key }) => (
-              <ServiceRowToggle
-                key={key}
-                label={label}
-                checked={pafPuafToggles[key]}
-                onChange={(checked) => togglePafPuaf(key, checked)}
-                aria-label={`${label}, PAF PuAF service`}
-              />
-            ))}
-          </ul>
-        </div>
+        )}
 
         {/* Other comments or notes */}
         <div className="space-y-2">

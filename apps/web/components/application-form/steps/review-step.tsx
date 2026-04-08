@@ -1,6 +1,7 @@
 "use client";
 
 import { useApplicationForm } from "@/lib/application-form";
+import { groupHasPafOrPuafEntity } from "@/lib/application-form/types";
 import {
   ADD_ON_SERVICE_LABELS,
   ENTITY_TYPE_OPTIONS,
@@ -225,22 +226,24 @@ export function ReviewStep() {
                   : "None"
               }
             />
-            <ReviewRow
-              label="PAF & PuAF services (Jaquillard Minns)"
-              value={
-                (() => {
-                  const t = state.pafPuafServiceToggles;
-                  if (!t) return "None";
-                  const labels: string[] = [];
-                  if (t.annualFinancialStatements) labels.push("Annual financial statements");
-                  if (t.annualInformationStatement) labels.push("Annual information statement");
-                  if (t.frankingCreditRefundApplication) labels.push("Franking credit refund application");
-                  if (t.pafResponsiblePersonServices) labels.push("PAF responsible person services");
-                  if (t.puafSubFundMonthlyStatements) labels.push("PuAF sub-fund monthly statements");
-                  return labels.length ? labels.join(", ") : "None";
-                })()
-              }
-            />
+            {groupHasPafOrPuafEntity(state) && (
+              <ReviewRow
+                label="PAF & PuAF services (Jaquillard Minns)"
+                value={
+                  (() => {
+                    const t = state.pafPuafServiceToggles;
+                    if (!t) return "None";
+                    const labels: string[] = [];
+                    if (t.annualFinancialStatements) labels.push("Annual financial statements");
+                    if (t.annualInformationStatement) labels.push("Annual information statement");
+                    if (t.frankingCreditRefundApplication) labels.push("Franking credit refund application");
+                    if (t.pafResponsiblePersonServices) labels.push("PAF responsible person services");
+                    if (t.puafSubFundMonthlyStatements) labels.push("PuAF sub-fund monthly statements");
+                    return labels.length ? labels.join(", ") : "None";
+                  })()
+                }
+              />
+            )}
             <ReviewRow label="Other comments or notes" value={state.servicesComments?.trim() || undefined} />
             <ReviewRow label="Preferred commencement" value={state.groupCommencementDate || undefined} />
           </CardContent>
