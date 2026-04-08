@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { CardDescription, CardTitle } from "@/components/ui/card";
 import { ENTITY_TYPE_OPTIONS, PORTFOLIO_STATUS_OPTIONS } from "@/lib/application-form/constants";
+import { cn } from "@/lib/utils";
 
 const reviewFieldLabelClass = "text-sm font-medium text-emerald-900";
 
+/** Baseline-align label and value so currency/numbers line up with text (avoids columns looking vertically offset). */
 const reviewFieldRowBase =
-  "review-field-row grid grid-cols-1 items-start gap-1 py-1.5 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] sm:gap-4 sm:py-1.5";
+  "review-field-row grid grid-cols-1 items-baseline gap-1 py-1.5 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] sm:gap-4 sm:py-1.5";
 
 /** Two-column field layout inside a section card (single column on small screens). */
 export function AdminReviewFieldGrid({ children }: { children: ReactNode }) {
@@ -63,10 +65,19 @@ export function ReviewRow({ label, value }: { label: string; value: ReactNode })
   );
 }
 
-export function ReviewRowAlways({ label, value }: { label: string; value: ReactNode }) {
+export function ReviewRowAlways({
+  label,
+  value,
+  labelBold,
+}: {
+  label: string;
+  value: ReactNode;
+  /** When true, label uses semibold weight to match emphasized values (e.g. totals). */
+  labelBold?: boolean;
+}) {
   return (
     <div className={reviewFieldRowBase}>
-      <span className={reviewFieldLabelClass}>{label}</span>
+      <span className={cn(reviewFieldLabelClass, labelBold && "font-bold")}>{label}</span>
       <span className="min-w-0 text-sm leading-snug text-slate-900">{value ?? "—"}</span>
     </div>
   );

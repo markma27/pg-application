@@ -84,7 +84,7 @@ const STEP_NOTES: Record<WorkflowStatus, string> = {
   pending: "Application received — queued for triage. Not yet assigned to a team member.",
   in_progress: "Assigned to someone in the team to assess, follow up, and progress the file.",
   documents_sent:
-    "Proposal, LPOA and DD forms have been issued to the client for review and signature.",
+    "Cover Letter, proposal, LPOA, feed and DD forms have been issued to the client for review and signature.",
   completed:
     "Signed documents received and the client is set up in PortfolioGuardian systems.",
 };
