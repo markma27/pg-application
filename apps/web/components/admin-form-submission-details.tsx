@@ -215,7 +215,11 @@ export function AdminFormSubmissionDetails({
                 <ReviewRowAlways label="Complexity surcharge" value={audOrDash(annualBreakdown.complexitySurcharge)} />
                 <ReviewRowAlways
                   label="Indicative annual ongoing service fee"
-                  value={audOrDash(annualBreakdown.indicativeTotal)}
+                  value={
+                    <span className="font-bold tabular-nums text-slate-900">
+                      {audOrDash(annualBreakdown.indicativeTotal)}
+                    </span>
+                  }
                 />
               </div>
             </div>
