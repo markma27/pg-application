@@ -1,4 +1,12 @@
-import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type EntityInput, type FullApplicationSubmission } from "@pg/shared";
+import {
+  APPLICANT_ROLE_ADVISER_REPRESENTATIVE,
+  assessEntity,
+  entityAnnualOngoingBasePlusComplexity,
+  mergePricingModelWithDefaults,
+  type EntityInput,
+  type FullApplicationSubmission,
+  type PricingModel,
+} from "@pg/shared";
 import {
   ADD_ON_SERVICE_CODES,
   ADD_ON_SERVICE_LABELS,
@@ -53,6 +61,33 @@ function formatOtherAssets(e: EntityInput): string | undefined {
   return parts.length ? parts.join(" · ") : undefined;
 }
 
+function audWhole(n: number): string {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+/** Base + complexity surcharge only (excludes reporting, BAS, ASIC, onboarding). */
+function indicativeAnnualOngoingServiceFeeDisplay(entity: EntityInput, model: PricingModel): string {
+  const core = entityAnnualOngoingBasePlusComplexity(entity, model);
+  if (core !== null) {
+    return audWhole(core);
+  }
+  const a = assessEntity(entity, model);
+  if (a.routingOutcome === "jm_fit") {
+    return "Not applicable (JM referral)";
+  }
+  if (a.routingOutcome === "manual_review" || a.pricingStatus === "manual_review") {
+    return "Not available — manual review";
+  }
+  if (a.pricingStatus === "review_required") {
+    return "Not available — review required";
+  }
+  return "Not available";
+}
+
 function partitionServiceCodes(codes: EntityInput["serviceCodes"]) {
   const set = new Set(codes);
   const addon = ADD_ON_SERVICE_CODES.filter((c) => set.has(c)).map((c) => ADD_ON_SERVICE_LABELS[c]);
@@ -71,12 +106,16 @@ export function AdminFormSubmissionDetails({
   data,
   applicationId,
   portfolioDocumentsByEntityId,
+  pricingModel: pricingModelProp,
 }: {
   data: FullApplicationSubmission;
   applicationId: string;
   /** Uploaded portfolio files keyed by form entity id (`entity.id` in payload). */
   portfolioDocumentsByEntityId?: Record<string, PortfolioDocRow[]>;
+  /** Saved admin pricing calculator model; defaults used if omitted. */
+  pricingModel?: PricingModel;
 }) {
+  const pricingModel = pricingModelProp ?? mergePricingModelWithDefaults({});
   const firstEntity = data.entities[0];
   const serviceCodes = firstEntity?.serviceCodes ?? [];
   const { addon, paf, other } = partitionServiceCodes(serviceCodes);
@@ -154,7 +193,9 @@ export function AdminFormSubmissionDetails({
               <div className="mb-3 border-b border-slate-200/80 pb-2">
                 <h3 className="text-sm font-semibold text-slate-900">Holdings &amp; account counts</h3>
                 <p className="mt-0.5 text-xs leading-snug text-slate-600">
-                  Listed and unlisted investments, property, wrap, banking, loans, and cryptocurrencies.
+                  Listed and unlisted investments, property, wrap, banking, loans, and cryptocurrencies. The indicative
+                  annual ongoing service fee below is entity base plus complexity surcharge only (saved admin pricing
+                  model); it excludes onboarding, extra reporting, BAS, and ASIC agent.
                 </p>
               </div>
               <AdminReviewFieldGrid>
@@ -185,6 +226,12 @@ export function AdminFormSubmissionDetails({
                   value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
                 />
               </AdminReviewFieldGrid>
+              <div className="mt-4 border-t border-slate-200/90 pt-4">
+                <ReviewRowAlways
+                  label="Indicative annual ongoing service fee"
+                  value={indicativeAnnualOngoingServiceFeeDisplay(entity, pricingModel)}
+                />
+              </div>
             </div>
 
             <div className="mt-4">

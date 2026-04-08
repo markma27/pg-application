@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Layers } from "lucide-react";
-import { fullApplicationSubmissionSchema } from "@pg/shared";
+import { fullApplicationSubmissionSchema, mergePricingModelWithDefaults } from "@pg/shared";
 import { AdminFormSubmissionDetails } from "@/components/admin-form-submission-details";
+import { parsePricingModelJson } from "@/lib/pricing-calculator/model-serialization";
 import {
   AdminLegacyApplicationDetails,
   type AdviserRelationalFields,
@@ -184,6 +185,17 @@ export default async function AdminApplicationDetailPage({
     .eq("application_id", id)
     .order("created_at", { ascending: true });
 
+  const { data: pricingSettingsRow } = await supabase
+    .from("pricing_calculator_settings")
+    .select("model_json")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const pricingModelForAdmin =
+    typeof pricingSettingsRow?.model_json === "string" && pricingSettingsRow.model_json.trim()
+      ? parsePricingModelJson(pricingSettingsRow.model_json) ?? mergePricingModelWithDefaults({})
+      : mergePricingModelWithDefaults({});
+
   const auditEvents: ApplicationAuditEventRow[] = auditQuery.error
     ? []
     : ((auditQuery.data ?? []) as ApplicationAuditEventRow[]);
@@ -270,6 +282,7 @@ export default async function AdminApplicationDetailPage({
           data={submission.data}
           applicationId={id}
           portfolioDocumentsByEntityId={entityPortfolioDocs}
+          pricingModel={pricingModelForAdmin}
         />
       ) : (
         <AdminLegacyApplicationDetails

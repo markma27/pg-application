@@ -10,7 +10,7 @@ import type {
   RoutingOutcome,
 } from "../schemas/application";
 
-function calculateComplexityPoints(entity: EntityInput, model: PricingModel) {
+export function calculateComplexityPoints(entity: EntityInput, model: PricingModel): number {
   const p = model.complexityPoints;
   return (
     entity.listedInvestmentCount * p.listedInvestment +
@@ -24,7 +24,34 @@ function calculateComplexityPoints(entity: EntityInput, model: PricingModel) {
   );
 }
 
-function assessEntity(entity: EntityInput, model: PricingModel): EntityAssessment {
+/**
+ * Entity base annual fee plus complexity-band surcharge only.
+ * Excludes reporting add-ons, BAS, ASIC agent, onboarding, and any other service-based annual add-ons.
+ * Returns null when the same factors that block indicative PG pricing apply (JM-only path, complexity manual band, etc.).
+ */
+export function entityAnnualOngoingBasePlusComplexity(
+  entity: EntityInput,
+  model: PricingModel,
+): number | null {
+  if (entity.entityType === "paf" || entity.entityType === "puaf") return null;
+  if (entity.serviceCodes.some((service) => JM_ONLY_SERVICES.has(service))) return null;
+  if (entity.serviceCodes.includes("customised_reporting")) return null;
+  if (entity.portfolioStatus === "complex_cleanup") return null;
+
+  const complexityPoints = calculateComplexityPoints(entity, model);
+  const complexityBand = model.complexityBands.find(
+    (band) => complexityPoints >= band.min && complexityPoints <= band.max,
+  );
+  if (!complexityBand || complexityBand.pricingStatus === "manual_review") return null;
+
+  const baseFee =
+    model.entityBaseFees[entity.entityType as keyof PricingModel["entityBaseFees"]] ?? null;
+  if (baseFee === null) return null;
+
+  return baseFee + complexityBand.annualFee;
+}
+
+export function assessEntity(entity: EntityInput, model: PricingModel): EntityAssessment {
   const jmReasons: string[] = [];
   const reviewReasons: string[] = [];
 
