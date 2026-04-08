@@ -148,34 +148,48 @@ export function AdminFormSubmissionDetails({
                   />
                 </>
               ) : null}
-              <ReviewRow
-                label="Listed investments"
-                value={entity.listedInvestmentCount != null ? String(entity.listedInvestmentCount) : undefined}
-              />
-              <ReviewRow
-                label="Unlisted investments"
-                value={entity.unlistedInvestmentCount != null ? String(entity.unlistedInvestmentCount) : undefined}
-              />
-              <ReviewRow
-                label="Property"
-                value={entity.propertyCount != null ? String(entity.propertyCount) : undefined}
-              />
-              <ReviewRow label="Wrap" value={entity.wrapCount != null ? String(entity.wrapCount) : undefined} />
-              <ReviewRow
-                label="Bank accounts"
-                value={entity.bankAccountCount != null ? String(entity.bankAccountCount) : undefined}
-              />
-              <ReviewRow
-                label="Foreign bank accounts"
-                value={entity.foreignBankAccountCount != null ? String(entity.foreignBankAccountCount) : undefined}
-              />
-              <ReviewRow label="Loans" value={entity.loanCount != null ? String(entity.loanCount) : undefined} />
-              <ReviewRow
-                label="Cryptocurrencies"
-                value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
-              />
-              <ReviewRow label="Other assets" value={formatOtherAssets(entity)} />
             </AdminReviewFieldGrid>
+
+            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
+              <div className="mb-3 border-b border-slate-200/80 pb-2">
+                <h3 className="text-sm font-semibold text-slate-900">Holdings &amp; account counts</h3>
+                <p className="mt-0.5 text-xs leading-snug text-slate-600">
+                  Listed and unlisted investments, property, wrap, banking, loans, and cryptocurrencies.
+                </p>
+              </div>
+              <AdminReviewFieldGrid>
+                <ReviewRow
+                  label="Listed investments"
+                  value={entity.listedInvestmentCount != null ? String(entity.listedInvestmentCount) : undefined}
+                />
+                <ReviewRow
+                  label="Unlisted investments"
+                  value={entity.unlistedInvestmentCount != null ? String(entity.unlistedInvestmentCount) : undefined}
+                />
+                <ReviewRow
+                  label="Property"
+                  value={entity.propertyCount != null ? String(entity.propertyCount) : undefined}
+                />
+                <ReviewRow label="Wrap" value={entity.wrapCount != null ? String(entity.wrapCount) : undefined} />
+                <ReviewRow
+                  label="Bank accounts"
+                  value={entity.bankAccountCount != null ? String(entity.bankAccountCount) : undefined}
+                />
+                <ReviewRow
+                  label="Foreign bank accounts"
+                  value={entity.foreignBankAccountCount != null ? String(entity.foreignBankAccountCount) : undefined}
+                />
+                <ReviewRow label="Loans" value={entity.loanCount != null ? String(entity.loanCount) : undefined} />
+                <ReviewRow
+                  label="Cryptocurrencies"
+                  value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
+                />
+              </AdminReviewFieldGrid>
+            </div>
+
+            <div className="mt-4">
+              <ReviewRow label="Other assets" value={formatOtherAssets(entity)} />
+            </div>
             {entityDocs && entityDocs.length > 0 ? (
               <AdminPortfolioDocumentsList
                 applicationId={applicationId}
