@@ -24,6 +24,53 @@ export function calculateComplexityPoints(entity: EntityInput, model: PricingMod
   );
 }
 
+/** PG-style annual components from the pricing model (ignores service-code JM routing). */
+export type EntityAnnualOngoingBreakdown = {
+  complexityPoints: number;
+  baseFee: number | null;
+  complexitySurcharge: number | null;
+  indicativeTotal: number | null;
+  /** Set when a band matches the point total */
+  bandPricingStatus: "indicative" | "manual_review" | null;
+};
+
+/**
+ * Base fee, complexity-band surcharge, points, and total from the saved model.
+ * Does not treat JM-only add-on codes as blockers so admin can reconcile figures when routing is JM-fit.
+ */
+export function entityAnnualOngoingBreakdown(
+  entity: EntityInput,
+  model: PricingModel,
+): EntityAnnualOngoingBreakdown {
+  const complexityPoints = calculateComplexityPoints(entity, model);
+  const complexityBand = model.complexityBands.find(
+    (band) => complexityPoints >= band.min && complexityPoints <= band.max,
+  );
+  const baseRaw = model.entityBaseFees[entity.entityType as keyof PricingModel["entityBaseFees"]];
+  const baseFee = typeof baseRaw === "number" && Number.isFinite(baseRaw) ? baseRaw : null;
+  const bandPricingStatus = complexityBand
+    ? complexityBand.pricingStatus === "manual_review"
+      ? "manual_review"
+      : "indicative"
+    : null;
+  const complexitySurcharge =
+    complexityBand != null &&
+    typeof complexityBand.annualFee === "number" &&
+    Number.isFinite(complexityBand.annualFee)
+      ? complexityBand.annualFee
+      : null;
+  const indicativeTotal =
+    baseFee !== null && complexitySurcharge !== null ? baseFee + complexitySurcharge : null;
+
+  return {
+    complexityPoints,
+    baseFee,
+    complexitySurcharge,
+    indicativeTotal,
+    bandPricingStatus,
+  };
+}
+
 /**
  * Entity base annual fee plus complexity-band surcharge only.
  * Excludes reporting add-ons, BAS, ASIC agent, onboarding, and any other service-based annual add-ons.
@@ -38,17 +85,9 @@ export function entityAnnualOngoingBasePlusComplexity(
   if (entity.serviceCodes.includes("customised_reporting")) return null;
   if (entity.portfolioStatus === "complex_cleanup") return null;
 
-  const complexityPoints = calculateComplexityPoints(entity, model);
-  const complexityBand = model.complexityBands.find(
-    (band) => complexityPoints >= band.min && complexityPoints <= band.max,
-  );
-  if (!complexityBand || complexityBand.pricingStatus === "manual_review") return null;
-
-  const baseFee =
-    model.entityBaseFees[entity.entityType as keyof PricingModel["entityBaseFees"]] ?? null;
-  if (baseFee === null) return null;
-
-  return baseFee + complexityBand.annualFee;
+  const d = entityAnnualOngoingBreakdown(entity, model);
+  if (d.bandPricingStatus !== "indicative" || d.indicativeTotal === null) return null;
+  return d.indicativeTotal;
 }
 
 export function assessEntity(entity: EntityInput, model: PricingModel): EntityAssessment {

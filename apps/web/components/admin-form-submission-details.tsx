@@ -1,7 +1,6 @@
 import {
   APPLICANT_ROLE_ADVISER_REPRESENTATIVE,
-  assessEntity,
-  entityAnnualOngoingBasePlusComplexity,
+  entityAnnualOngoingBreakdown,
   mergePricingModelWithDefaults,
   type EntityInput,
   type FullApplicationSubmission,
@@ -69,23 +68,8 @@ function audWhole(n: number): string {
   }).format(n);
 }
 
-/** Base + complexity surcharge only (excludes reporting, BAS, ASIC, onboarding). */
-function indicativeAnnualOngoingServiceFeeDisplay(entity: EntityInput, model: PricingModel): string {
-  const core = entityAnnualOngoingBasePlusComplexity(entity, model);
-  if (core !== null) {
-    return audWhole(core);
-  }
-  const a = assessEntity(entity, model);
-  if (a.routingOutcome === "jm_fit") {
-    return "Not applicable (JM referral)";
-  }
-  if (a.routingOutcome === "manual_review" || a.pricingStatus === "manual_review") {
-    return "Not available — manual review";
-  }
-  if (a.pricingStatus === "review_required") {
-    return "Not available — review required";
-  }
-  return "Not available";
+function audOrDash(n: number | null): string {
+  return n === null ? "—" : audWhole(n);
 }
 
 function partitionServiceCodes(codes: EntityInput["serviceCodes"]) {
@@ -148,6 +132,7 @@ export function AdminFormSubmissionDetails({
       {/* Entities */}
       {data.entities.map((entity, i) => {
         const entityDocs = portfolioDocumentsByEntityId?.[entity.id];
+        const annualBreakdown = entityAnnualOngoingBreakdown(entity, pricingModel);
         return (
         <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
           <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
@@ -192,11 +177,6 @@ export function AdminFormSubmissionDetails({
             <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
               <div className="mb-3 border-b border-slate-200/80 pb-2">
                 <h3 className="text-sm font-semibold text-slate-900">Holdings &amp; account counts</h3>
-                <p className="mt-0.5 text-xs leading-snug text-slate-600">
-                  Listed and unlisted investments, property, wrap, banking, loans, and cryptocurrencies. The indicative
-                  annual ongoing service fee below is entity base plus complexity surcharge only (saved admin pricing
-                  model); it excludes onboarding, extra reporting, BAS, and ASIC agent.
-                </p>
               </div>
               <AdminReviewFieldGrid>
                 <ReviewRow
@@ -226,10 +206,16 @@ export function AdminFormSubmissionDetails({
                   value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
                 />
               </AdminReviewFieldGrid>
-              <div className="mt-4 border-t border-slate-200/90 pt-4">
+              <div className="mt-4 space-y-0 border-t border-slate-200/90 pt-4">
+                <ReviewRowAlways
+                  label="Complexity points"
+                  value={<span className="tabular-nums">{annualBreakdown.complexityPoints}</span>}
+                />
+                <ReviewRowAlways label="Base fee" value={audOrDash(annualBreakdown.baseFee)} />
+                <ReviewRowAlways label="Complexity surcharge" value={audOrDash(annualBreakdown.complexitySurcharge)} />
                 <ReviewRowAlways
                   label="Indicative annual ongoing service fee"
-                  value={indicativeAnnualOngoingServiceFeeDisplay(entity, pricingModel)}
+                  value={audOrDash(annualBreakdown.indicativeTotal)}
                 />
               </div>
             </div>
