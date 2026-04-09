@@ -1,12 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AdminApplicationRow, AdminAssignableUser } from "@/components/admin-applications-table";
 import { AdminDashboardStatFilters } from "@/components/admin-dashboard-stat-filters";
-
-function startOfTodayIso() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
+import { startOfPortalDayIso } from "@/lib/portal-datetime";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -20,7 +15,7 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const todayStartIso = startOfTodayIso();
+  const todayStartIso = startOfPortalDayIso();
 
   const base = () => supabase.from("applications").select("*", { count: "exact", head: true });
 

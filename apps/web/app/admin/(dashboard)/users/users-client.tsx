@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PortalModal } from "@/components/ui/portal-modal";
 import { cn } from "@/lib/utils";
+import { formatPortalDateOnly, formatPortalDateTime12h } from "@/lib/portal-datetime";
 
 /** Same pattern as `ContactStep` contact-role select: custom chevron + application form focus ring. */
 const portalSelectClass =
@@ -51,28 +52,9 @@ type Props = {
   currentUserId: string;
 };
 
-const PORTAL_TIMEZONE = "Australia/Adelaide";
-
-function formatAddedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-AU", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: PORTAL_TIMEZONE,
-  });
-}
-
 function formatLastLogin(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-AU", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: PORTAL_TIMEZONE,
-    hour12: true,
-  });
+  return formatPortalDateTime12h(iso);
 }
 
 function StatusBadge({ status }: { status: PortalUserRow["status"] }) {
@@ -374,7 +356,7 @@ export function UsersClient({ users, isAdmin, currentUserId }: Props) {
                     <span className="capitalize text-slate-700">{u.role}</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatAddedDate(u.created_at)}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatPortalDateOnly(u.created_at)}</td>
                 <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatLastLogin(u.last_login_at)}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <StatusBadge status={u.status} />

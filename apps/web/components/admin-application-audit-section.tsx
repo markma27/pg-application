@@ -8,6 +8,7 @@ import {
   WORKFLOW_STATUS_LABEL,
   normalizeWorkflowStatus,
 } from "@/lib/admin/application-workflow-status";
+import { formatPortalDateTime } from "@/lib/portal-datetime";
 
 export type ApplicationAuditEventRow = {
   id: string;
@@ -17,10 +18,6 @@ export type ApplicationAuditEventRow = {
   actor_label: string;
   detail: Record<string, unknown> | null;
 };
-
-function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
 
 function statusChangeInline(detail: Record<string, unknown> | null): string | null {
   if (!detail) return null;
@@ -86,7 +83,7 @@ export function AdminApplicationAuditSection({
                   />
                   <p className="text-sm leading-snug text-slate-800">
                     <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide text-slate-500">
-                      {formatWhen(e.created_at)}
+                      {formatPortalDateTime(e.created_at)}
                     </span>
                     <span className="text-slate-300"> · </span>
                     <span className="font-semibold text-slate-900">{auditEventTypeLabel(e.event_type)}</span>

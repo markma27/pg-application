@@ -18,6 +18,7 @@ import { ApplicationStatusBadges } from "@/components/admin-application-status-b
 import { AdminApplicationStatusFlow } from "@/components/admin-application-status-flow";
 import type { PortfolioDocRow } from "@/components/admin-portfolio-documents";
 import { createClient } from "@/lib/supabase/server";
+import { formatPortalDateTime } from "@/lib/portal-datetime";
 import { updateApplicationWorkflowStatus } from "./actions";
 
 type EntityServiceRow = {
@@ -245,10 +246,7 @@ export default async function AdminApplicationDetailPage({
             {app.created_at ? (
               <p className="mt-2 text-sm text-slate-500">
                 Date submitted:{" "}
-                {new Date(app.created_at).toLocaleString(undefined, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
+                {formatPortalDateTime(app.created_at)}
               </p>
             ) : null}
             <div

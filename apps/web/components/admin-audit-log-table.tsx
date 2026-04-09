@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin/audit-event-display";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { formatPortalDateTime } from "@/lib/portal-datetime";
 
 export type AdminAuditLogTableRow = {
   id: string;
@@ -20,10 +21,6 @@ export type AdminAuditLogTableRow = {
   application_id: string;
   reference: string;
 };
-
-function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
 
 export function AdminAuditLogTable({ rows }: { rows: AdminAuditLogTableRow[] }) {
   const [q, setQ] = useState("");
@@ -41,7 +38,7 @@ export function AdminAuditLogTable({ rows }: { rows: AdminAuditLogTableRow[] }) 
         r.actor_type,
         r.actor_label,
         detailText,
-        formatWhen(r.created_at),
+        formatPortalDateTime(r.created_at),
       ]
         .join(" ")
         .toLowerCase();
@@ -85,7 +82,7 @@ export function AdminAuditLogTable({ rows }: { rows: AdminAuditLogTableRow[] }) 
                   key={r.id}
                   className={cn("border-b border-slate-100 last:border-0", "hover:bg-slate-50/80")}
                 >
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatWhen(r.created_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatPortalDateTime(r.created_at)}</td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/applications/${r.application_id}`}

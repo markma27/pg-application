@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ApplicationStatusBadges } from "@/components/admin-application-status-badges";
 import { normalizeWorkflowStatus, type WorkflowStatus } from "@/lib/admin/application-workflow-status";
 import { NATIVE_SELECT_CLASS } from "@/lib/native-select-styles";
+import { formatPortalCreatedCompact } from "@/lib/portal-datetime";
 
 export type AdminAssignableUser = {
   id: string;
@@ -30,16 +31,6 @@ export type AdminApplicationRow = {
 
 /** Preset from dashboard stat cards; narrows the list before search / deleted toggle. */
 export type DashboardStatPreset = "today" | WorkflowStatus;
-
-function formatCreated(iso: string) {
-  const d = new Date(iso);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-}
 
 export function AdminApplicationsTable({
   rows,
@@ -228,7 +219,7 @@ export function AdminApplicationsTable({
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                    {formatCreated(r.created_at)}
+                    {formatPortalCreatedCompact(r.created_at)}
                   </td>
                 </tr>
               ))
