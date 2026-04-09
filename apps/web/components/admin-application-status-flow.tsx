@@ -2,7 +2,7 @@
 
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import {
   WORKFLOW_STATUS_LABEL,
   WORKFLOW_STATUS_ORDER,
@@ -123,7 +123,10 @@ export function AdminApplicationStatusFlow({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [pipelineConfirmTarget, setPipelineConfirmTarget] = useState<WorkflowStatus | null>(null);
+  const [pipelineConfirm, setPipelineConfirm] = useState<{
+    target: WorkflowStatus;
+    direction: "forward" | "backward";
+  } | null>(null);
 
   const currentIndex = WORKFLOW_STATUS_ORDER.indexOf(current);
 
@@ -139,29 +142,34 @@ export function AdminApplicationStatusFlow({
     });
   };
 
+  const closePipelineConfirm = useCallback(() => {
+    setPipelineConfirm(null);
+  }, []);
+
   const onSelect = (key: WorkflowStatus) => {
     if (disabled || key === current) return;
-    setPipelineConfirmTarget(key);
+    const nextIndex = WORKFLOW_STATUS_ORDER.indexOf(key);
+    const direction = nextIndex < currentIndex ? "backward" : "forward";
+    setPipelineConfirm({ target: key, direction });
   };
 
   const confirmPipelineChange = () => {
-    if (!pipelineConfirmTarget) return;
-    const key = pipelineConfirmTarget;
-    setPipelineConfirmTarget(null);
+    if (!pipelineConfirm) return;
+    const key = pipelineConfirm.target;
+    setPipelineConfirm(null);
     runStatusUpdate(key);
   };
 
-  const pendingIndex =
-    pipelineConfirmTarget != null ? WORKFLOW_STATUS_ORDER.indexOf(pipelineConfirmTarget) : -1;
-  const isGoingBack = pendingIndex >= 0 && pendingIndex < currentIndex;
-  const targetLabel = pipelineConfirmTarget ? WORKFLOW_STATUS_LABEL[pipelineConfirmTarget] : "";
+  const targetLabel = pipelineConfirm ? WORKFLOW_STATUS_LABEL[pipelineConfirm.target] : "";
+  const isGoingBack = pipelineConfirm?.direction === "backward";
 
   return (
     <div className="w-full min-w-0">
       <ConfirmDialog
-        open={!!pipelineConfirmTarget}
-        onClose={() => setPipelineConfirmTarget(null)}
-        title={isGoingBack ? "Move to an earlier stage?" : "Move to a later stage?"}
+        key={pipelineConfirm ? `${pipelineConfirm.target}-${pipelineConfirm.direction}` : "pipeline-confirm-closed"}
+        open={!!pipelineConfirm}
+        onClose={closePipelineConfirm}
+        title={isGoingBack ? "Move to an earlier stage?" : "Confirm move forward?"}
         description={
           isGoingBack ? (
             <>
@@ -170,9 +178,9 @@ export function AdminApplicationStatusFlow({
             </>
           ) : (
             <>
-              Move this application forward to{" "}
-              <span className="font-semibold text-slate-800">{targetLabel}</span>? The pipeline status will update for
-              your team.
+              Move this application to <span className="font-semibold text-slate-800">{targetLabel}</span>? This
+              advances the pipeline for your team. Click <span className="font-medium text-slate-700">Move stage</span>{" "}
+              to confirm, or cancel to stay on the current stage.
             </>
           )
         }
