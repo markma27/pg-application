@@ -75,6 +75,11 @@ export function loadGooglePlacesScript(apiKey: string): Promise<void> {
 const AU_REGION = "au";
 const DEBOUNCE_MS = 200;
 
+/** Shortcut addresses that resolve when the user types the trigger + Tab/Enter. */
+const SHORTCUTS: Record<string, string> = {
+  midsec: "Level 2/170 Greenhill Rd, Parkside SA 5063",
+};
+
 /** Shapes returned by `google.maps.importLibrary("places")` (Places API / Autocomplete Data). */
 type PlacesLibrary = {
   AutocompleteSessionToken: new () => unknown;
@@ -283,10 +288,29 @@ export function AddressAutocomplete({
     [onChange]
   );
 
+  /** Handle shortcut triggers (e.g. "midsec" → autofill address) on Tab/Enter. */
+  const handleShortcut = useCallback(
+    (value: string) => {
+      const normalised = value.trim().toLowerCase();
+      const resolved = SHORTCUTS[normalised];
+      if (resolved) {
+        onChange(resolved);
+        setSuggestions([]);
+        setOpen(false);
+        sessionTokenRef.current = null;
+      }
+    },
+    [onChange]
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (!open || suggestions.length === 0) {
-        if (e.key === "Escape") setOpen(false);
+        if (e.key === "Escape") { setOpen(false); return; }
+        if (e.key === "Enter" || e.key === "Tab") {
+          handleShortcut(text);
+          return;
+        }
         return;
       }
       if (e.key === "ArrowDown") {
@@ -303,7 +327,7 @@ export function AddressAutocomplete({
         setHighlightIndex(-1);
       }
     },
-    [open, suggestions, highlightIndex, selectSuggestion]
+    [open, suggestions, highlightIndex, selectSuggestion, handleShortcut, text]
   );
 
   useEffect(() => {
