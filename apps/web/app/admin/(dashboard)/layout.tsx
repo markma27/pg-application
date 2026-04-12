@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
+import { AdminThemeProvider } from "@/components/admin-theme-provider";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,8 @@ export default async function AdminDashboardLayout({
   }
 
   return (
-    <AdminShell profile={{ fullName: admin.full_name, email: admin.email }}>{children}</AdminShell>
+    <AdminThemeProvider>
+      <AdminShell profile={{ fullName: admin.full_name, email: admin.email }}>{children}</AdminShell>
+    </AdminThemeProvider>
   );
 }

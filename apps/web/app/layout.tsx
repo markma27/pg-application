@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Poppins, Montserrat } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { AdminDarkModeReset } from "@/components/admin-dark-mode-reset";
 import { PageTransition } from "@/components/page-transition";
 
 const poppins = Poppins({
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn(poppins.variable, montserrat.variable, "bg-slate-100")}>
       <body className="min-h-screen bg-slate-100 antialiased">
+        <AdminDarkModeReset />
         <PageTransition>{children}</PageTransition>
       </body>
     </html>

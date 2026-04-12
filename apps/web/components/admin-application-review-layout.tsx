@@ -3,7 +3,7 @@ import { CardDescription, CardTitle } from "@/components/ui/card";
 import { ENTITY_TYPE_OPTIONS, PORTFOLIO_STATUS_OPTIONS } from "@/lib/application-form/constants";
 import { cn } from "@/lib/utils";
 
-const reviewFieldLabelClass = "text-sm font-medium text-emerald-900";
+const reviewFieldLabelClass = "text-sm font-medium text-emerald-900 dark:text-emerald-400";
 
 /** Baseline-align label and value so currency/numbers line up with text (avoids columns looking vertically offset). */
 const reviewFieldRowBase =
@@ -28,14 +28,14 @@ export function AdminReviewFieldGrid({ children }: { children: ReactNode }) {
 /** Renders each service as a compact chip so long lists stay scannable (admin review). */
 export function AdminReviewServiceList({ items, emptyLabel = "None" }: { items: string[]; emptyLabel?: string }) {
   if (items.length === 0) {
-    return <span className="text-sm leading-snug text-slate-700">{emptyLabel}</span>;
+    return <span className="text-sm leading-snug text-slate-700 dark:text-[var(--admin-muted-text)]">{emptyLabel}</span>;
   }
   return (
     <ul className="flex flex-col gap-1">
       {items.map((item, i) => (
         <li
           key={`${i}-${item}`}
-          className="w-fit max-w-full rounded-md border border-emerald-200/70 bg-emerald-50/90 px-2 py-0.5 text-sm leading-snug text-slate-900"
+          className="w-fit max-w-full rounded-md border border-emerald-200/70 bg-emerald-50/90 px-2 py-0.5 text-sm leading-snug text-slate-900 dark:border-emerald-800/40 dark:bg-emerald-900/30 dark:text-[var(--admin-dropdown-text)]"
         >
           {item}
         </li>
@@ -48,8 +48,8 @@ export function AdminReviewServiceList({ items, emptyLabel = "None" }: { items: 
 export function AdminSectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <CardTitle className="text-base font-semibold text-slate-900">{title}</CardTitle>
-      {subtitle ? <CardDescription className="mt-0.5 text-slate-600">{subtitle}</CardDescription> : null}
+      <CardTitle className="text-base font-semibold text-slate-900 dark:text-[var(--admin-section-title)]">{title}</CardTitle>
+      {subtitle ? <CardDescription className="mt-0.5 text-slate-600 dark:text-[var(--admin-muted-text)]">{subtitle}</CardDescription> : null}
     </div>
   );
 }
@@ -60,7 +60,7 @@ export function ReviewRow({ label, value }: { label: string; value: ReactNode })
   return (
     <div className={reviewFieldRowBase}>
       <span className={reviewFieldLabelClass}>{label}</span>
-      <span className="min-w-0 text-sm leading-snug text-slate-900">{value}</span>
+      <span className="min-w-0 text-sm leading-snug text-slate-900 dark:text-[var(--admin-dropdown-text)]">{value}</span>
     </div>
   );
 }
@@ -78,7 +78,7 @@ export function ReviewRowAlways({
   return (
     <div className={reviewFieldRowBase}>
       <span className={cn(reviewFieldLabelClass, labelBold && "font-bold")}>{label}</span>
-      <span className="min-w-0 text-sm leading-snug text-slate-900">{value ?? "—"}</span>
+      <span className="min-w-0 text-sm leading-snug text-slate-900 dark:text-[var(--admin-dropdown-text)]">{value ?? "—"}</span>
     </div>
   );
 }

@@ -67,6 +67,7 @@ html {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --admin-table-border: oklch(0.922 0 0);
 }
 
 body {
@@ -150,6 +151,242 @@ a {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Admin portal dark mode — scoped entirely to the `.admin-dark` class so
+   non-admin pages are untouched. The theme provider toggles BOTH `.dark`
+   (for Tailwind's `dark:` variant) and `.admin-dark` (for these vars and
+   the utility overrides below) on <html>. */
+.admin-dark {
+  color-scheme: dark;
+  --admin-page-bg: oklch(0.17 0 0);
+  --admin-sidebar-bg: oklch(0.2 0 0);
+  --admin-sidebar-border: oklch(1 0 0 / 10%);
+  --admin-sidebar-text: oklch(0.88 0 0);
+  --admin-sidebar-active-bg: oklch(0.3 0 0);
+  --admin-sidebar-active-text: oklch(0.99 0 0);
+  --admin-sidebar-hover-bg: oklch(0.26 0 0);
+  --admin-header-bg: oklch(0.22 0 0);
+  --admin-header-border: oklch(1 0 0 / 10%);
+  --admin-header-title: oklch(0.96 0 0);
+  --admin-card-bg: oklch(0.22 0 0);
+  --admin-card-slate: oklch(0.26 0 0);
+  --admin-card-amber: oklch(0.3 0.05 85);
+  --admin-card-sky: oklch(0.3 0.05 230);
+  --admin-card-violet: oklch(0.3 0.05 290);
+  --admin-card-emerald: oklch(0.3 0.05 160);
+  --admin-card-text: oklch(0.96 0 0);
+  --admin-table-header-bg: oklch(0.25 0 0);
+  --admin-table-header-text: oklch(0.78 0 0);
+  --admin-table-border: oklch(1 0 0 / 10%);
+  --admin-section-title: oklch(0.96 0 0);
+  --admin-muted-text: oklch(0.75 0 0);
+  --admin-brand-dark: oklch(0.78 0.1 240);
+  --admin-brand-mid: oklch(0.82 0.11 235);
+  --admin-input-bg: oklch(0.25 0 0);
+  --admin-input-border: oklch(1 0 0 / 14%);
+  --admin-dropdown-bg: oklch(0.24 0 0);
+  --admin-dropdown-border: oklch(1 0 0 / 12%);
+  --admin-dropdown-text: oklch(0.96 0 0);
+  --admin-dropdown-hover: oklch(0.3 0 0);
+  --admin-pagination-active-bg: #1e4a7a;
+  --admin-pagination-text: #ffffff;
+  --admin-pagination-btn-bg: #ffffff;
+  --admin-pagination-btn-border: oklch(0.922 0 0);
+  --admin-pagination-btn-text: oklch(0.6 0 0);
+  --admin-pagination-btn-bg-dark: oklch(0.22 0 0);
+  --admin-pagination-btn-border-dark: oklch(1 0 0 / 10%);
+  --admin-pagination-btn-text-dark: oklch(0.85 0 0);
+  --admin-table-border: oklch(1 0 0 / 10%);
+}
+
+/* Make the body itself dark when the admin theme is active. The
+   hardcoded `body { background: #f8fafc }` rule above is replaced
+   via higher specificity here. */
+html.admin-dark body {
+  background: var(--admin-page-bg);
+  color: var(--admin-card-text);
+}
+
+/* ---------- Scoped utility overrides for admin dark mode ----------
+   Rather than touching every admin component to add `dark:` siblings,
+   we override the most common hardcoded light-mode Tailwind utilities
+   ONLY when rendered inside `.admin-dark`.
+
+   Cascade strategy:
+   - All rules live inside `@layer utilities` so they share the same
+     layer as Tailwind's utility classes. Unlayered rules would beat
+     the entire layer and would clobber explicit `dark:` variants.
+   - We scope with `:where(.admin-dark)` so the rule has the SAME
+     specificity (0,1,0) as a raw utility like `.bg-white`. Source
+     order then decides — our rules come after the Tailwind import,
+     so they win over the raw utility.
+   - Explicit `dark:bg-...` variants compile to `.dark .dark\:bg-...`
+     with specificity (0,2,0). That still beats (0,1,0), so any
+     component that already has a thoughtful `dark:` variant keeps
+     full control. */
+@layer utilities {
+
+/* Surfaces */
+:where(.admin-dark) .bg-white { background-color: var(--admin-card-bg); }
+:where(.admin-dark) .bg-white\/70 { background-color: color-mix(in oklab, var(--admin-card-bg) 70%, transparent); }
+:where(.admin-dark) .bg-white\/60 { background-color: color-mix(in oklab, var(--admin-card-bg) 60%, transparent); }
+:where(.admin-dark) .bg-white\/40 { background-color: color-mix(in oklab, var(--admin-card-bg) 40%, transparent); }
+:where(.admin-dark) .bg-white\/30 { background-color: color-mix(in oklab, var(--admin-card-bg) 30%, transparent); }
+:where(.admin-dark) .bg-slate-50,
+:where(.admin-dark) .bg-slate-50\/80,
+:where(.admin-dark) .bg-slate-50\/60 { background-color: var(--admin-table-header-bg); }
+:where(.admin-dark) .bg-slate-100,
+:where(.admin-dark) .bg-slate-100\/80 { background-color: var(--admin-table-header-bg); }
+:where(.admin-dark) .bg-slate-200 { background-color: var(--admin-input-bg); }
+:where(.admin-dark) .bg-\[\#f4f6f9\] { background-color: var(--admin-page-bg); }
+:where(.admin-dark) .bg-\[\#f8fafc\] { background-color: var(--admin-page-bg); }
+
+/* Text — slate/gray scales map to an admin contrast ramp */
+:where(.admin-dark) .text-slate-900,
+:where(.admin-dark) .text-gray-900 { color: var(--admin-card-text); }
+:where(.admin-dark) .text-slate-800,
+:where(.admin-dark) .text-gray-800 { color: oklch(0.93 0 0); }
+:where(.admin-dark) .text-slate-700,
+:where(.admin-dark) .text-gray-700 { color: oklch(0.88 0 0); }
+:where(.admin-dark) .text-slate-600,
+:where(.admin-dark) .text-gray-600 { color: var(--admin-muted-text); }
+:where(.admin-dark) .text-slate-500,
+:where(.admin-dark) .text-gray-500 { color: var(--admin-muted-text); }
+:where(.admin-dark) .text-slate-400,
+:where(.admin-dark) .text-gray-400 { color: oklch(0.65 0 0); }
+:where(.admin-dark) .text-slate-300,
+:where(.admin-dark) .text-gray-300 { color: oklch(0.45 0 0); }
+
+/* Brand hex colors used across admin */
+:where(.admin-dark) .text-\[\#0c2742\],
+:where(.admin-dark) .text-\[\#1e4a7a\] { color: var(--admin-brand-mid); }
+:where(.admin-dark) .hover\:text-\[\#0c2742\]:hover,
+:where(.admin-dark) .hover\:text-\[\#163a63\]:hover { color: var(--admin-sidebar-active-text); }
+:where(.admin-dark) .text-\[\#334155\] { color: var(--admin-sidebar-text); }
+:where(.admin-dark) .bg-\[\#1e4a7a\] { background-color: var(--admin-pagination-active-bg); }
+:where(.admin-dark) .hover\:bg-\[\#163a63\]:hover { background-color: oklch(0.6 0.13 250); }
+:where(.admin-dark) .border-\[\#dce6f7\] { border-color: var(--admin-sidebar-border); }
+:where(.admin-dark) .bg-\[\#e4e6ec\] { background-color: var(--admin-page-bg); }
+:where(.admin-dark) .ring-\[\#0c2742\]\/30 { --tw-ring-color: oklch(0.5 0.08 250 / 0.5); }
+:where(.admin-dark) .ring-\[\#0c2742\]\/50 { --tw-ring-color: oklch(0.6 0.1 250 / 0.7); }
+:where(.admin-dark) .ring-offset-\[\#f4f6f9\] { --tw-ring-offset-color: var(--admin-page-bg); }
+
+/* Pagination buttons dark mode — override inline styles for non-active pages */
+:where(.admin-dark) [style*="--admin-pagination-btn-bg"] { background-color: var(--admin-pagination-btn-bg-dark) !important; }
+:where(.admin-dark) [style*="--admin-pagination-btn-border"] { border-color: var(--admin-pagination-btn-border-dark) !important; }
+:where(.admin-dark) [style*="--admin-pagination-btn-text"] { color: var(--admin-pagination-btn-text-dark) !important; }
+
+/* Table row border overrides */
+:where(.admin-dark) table tbody tr { border-color: var(--admin-table-border) !important; }
+
+/* Borders / dividers */
+:where(.admin-dark) .border-slate-100,
+:where(.admin-dark) .border-slate-200,
+:where(.admin-dark) .border-slate-300,
+:where(.admin-dark) .border-slate-400 { border-color: var(--admin-table-border); }
+:where(.admin-dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+:where(.admin-dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: var(--admin-table-border); }
+:where(.admin-dark) .ring-slate-200 { --tw-ring-color: var(--admin-table-border); }
+
+/* Hover tints */
+:where(.admin-dark) .hover\:bg-slate-50:hover,
+:where(.admin-dark) .hover\:bg-slate-50\/80:hover { background-color: oklch(1 0 0 / 0.05); }
+:where(.admin-dark) .hover\:bg-black\/5:hover { background-color: oklch(1 0 0 / 0.08); }
+
+/* Stat card backgrounds */
+:where(.admin-dark) .bg-slate-200\/90 { background-color: oklch(0.25 0 0); }
+:where(.admin-dark) .bg-amber-50\/95 { background-color: oklch(0.28 0.06 85 / 0.95); }
+:where(.admin-dark) .bg-amber-100\/80 { background-color: oklch(0.32 0.07 85 / 0.8); }
+:where(.admin-dark) .bg-sky-100\/90 { background-color: oklch(0.28 0.07 230 / 0.9); }
+:where(.admin-dark) .bg-violet-100\/90 { background-color: oklch(0.28 0.07 290 / 0.9); }
+:where(.admin-dark) .bg-emerald-100\/90 { background-color: oklch(0.28 0.06 160 / 0.9); }
+
+/* Status / accent tints — preserve the hue but darken the surface.
+   Attribute selectors ([class*=""]) catch all opacity modifiers
+   (e.g. `text-amber-950/90`, `bg-amber-100/80`) in one rule. */
+:where(.admin-dark) [class*="bg-amber-50"] { background-color: oklch(0.32 0.06 85); }
+:where(.admin-dark) [class*="bg-amber-100"] { background-color: oklch(0.36 0.07 85); }
+:where(.admin-dark) [class*="border-amber-200"],
+:where(.admin-dark) [class*="border-amber-100"] { border-color: oklch(0.5 0.12 85); }
+:where(.admin-dark) [class*="text-amber-900"],
+:where(.admin-dark) [class*="text-amber-950"] { color: oklch(0.9 0.09 85); }
+:where(.admin-dark) [class*="ring-amber-"] { --tw-ring-color: oklch(0.5 0.12 85); }
+
+:where(.admin-dark) [class*="bg-sky-50"] { background-color: oklch(0.32 0.07 230); }
+:where(.admin-dark) [class*="bg-sky-100"] { background-color: oklch(0.36 0.08 230); }
+:where(.admin-dark) [class*="border-sky-200"],
+:where(.admin-dark) [class*="border-sky-100"] { border-color: oklch(0.5 0.13 230); }
+:where(.admin-dark) [class*="text-sky-900"],
+:where(.admin-dark) [class*="text-sky-950"] { color: oklch(0.9 0.09 230); }
+
+:where(.admin-dark) [class*="bg-violet-50"] { background-color: oklch(0.32 0.07 290); }
+:where(.admin-dark) [class*="bg-violet-100"] { background-color: oklch(0.36 0.08 290); }
+:where(.admin-dark) [class*="border-violet-200"],
+:where(.admin-dark) [class*="border-violet-100"] { border-color: oklch(0.5 0.13 290); }
+:where(.admin-dark) [class*="text-violet-900"],
+:where(.admin-dark) [class*="text-violet-950"] { color: oklch(0.9 0.09 290); }
+
+:where(.admin-dark) [class*="bg-emerald-50"] { background-color: oklch(0.3 0.06 160); }
+:where(.admin-dark) [class*="bg-emerald-100"] { background-color: oklch(0.34 0.07 160); }
+:where(.admin-dark) [class*="border-emerald-200"],
+:where(.admin-dark) [class*="border-emerald-100"] { border-color: oklch(0.5 0.12 160); }
+:where(.admin-dark) [class*="text-emerald-800"],
+:where(.admin-dark) [class*="text-emerald-900"],
+:where(.admin-dark) [class*="text-emerald-950"] { color: oklch(0.9 0.09 160); }
+:where(.admin-dark) [class*="from-emerald-50"] { --tw-gradient-from: oklch(0.3 0.06 160) var(--tw-gradient-from-position); }
+:where(.admin-dark) [class*="to-emerald-100"] { --tw-gradient-to: oklch(0.34 0.07 160) var(--tw-gradient-to-position); }
+
+:where(.admin-dark) [class*="bg-red-50"] { background-color: oklch(0.3 0.08 25); }
+:where(.admin-dark) [class*="border-red-200"] { border-color: oklch(0.5 0.14 25); }
+:where(.admin-dark) [class*="text-red-6"],
+:where(.admin-dark) [class*="text-red-7"],
+:where(.admin-dark) [class*="text-red-8"],
+:where(.admin-dark) [class*="text-red-9"] { color: oklch(0.88 0.11 25); }
+
+:where(.admin-dark) [class*="bg-rose-50"],
+:where(.admin-dark) [class*="bg-rose-100"] { background-color: oklch(0.32 0.08 15); }
+:where(.admin-dark) [class*="border-rose-200"] { border-color: oklch(0.5 0.14 15); }
+:where(.admin-dark) [class*="text-rose-7"],
+:where(.admin-dark) [class*="text-rose-8"],
+:where(.admin-dark) [class*="text-rose-9"] { color: oklch(0.9 0.1 15); }
+
+/* Hardcoded status-flow pastel hex fills */
+:where(.admin-dark) .bg-\[\#FEF9E7\] { background-color: oklch(0.32 0.06 85); }
+:where(.admin-dark) .bg-\[\#EBF5FB\] { background-color: oklch(0.32 0.07 230); }
+:where(.admin-dark) .bg-\[\#F4ECF7\] { background-color: oklch(0.32 0.07 290); }
+:where(.admin-dark) .bg-\[\#E9F7EF\] { background-color: oklch(0.3 0.06 160); }
+
+/* Inputs — style native and shadcn <input>/<textarea>/<select>. Using
+   :where() keeps specificity low so component-level classes win. */
+:where(.admin-dark) input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+:where(.admin-dark) textarea,
+:where(.admin-dark) select {
+  background-color: var(--admin-input-bg);
+  color: var(--admin-card-text);
+  border-color: var(--admin-input-border);
+}
+:where(.admin-dark) input::placeholder,
+:where(.admin-dark) textarea::placeholder { color: oklch(0.6 0 0); }
+
+:where(.admin-dark) input[type="checkbox"],
+:where(.admin-dark) input[type="radio"] {
+  accent-color: oklch(0.55 0.12 250);
+}
+
+/* Shadows — subtler on dark */
+:where(.admin-dark) .shadow-sm,
+:where(.admin-dark) .shadow,
+:where(.admin-dark) .shadow-md,
+:where(.admin-dark) .shadow-lg,
+:where(.admin-dark) .shadow-xl { box-shadow: 0 1px 3px oklch(0 0 0 / 0.5), 0 1px 2px oklch(0 0 0 / 0.35); }
+
+/* Brand logo SVG has dark fills — brighten it inside the admin sidebar
+   so it stays visible on dark backgrounds. */
+:where(.admin-dark) aside img[alt="PortfolioGuardian"] {
+  filter: brightness(1.5) saturate(1.1);
+}
+
+} /* end @layer utilities */
 
 @theme inline {
   --font-sans: var(--font-sans);

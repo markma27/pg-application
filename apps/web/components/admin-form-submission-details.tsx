@@ -109,8 +109,15 @@ export function AdminFormSubmissionDetails({
   return (
     <div className="space-y-6">
       {/* Contact */}
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+      <Card className="overflow-hidden rounded-xl border pt-0 ring-0 shadow-none"
+        style={{ borderColor: "var(--admin-table-border, #e2e8f0)" }}
+      >
+        <CardHeader className="border-b px-6 py-4"
+          style={{
+            background: "var(--admin-card-bg, #f1f5f9)",
+            borderColor: "var(--admin-table-border, #e2e8f0)",
+          }}
+        >
           <AdminSectionHeader title="Contact" subtitle="Primary applicant — from submission payload" />
         </CardHeader>
         <CardContent className="px-6 py-4">
@@ -134,8 +141,15 @@ export function AdminFormSubmissionDetails({
         const entityDocs = portfolioDocumentsByEntityId?.[entity.id];
         const annualBreakdown = entityAnnualOngoingBreakdown(entity, pricingModel);
         return (
-        <Card key={entity.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-          <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+        <Card key={entity.id} className="overflow-hidden rounded-xl border pt-0 ring-0 shadow-none"
+          style={{ borderColor: "var(--admin-table-border, #e2e8f0)" }}
+        >
+          <CardHeader className="border-b px-6 py-4"
+            style={{
+              background: "var(--admin-card-bg, #f1f5f9)",
+              borderColor: "var(--admin-table-border, #e2e8f0)",
+            }}
+          >
             <AdminSectionHeader title={`Entity ${i + 1}`} subtitle="Entity & portfolio details" />
           </CardHeader>
           <CardContent className="px-6 py-4">
@@ -174,9 +188,14 @@ export function AdminFormSubmissionDetails({
               ) : null}
             </AdminReviewFieldGrid>
 
-            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-              <div className="mb-3 border-b border-slate-200/80 pb-2">
-                <h3 className="text-sm font-semibold text-slate-900">Holdings &amp; account counts</h3>
+            <div className="mt-6 rounded-xl border px-4 py-4 sm:px-5"
+              style={{
+                borderColor: "var(--admin-table-border, #e2e8f0)",
+                background: "var(--admin-card-bg, #f8fafc)",
+              }}
+            >
+              <div className="mb-3 border-b pb-2" style={{ borderColor: "var(--admin-table-border, #e2e8f0cc)" }}>
+                <h3 className="text-sm font-semibold" style={{ color: "var(--admin-dropdown-text, #0f172a)" }}>Holdings &amp; account counts</h3>
               </div>
               <AdminReviewFieldGrid>
                 <ReviewRow
@@ -206,10 +225,10 @@ export function AdminFormSubmissionDetails({
                   value={entity.cryptocurrencyCount != null ? String(entity.cryptocurrencyCount) : undefined}
                 />
               </AdminReviewFieldGrid>
-              <div className="mt-4 space-y-0 border-t border-slate-200/90 pt-4">
+              <div className="mt-4 space-y-0 border-t pt-4" style={{ borderColor: "var(--admin-table-border, #e2e8f0e6)" }}>
                 <ReviewRowAlways
                   label="Complexity points"
-                  value={<span className="tabular-nums">{annualBreakdown.complexityPoints}</span>}
+                  value={<span className="tabular-nums" style={{ color: "var(--admin-dropdown-text)" }}>{annualBreakdown.complexityPoints}</span>}
                 />
                 <ReviewRowAlways label="Base fee" value={audOrDash(annualBreakdown.baseFee)} />
                 <ReviewRowAlways label="Complexity surcharge" value={audOrDash(annualBreakdown.complexitySurcharge)} />
@@ -217,7 +236,7 @@ export function AdminFormSubmissionDetails({
                   label="Indicative annual ongoing service fee"
                   labelBold
                   value={
-                    <span className="text-sm font-bold leading-snug tabular-nums text-slate-900">
+                    <span className="text-sm font-bold leading-snug tabular-nums" style={{ color: "var(--admin-dropdown-text, #0f172a)" }}>
                       {audOrDash(annualBreakdown.indicativeTotal)}
                     </span>
                   }
@@ -241,8 +260,15 @@ export function AdminFormSubmissionDetails({
       })}
 
       {/* Services & commencement */}
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+      <Card className="overflow-hidden rounded-xl border pt-0 ring-0 shadow-none"
+        style={{ borderColor: "var(--admin-table-border, #e2e8f0)" }}
+      >
+        <CardHeader className="border-b px-6 py-4"
+          style={{
+            background: "var(--admin-card-bg, #f1f5f9)",
+            borderColor: "var(--admin-table-border, #e2e8f0)",
+          }}
+        >
           <AdminSectionHeader
             title="Services & commencement"
             subtitle="Group-wide — standard, add-ons, PAF/PuAF, commencement"
@@ -269,8 +295,15 @@ export function AdminFormSubmissionDetails({
 
       {/* Individuals */}
       {data.individuals.map((ind, i) => (
-        <Card key={ind.id} className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-          <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+        <Card key={ind.id} className="overflow-hidden rounded-xl border pt-0 ring-0 shadow-none"
+          style={{ borderColor: "var(--admin-table-border, #e2e8f0)" }}
+        >
+          <CardHeader className="border-b px-6 py-4"
+            style={{
+              background: "var(--admin-card-bg, #f1f5f9)",
+              borderColor: "var(--admin-table-border, #e2e8f0)",
+            }}
+          >
             <AdminSectionHeader
               title={`Know Your Customer (KYC) – Individual ${i + 1}`}
               subtitle="KYC / identity"
@@ -307,8 +340,15 @@ export function AdminFormSubmissionDetails({
       ))}
 
       {/* Adviser & administration */}
-      <Card className="overflow-hidden rounded-xl border border-slate-200 pt-0 ring-0 shadow-none">
-        <CardHeader className="border-b border-slate-100 bg-slate-100 px-6 py-4">
+      <Card className="overflow-hidden rounded-xl border pt-0 ring-0 shadow-none"
+        style={{ borderColor: "var(--admin-table-border, #e2e8f0)" }}
+      >
+        <CardHeader className="border-b px-6 py-4"
+          style={{
+            background: "var(--admin-card-bg, #f1f5f9)",
+            borderColor: "var(--admin-table-border, #e2e8f0)",
+          }}
+        >
           <AdminSectionHeader
             title="Investment adviser & administration"
             subtitle="Adviser firm, authorisations, document routing, dividend"

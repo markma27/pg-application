@@ -29,16 +29,17 @@ export function AdminProfileMenu({ fullName }: Props) {
           e.stopPropagation();
           setOpen(true);
         }}
-        className="w-full border-b border-slate-100 px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
+        className="w-full border-b px-3 py-2 text-left text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+        style={{ borderColor: "var(--admin-dropdown-border, #f1f5f9)", color: "var(--admin-dropdown-text, #334155)" }}
       >
         Edit profile
       </button>
 
       <PortalModal open={open} onClose={() => setOpen(false)} aria-labelledby="profile-dialog-title">
-        <h2 id="profile-dialog-title" className="text-lg font-semibold text-[#0c2742]">
+        <h2 id="profile-dialog-title" className="text-lg font-semibold text-[#0c2742] dark:text-[var(--admin-section-title)]">
           Edit profile
         </h2>
-        <p className="mt-1 text-sm text-slate-600">Your email is your sign-in ID and cannot be changed here.</p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-[var(--admin-muted-text)]">Your email is your sign-in ID and cannot be changed here.</p>
         <form action={formAction} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="profile-full-name">Display name</Label>

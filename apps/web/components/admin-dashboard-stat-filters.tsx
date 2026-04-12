@@ -47,12 +47,21 @@ export function AdminDashboardStatFilters({
               aria-pressed={isOn}
               className={cn(
                 "rounded-xl text-left transition-[box-shadow,ring] outline-none focus-visible:ring-2 focus-visible:ring-[#0c2742]/30",
-                isOn && "ring-2 ring-[#0c2742]/50 ring-offset-2 ring-offset-[#f4f6f9]",
+                isOn && [
+                  "ring-2 ring-[#0c2742]/50 ring-offset-2 ring-offset-[#f4f6f9]",
+                  "dark:ring-offset-[var(--admin-page-bg,#f4f6f9)]",
+                ],
               )}
             >
-              <Card className={cn("h-full cursor-pointer border-0 p-5 transition-colors", c.className)}>
-                <p className="text-sm font-medium text-slate-700">{c.label}</p>
-                <p className="mt-3 text-3xl font-semibold tabular-nums text-[#0c2742]">{c.value}</p>
+              <Card
+                className={cn(
+                  "h-full cursor-pointer border-0 p-5 transition-colors",
+                  c.className,
+                  "dark:opacity-90",
+                )}
+              >
+                <p className="text-sm font-medium text-slate-700 dark:text-[var(--admin-muted-text)]">{c.label}</p>
+                <p className="mt-3 text-3xl font-semibold tabular-nums text-[#0c2742] dark:text-[var(--admin-sidebar-active-text)]">{c.value}</p>
               </Card>
             </button>
           );
@@ -60,8 +69,8 @@ export function AdminDashboardStatFilters({
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-[#0c2742]">Applications</h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <h2 className="text-lg font-semibold text-[#0c2742] dark:text-[var(--admin-section-title)]">Applications</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-[var(--admin-muted-text)]">
           Submissions from the public form. Open a row to review full application details.
         </p>
         <div className="mt-6">

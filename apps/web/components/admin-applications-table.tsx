@@ -9,6 +9,7 @@ import { ApplicationStatusBadges } from "@/components/admin-application-status-b
 import { normalizeWorkflowStatus, type WorkflowStatus } from "@/lib/admin/application-workflow-status";
 import { NATIVE_SELECT_CLASS } from "@/lib/native-select-styles";
 import { formatPortalCreatedCompact } from "@/lib/portal-datetime";
+import { cn } from "@/lib/utils";
 
 export type AdminAssignableUser = {
   id: string;
@@ -136,23 +137,31 @@ export function AdminApplicationsTable({
           placeholder="Search by reference, name, email, status, assignee, or entity count."
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="h-11 max-w-xl border-slate-300 bg-white"
+          className="h-11 max-w-xl border-slate-300 bg-white dark:border-[var(--admin-input-border)] dark:bg-[var(--admin-input-bg)] dark:text-[var(--admin-dropdown-text)]"
         />
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+        <label className="flex cursor-pointer items-center gap-2 text-sm" style={{ color: "var(--admin-muted-text, #64748b)" }}>
           <input
             type="checkbox"
             checked={showDeleted}
             onChange={(e) => setShowDeleted(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-400"
+            className="h-4 w-4 rounded border-slate-400 dark:border-slate-600"
           />
           Show Deleted
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white">
+      <div className="overflow-x-auto rounded-xl border bg-white dark:border-[var(--admin-table-border)] dark:bg-[var(--admin-card-bg)]"
+        style={{ borderColor: "var(--admin-table-border, #e2e8f0)" }}
+      >
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wide text-slate-600">
+            <tr className="border-b text-xs font-semibold uppercase tracking-wide"
+              style={{
+                background: "var(--admin-table-header-bg, #f8fafc)",
+                borderColor: "var(--admin-table-border, #e2e8f0)",
+                color: "var(--admin-table-header-text, #64748b)",
+              }}
+            >
               <th className="px-4 py-3">Reference</th>
               <th className="px-4 py-3">Primary Applicant</th>
               <th className="px-4 py-3">Email</th>
@@ -165,7 +174,7 @@ export function AdminApplicationsTable({
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-10 text-center" style={{ color: "var(--admin-muted-text)" }}>
                   No applications match your filters.
                 </td>
               </tr>
@@ -183,19 +192,21 @@ export function AdminApplicationsTable({
                       goToApplication(r.id);
                     }
                   }}
-                  className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/80 focus-visible:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500/40"
+                  className="cursor-pointer border-b last:border-0 transition-colors hover:bg-slate-50/80 focus-visible:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500/40 dark:border-[var(--admin-table-border)] dark:hover:bg-white/5 dark:focus-visible:bg-white/5"
+                  style={{ borderColor: "var(--admin-table-border, #f1f5f9)" }}
                 >
-                  <td className="px-4 py-3 font-medium text-[#1e4a7a]">{r.reference}</td>
-                  <td className="px-4 py-3 text-slate-800">{r.primary_contact_name}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.email}</td>
+                  <td className="px-4 py-3 font-medium text-[#1e4a7a] dark:text-[var(--admin-brand-mid)]">{r.reference}</td>
+                  <td className="px-4 py-3" style={{ color: "var(--admin-dropdown-text, #334155)" }}>{r.primary_contact_name}</td>
+                  <td className="px-4 py-3" style={{ color: "var(--admin-muted-text, #64748b)" }}>{r.email}</td>
                   <td className="px-4 py-3">
                     <ApplicationStatusBadges status={r.status} deletedAt={r.deleted_at} />
                   </td>
-                  <td className="px-4 py-3 text-center tabular-nums text-slate-800 font-medium">
+                  <td className="px-4 py-3 text-center tabular-nums font-medium" style={{ color: "var(--admin-dropdown-text, #334155)" }}>
                     {r.entity_count}
                   </td>
                   <td
-                    className="px-4 py-3 text-slate-700"
+                    className="px-4 py-3"
+                    style={{ color: "var(--admin-dropdown-text, #475569)" }}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                   >
@@ -220,14 +231,15 @@ export function AdminApplicationsTable({
                         </select>
                         <ChevronDown
                           aria-hidden
-                          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
+                          style={{ color: "var(--admin-muted-text)" }}
                         />
                       </div>
                     ) : (
                       <span>{r.assignee_name ?? "—"}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                  <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--admin-muted-text)" }}>
                     {formatPortalCreatedCompact(r.created_at)}
                   </td>
                 </tr>
@@ -246,11 +258,17 @@ export function AdminApplicationsTable({
               onClick={() => setPage(i)}
               aria-label={`Page ${i + 1}`}
               aria-current={page === i ? "page" : undefined}
-              className={`flex h-9 min-w-[2.25rem] cursor-pointer items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 ${
+              className={cn(
+                "flex h-9 min-w-[2.25rem] cursor-pointer items-center justify-center rounded-lg text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
                 page === i
-                  ? "bg-[#0c2742] text-white"
-                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-              }`}
+                  ? "text-white"
+                  : "border hover:bg-black/5 dark:hover:bg-white/10",
+              )}
+              style={
+                page === i
+                  ? { background: "var(--admin-pagination-active-bg, #1e4a7a)", color: "#ffffff", borderColor: "var(--admin-pagination-btn-border, oklch(0.922 0 0))" }
+                  : { background: "var(--admin-pagination-btn-bg, #ffffff)", borderColor: "var(--admin-pagination-btn-border, oklch(0.922 0 0))", color: "var(--admin-pagination-btn-text)" }
+              }
             >
               {i + 1}
             </button>
