@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { ChevronDown } from "lucide-react";
 import { assignApplicationToAdmin } from "@/lib/admin/assign-application-actions";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,8 @@ export function AdminApplicationsTable({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -82,6 +84,13 @@ export function AdminApplicationsTable({
       return hay.includes(needle);
     });
   }, [rows, q, showDeleted, presetFilter, todayStartIso]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [q, showDeleted, presetFilter, todayStartIso]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const goToApplication = useCallback(
     (id: string) => {
@@ -161,7 +170,7 @@ export function AdminApplicationsTable({
                 </td>
               </tr>
             ) : (
-              filtered.map((r) => (
+              paginated.map((r) => (
                 <tr
                   key={r.id}
                   role="link"
@@ -227,6 +236,27 @@ export function AdminApplicationsTable({
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end gap-1.5 pt-2">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPage(i)}
+              aria-label={`Page ${i + 1}`}
+              aria-current={page === i ? "page" : undefined}
+              className={`flex h-9 min-w-[2.25rem] cursor-pointer items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 ${
+                page === i
+                  ? "bg-[#0c2742] text-white"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
