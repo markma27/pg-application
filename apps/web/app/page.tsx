@@ -24,17 +24,17 @@ export default function HomePage() {
         </h1>
 
         {/* Intro */}
-        <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+        <p className="mt-4 text-xs text-slate-600 leading-relaxed">
           Welcome to PortfolioGuardian&apos;s client application portal. This form is how you tell us
           about the investment structures you wish to include and the portfolio administration and
           reporting services you are seeking. We use your answers to assess suitability and plan next steps.
         </p>
-        <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+        <p className="mt-4 text-xs text-slate-600 leading-relaxed">
           Structures may include trusts, companies, self managed super funds, individuals, private
           ancillary funds, or public ancillary funds. Work that needs specialised compliance or is
           outside our standard services may be referred to our parent company - Jaquillard Minns.
         </p>
-        <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+        <p className="mt-3 text-xs text-slate-600 leading-relaxed">
           Please have the following ready before you start.
         </p>
 
