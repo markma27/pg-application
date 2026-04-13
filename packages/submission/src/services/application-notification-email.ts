@@ -61,6 +61,17 @@ function readLogoPngBytesForPdf(): Uint8Array | null {
   }
 }
 
+function readFontBytesForPdf(relPath: string): Uint8Array | null {
+  const p = findPublicFile(relPath);
+  if (!p) return null;
+  try {
+    return new Uint8Array(readFileSync(p));
+  } catch (err) {
+    console.warn(`PDF font: could not read ${relPath}.`, err);
+    return null;
+  }
+}
+
 function safePdfBasename(reference: string): string {
   const t = reference.trim().replace(/[^\w.-]+/g, "_");
   return t || "application";
@@ -249,10 +260,14 @@ export async function buildApplicantConfirmationEmail(params: {
   let pdfAttachment: Attachment | undefined;
   try {
     const logoPng = readLogoPngBytesForPdf();
+    const montserratRegular = readFontBytesForPdf("fonts/Montserrat-Regular.ttf");
+    const montserratBold = readFontBytesForPdf("fonts/Montserrat-Bold.ttf");
     const pdfBytes = await buildApplicationPdfBytes({
       payload,
       reference: refDisplay,
       logoPngBytes: logoPng ?? undefined,
+      montserratRegularBytes: montserratRegular ?? undefined,
+      montserratBoldBytes: montserratBold ?? undefined,
     });
     const pdfName = `PortfolioGuardian-Application-${safePdfBasename(refDisplay)}.pdf`;
     pdfAttachment = {

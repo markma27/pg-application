@@ -174,7 +174,7 @@ export function ConfirmationStep() {
           type="button"
           onClick={handleDownloadPdf}
           disabled={isDownloadingPdf}
-          className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-emerald-600 bg-white px-8 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-red-600 bg-red-600 px-8 text-sm font-medium !text-white transition-colors hover:bg-red-700 hover:border-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Download className="h-4 w-4 shrink-0" aria-hidden />
           {isDownloadingPdf ? "Preparing PDF…" : "Download PDF copy"}

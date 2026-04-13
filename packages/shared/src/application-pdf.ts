@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type FullApplicationSubmission } from "./schemas/application";
 import { maskAustralianTaxFileNumber } from "./tfn-mask";
 
@@ -19,6 +20,8 @@ const FONT_SIZE = 9;
 const FONT_SIZE_BOLD = 9;
 const LINE_H = 11;
 const ROW_PAD = 6;
+
+const DASH = "-";
 
 const ENTITY_TYPE_LABEL: Record<string, string> = {
   individual: "Individual",
@@ -53,22 +56,22 @@ const SERVICE_CODE_LABEL: Record<string, string> = {
 };
 
 function formatDocumentSend(value: FullApplicationSubmission["annualReportSendTo"]): string {
-  if (value == null || value === "") return "—";
+  if (value == null || value === "") return DASH;
   if (value === "not_required") return "Not required";
   if (Array.isArray(value) && value.length > 0) {
     return value.map((v) => (v === "trustee" ? "Individual" : "Adviser")).join(", ");
   }
-  return "—";
+  return DASH;
 }
 
 function yesNo(v: boolean | "" | undefined): string {
   if (v === true) return "Yes";
   if (v === false) return "No";
-  return "—";
+  return DASH;
 }
 
 function wrapLines(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
-  const t = text.trim() || "—";
+  const t = text.trim() || DASH;
   const words = t.split(/\s+/);
   const lines: string[] = [];
   let line = "";
@@ -81,14 +84,14 @@ function wrapLines(text: string, font: PDFFont, fontSize: number, maxWidth: numb
     }
   }
   if (line) lines.push(line);
-  return lines.length ? lines : ["—"];
+  return lines.length ? lines : [DASH];
 }
 
 function serviceCodesSummary(codes: string[]): string {
   const labels = [...new Set(codes)]
     .map((c) => SERVICE_CODE_LABEL[c] ?? c)
     .filter(Boolean);
-  return labels.join(", ") || "—";
+  return labels.join(", ") || DASH;
 }
 
 export interface BuildApplicationPdfParams {
@@ -97,13 +100,34 @@ export interface BuildApplicationPdfParams {
   reference: string;
   /** PNG bytes for header logo; optional (header falls back to text). */
   logoPngBytes?: Uint8Array | null;
+  /** Montserrat TTF bytes for body text; falls back to Helvetica when absent. */
+  montserratRegularBytes?: Uint8Array | null;
+  /** Montserrat Bold TTF bytes for labels/headers; falls back to Helvetica-Bold when absent. */
+  montserratBoldBytes?: Uint8Array | null;
 }
 
 export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams): Promise<Uint8Array> {
-  const { payload, reference, logoPngBytes } = params;
+  const { payload, reference, logoPngBytes, montserratRegularBytes, montserratBoldBytes } = params;
   const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  pdfDoc.registerFontkit(fontkit);
+
+  let font: PDFFont;
+  let fontBold: PDFFont;
+  try {
+    if (montserratRegularBytes && montserratRegularBytes.byteLength > 0) {
+      font = await pdfDoc.embedFont(montserratRegularBytes, { subset: true });
+    } else {
+      font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    }
+    if (montserratBoldBytes && montserratBoldBytes.byteLength > 0) {
+      fontBold = await pdfDoc.embedFont(montserratBoldBytes, { subset: true });
+    } else {
+      fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    }
+  } catch {
+    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  }
 
   let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
   const contentW = PAGE_W - MARGIN_X * 2;
@@ -111,11 +135,13 @@ export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams
 
   let y = PAGE_H - MARGIN_TOP;
 
+  const newPage = () => {
+    page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+    y = PAGE_H - MARGIN_TOP;
+  };
+
   const ensureSpace = (needed: number) => {
-    if (y - needed < MARGIN_BOTTOM) {
-      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-      y = PAGE_H - MARGIN_TOP;
-    }
+    if (y - needed < MARGIN_BOTTOM) newPage();
   };
 
   const drawSectionTitle = (title: string) => {
@@ -155,25 +181,19 @@ export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams
       color: LABEL_BG,
     });
 
-    let baseline = rowBottom + ROW_PAD + FONT_SIZE * 0.85;
-    for (let i = 0; i < labelLines.length; i++) {
-      page.drawText(labelLines[i]!, {
-        x: MARGIN_X + ROW_PAD,
-        y: baseline + i * LINE_H,
-        size: FONT_SIZE_BOLD,
-        font: fontBold,
-        color: TEXT_HEADER,
-      });
-    }
-    for (let i = 0; i < valueLines.length; i++) {
-      page.drawText(valueLines[i]!, {
-        x: MARGIN_X + LABEL_COL_W + ROW_PAD,
-        y: baseline + i * LINE_H,
-        size: FONT_SIZE,
-        font,
-        color: TEXT_BODY,
-      });
-    }
+    const drawColumn = (lines: string[], x: number, size: number, f: PDFFont, color: ReturnType<typeof rgb>) => {
+      const colH = lines.length * LINE_H;
+      const padTop = (rowH - colH) / 2;
+      const topY = rowBottom + rowH - padTop;
+      for (let i = 0; i < lines.length; i++) {
+        const lineBoxTop = topY - i * LINE_H;
+        const baseline = lineBoxTop - LINE_H + (LINE_H - size) / 2 + size * 0.2;
+        page.drawText(lines[i]!, { x, y: baseline, size, font: f, color });
+      }
+    };
+
+    drawColumn(labelLines, MARGIN_X + ROW_PAD, FONT_SIZE_BOLD, fontBold, TEXT_HEADER);
+    drawColumn(valueLines, MARGIN_X + LABEL_COL_W + ROW_PAD, FONT_SIZE, font, TEXT_BODY);
 
     y = rowBottom;
   };
@@ -253,28 +273,28 @@ export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams
   if (payload.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE) {
     drawRow(
       "Authority to submit on behalf of client",
-      payload.representativeAuthorityConfirmed === true ? "Confirmed" : "—",
+      payload.representativeAuthorityConfirmed === true ? "Confirmed" : DASH,
     );
   }
-  drawRow("Group / account name", payload.groupName?.trim() || "—");
-  drawRow("Adviser (intro)", payload.adviserDetails?.trim() || "—");
+  drawRow("Group / account name", payload.groupName?.trim() || DASH);
 
-  /* Entities */
+  /* Entities — each starts on a new page */
   payload.entities.forEach((entity, i) => {
+    newPage();
     drawSectionTitle(`Entity ${i + 1}`);
     drawRow("Entity name", entity.entityName);
     drawRow("Entity type", ENTITY_TYPE_LABEL[entity.entityType] ?? entity.entityType);
     drawRow("Portfolio status", PORTFOLIO_STATUS_LABEL[entity.portfolioStatus] ?? entity.portfolioStatus);
-    drawRow("Portfolio HIN", entity.portfolioHin?.trim() || "—");
-    drawRow("Australian Business Number (ABN)", entity.abn?.trim() || "—");
+    drawRow("Portfolio HIN", entity.portfolioHin?.trim() || DASH);
+    drawRow("Australian Business Number (ABN)", entity.abn?.trim() || DASH);
     drawRow("Tax File Number (TFN)", maskAustralianTaxFileNumber(entity.tfn ?? ""));
     drawRow("Registered for GST", yesNo(entity.registeredForGst));
     drawRow("Primary bank account", yesNo(entity.hasPrimaryBankAccount));
     if (entity.hasPrimaryBankAccount) {
-      drawRow("Bank name", entity.primaryBankName?.trim() || "—");
-      drawRow("Account name", entity.primaryBankAccountName?.trim() || "—");
-      drawRow("BSB", entity.primaryBankBsb?.replace(/\s/g, "") || "—");
-      drawRow("Account number", entity.primaryBankAccountNumber?.replace(/\s/g, "") || "—");
+      drawRow("Bank name", entity.primaryBankName?.trim() || DASH);
+      drawRow("Account name", entity.primaryBankAccountName?.trim() || DASH);
+      drawRow("BSB", entity.primaryBankBsb?.replace(/\s/g, "") || DASH);
+      drawRow("Account number", entity.primaryBankAccountNumber?.replace(/\s/g, "") || DASH);
     }
     drawRow("Listed investments", String(entity.listedInvestmentCount ?? 0));
     drawRow("Unlisted investments", String(entity.unlistedInvestmentCount ?? 0));
@@ -289,27 +309,28 @@ export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams
       entity.hasForeignInvestments && "Foreign investments",
       entity.otherAssetsText?.trim(),
     ].filter(Boolean) as string[];
-    drawRow("Other assets", otherBits.length ? otherBits.join(" · ") : "—");
+    drawRow("Other assets", otherBits.length ? otherBits.join(" · ") : DASH);
   });
 
-  /* Services */
+  /* Services — starts on a new page */
+  newPage();
   drawSectionTitle("Services & commencement");
   const codes = payload.entities[0]?.serviceCodes ?? [];
   drawRow("Services (group)", serviceCodesSummary(codes));
-  drawRow("Other comments or notes", payload.servicesComments?.trim() || "—");
-  drawRow("Preferred commencement", payload.entities[0]?.commencementDate ?? "—");
+  drawRow("Other comments or notes", payload.servicesComments?.trim() || DASH);
+  drawRow("Preferred commencement", payload.entities[0]?.commencementDate ?? DASH);
 
-  /* Individuals */
+  /* Individuals — follow directly after Services (no forced page break) */
   payload.individuals.forEach((ind, i) => {
     drawSectionTitle(`Know Your Customer (KYC) – Individual ${i + 1}`);
-    drawRow("Name", [ind.title, ind.fullName].filter(Boolean).join(" ").trim() || "—");
+    drawRow("Name", [ind.title, ind.fullName].filter(Boolean).join(" ").trim() || DASH);
     drawRow(
       "Relationship to account",
-      ind.relationshipRoles?.length ? ind.relationshipRoles.map((r) => r.replace(/_/g, " ")).join(", ") : "—",
+      ind.relationshipRoles?.length ? ind.relationshipRoles.map((r) => r.replace(/_/g, " ")).join(", ") : DASH,
     );
     drawRow(
       "Residential address",
-      [ind.streetAddress, ind.streetAddressLine2].filter(Boolean).join(", ").trim() || "—",
+      [ind.streetAddress, ind.streetAddressLine2].filter(Boolean).join(", ").trim() || DASH,
     );
     drawRow("Tax File Number", maskAustralianTaxFileNumber(ind.taxFileNumber));
     drawRow("Date of birth", ind.dateOfBirth);
@@ -325,12 +346,11 @@ export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams
   const hasAdv = payload.hasInvestmentAdviser === true;
   drawRow("Has investment adviser", hasAdv ? "Yes" : "No");
   if (hasAdv) {
-    drawRow("Adviser name", payload.adviserName?.trim() || "—");
-    drawRow("Company", payload.adviserCompany?.trim() || "—");
-    drawRow("Adviser address", payload.adviserAddress?.trim() || "—");
-    drawRow("Phone", payload.adviserTel?.trim() || "—");
-    drawRow("Fax", payload.adviserFax?.trim() || "—");
-    drawRow("Email", payload.adviserEmail?.trim() || "—");
+    drawRow("Adviser name", payload.adviserName?.trim() || DASH);
+    drawRow("Company", payload.adviserCompany?.trim() || DASH);
+    drawRow("Adviser address", payload.adviserAddress?.trim() || DASH);
+    drawRow("Phone", payload.adviserTel?.trim() || DASH);
+    drawRow("Email", payload.adviserEmail?.trim() || DASH);
     drawRow("Nominate adviser as primary contact", yesNo(payload.nominateAdviserPrimaryContact));
     drawRow("Authorise adviser access to statements", yesNo(payload.authoriseAdviserAccessStatements));
     drawRow("Authorise deal with adviser direct", yesNo(payload.authoriseDealWithAdviserDirect));
@@ -343,7 +363,7 @@ export async function buildApplicationPdfBytes(params: BuildApplicationPdfParams
       ? "Receive in cash"
       : payload.dividendPreference === "reinvest"
         ? "Re-invest"
-        : "—";
+        : DASH;
   drawRow("Dividend preference", div);
 
   const bytes = await pdfDoc.save();

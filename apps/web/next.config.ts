@@ -109,6 +109,8 @@ const nextConfig: NextConfig = {
     "*": [
       "./public/portfolioguardian-logo.png",
       "./public/PortfolioGuardian_OriginalLogo.svg",
+      "./public/fonts/Montserrat-Regular.ttf",
+      "./public/fonts/Montserrat-Bold.ttf",
     ],
   },
   /**
