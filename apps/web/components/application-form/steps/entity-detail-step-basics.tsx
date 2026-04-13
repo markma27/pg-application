@@ -264,7 +264,7 @@ export function EntityDetailStepBasics({ entityIndex }: { entityIndex: number })
             <Input
               value={entity.entityName}
               onChange={(e) => update({ entityName: e.target.value })}
-              placeholder="Your full entity name including trustee name for trust entities"
+              placeholder="Your full entity name including trustee name for trust, SMSF and PAF/PuAF entities"
               required
               aria-invalid={err("entityName")}
               className={cn("h-11 rounded-lg border-slate-300 px-4", err("entityName") && "border-red-500 ring-2 ring-red-500/20")}
