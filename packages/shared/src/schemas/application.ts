@@ -89,10 +89,10 @@ export const entityInputSchema = z.object({
     if (!/^\d{6}$/.test(bsb)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "BSB must be 6 digits.", path: ["primaryBankBsb"] });
     }
-    if (!accNum || accNum.length < 3 || accNum.length > 20) {
+    if (!accNum || accNum.length < 3 || accNum.length > 9) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Account number must be 3–20 characters (digits).",
+        message: "Account number must be 3–9 digits.",
         path: ["primaryBankAccountNumber"],
       });
     }
