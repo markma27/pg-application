@@ -33,12 +33,13 @@
     "zod": "latest"
   },
   "devDependencies": {
-    "shadcn": "^4.0.0",
+    "@fontsource/montserrat": "^5.2.8",
     "@tailwindcss/postcss": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "autoprefixer": "latest",
     "postcss": "latest",
+    "shadcn": "^4.0.0",
     "tailwindcss": "latest"
   }
 }

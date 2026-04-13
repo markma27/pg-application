@@ -93,6 +93,7 @@ export async function sendApplicationNotification(params: {
       reference,
       primaryContactName: payload.primaryContactName,
       publicSiteUrl: resolvePublicSiteUrl(),
+      payload,
     });
     try {
       const { data, error } = await resend.emails.send({

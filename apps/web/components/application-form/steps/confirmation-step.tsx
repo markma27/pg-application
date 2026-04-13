@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useApplicationForm } from "@/lib/application-form";
-import { Mail, Phone } from "lucide-react";
+import { downloadApplicationPdf } from "@/lib/application-pdf-download";
+import { formStateToPayload } from "@/lib/application-form/types";
+import { Download, Mail, Phone } from "lucide-react";
 
 /** Fallback if the API did not return a DB reference (e.g. persistence disabled). */
 function formatReferenceFallback(applicationId: string): string {
@@ -17,10 +19,29 @@ function formatReferenceFallback(applicationId: string): string {
 export function ConfirmationStep() {
   const { state } = useApplicationForm();
   const result = state.submitResult;
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const handlePrint = useCallback(() => {
     window.print();
   }, []);
+
+  const handleDownloadPdf = useCallback(async () => {
+    const payload = formStateToPayload(state);
+    if (!result || !payload) return;
+    setIsDownloadingPdf(true);
+    try {
+      const ref = result.reference?.trim() || formatReferenceFallback(result.applicationId);
+      await downloadApplicationPdf({
+        payload,
+        reference: ref,
+        filenameBase: ref,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }, [state, result]);
 
   if (!result) {
     return (
@@ -142,13 +163,22 @@ export function ConfirmationStep() {
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4">
         <Link
           href="/"
           className="inline-flex h-12 cursor-pointer items-center justify-center rounded-lg bg-emerald-600 px-8 text-sm font-medium !text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
         >
           Return to Home
         </Link>
+        <button
+          type="button"
+          onClick={handleDownloadPdf}
+          disabled={isDownloadingPdf}
+          className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-emerald-600 bg-white px-8 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Download className="h-4 w-4 shrink-0" aria-hidden />
+          {isDownloadingPdf ? "Preparing PDF…" : "Download PDF copy"}
+        </button>
         <button
           type="button"
           onClick={handlePrint}

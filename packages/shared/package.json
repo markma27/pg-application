@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "pdf-lib": "^1.17.1",
     "zod": "latest"
   },
   "devDependencies": {

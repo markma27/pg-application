@@ -1,6 +1,9 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
 import { useApplicationForm } from "@/lib/application-form";
+import { downloadApplicationPdf } from "@/lib/application-pdf-download";
+import { formStateToPayload } from "@/lib/application-form/types";
 import { groupHasPafOrPuafEntity } from "@/lib/application-form/types";
 import {
   ADD_ON_SERVICE_LABELS,
@@ -16,7 +19,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
+
+/** Pre-submission PDF preview: reference is not known until submit. */
+const TEST_PDF_REFERENCE = "TBA";
 
 const ENTITY_STEPS_START = 2;
 const ENTITY_STEPS_PER_ENTITY = 2;
@@ -65,6 +71,24 @@ function SectionHeader({
 
 export function ReviewStep() {
   const { state, goToStep, servicesStepIndex, individualDetailsStepIndex, adviserDetailsStepIndex } = useApplicationForm();
+  const [isTestPdfLoading, setIsTestPdfLoading] = useState(false);
+  const previewPayload = useMemo(() => formStateToPayload(state), [state]);
+
+  const handleDownloadTestPdf = useCallback(async () => {
+    if (!previewPayload) return;
+    setIsTestPdfLoading(true);
+    try {
+      await downloadApplicationPdf({
+        payload: previewPayload,
+        reference: TEST_PDF_REFERENCE,
+        filenameBase: TEST_PDF_REFERENCE,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsTestPdfLoading(false);
+    }
+  }, [previewPayload]);
 
   const entityTypeLabel = (value: string) => ENTITY_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
   const portfolioLabel = (value: string) => PORTFOLIO_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -78,6 +102,26 @@ export function ReviewStep() {
         <p className="mt-1.5 text-sm text-slate-600">
           Please confirm your details before submitting. Use Edit on any section to make changes.
         </p>
+        <div className="mt-4 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-amber-950">
+            <span className="font-medium">Test PDF (temporary):</span> download a preview without submitting. Reference
+            shows as <span className="font-mono">{TEST_PDF_REFERENCE}</span> until you submit.
+          </p>
+          <button
+            type="button"
+            onClick={handleDownloadTestPdf}
+            disabled={!previewPayload || isTestPdfLoading}
+            className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-amber-700/30 bg-white px-4 py-2 text-sm font-medium text-amber-950 transition-colors hover:bg-amber-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              !previewPayload
+                ? "Complete all required fields in the wizard so the application can be validated before generating a PDF."
+                : undefined
+            }
+          >
+            <Download className="h-4 w-4 shrink-0" aria-hidden />
+            {isTestPdfLoading ? "Preparing…" : "Download test PDF"}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">

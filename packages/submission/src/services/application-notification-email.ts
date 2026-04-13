@@ -1,6 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { APPLICANT_ROLE_ADVISER_REPRESENTATIVE, type FullApplicationSubmission } from "@pg/shared";
+import {
+  APPLICANT_ROLE_ADVISER_REPRESENTATIVE,
+  buildApplicationPdfBytes,
+  type FullApplicationSubmission,
+} from "@pg/shared";
 import type { Attachment } from "resend";
 
 /** Emerald CTA aligned with apply form / admin accents */
@@ -44,6 +48,22 @@ function findPublicFile(filename: string): string | null {
     dir = parent;
   }
   return null;
+}
+
+function readLogoPngBytesForPdf(): Uint8Array | null {
+  const pngPath = findPublicFile(LOGO_PNG);
+  if (!pngPath) return null;
+  try {
+    return new Uint8Array(readFileSync(pngPath));
+  } catch (err) {
+    console.warn("PDF logo: could not read PNG.", err);
+    return null;
+  }
+}
+
+function safePdfBasename(reference: string): string {
+  const t = reference.trim().replace(/[^\w.-]+/g, "_");
+  return t || "application";
 }
 
 function resolveEmailLogoAsset(): EmailLogoAsset | null {
@@ -217,13 +237,34 @@ export async function buildApplicantConfirmationEmail(params: {
   reference: string | null | undefined;
   primaryContactName: string;
   publicSiteUrl: string;
+  payload: FullApplicationSubmission;
 }): Promise<{ html: string; text: string; attachments: Attachment[] }> {
-  const { applicationId, reference, primaryContactName, publicSiteUrl } = params;
+  const { applicationId, reference, primaryContactName, publicSiteUrl: _publicSiteUrl, payload } = params;
   const refDisplay = referenceDisplayForEmail(reference, applicationId);
-  const site = publicSiteUrl.replace(/\/$/, "");
+  void _publicSiteUrl;
   const mailtoHelp = `mailto:applications@portfolioguardian.com.au?subject=${encodeURIComponent(`Application inquiry - Reference ${refDisplay}`)}`;
 
-  const { attachments, imgHtml } = await buildLogoAttachmentAndImgTag();
+  const { attachments: logoAttachments, imgHtml } = await buildLogoAttachmentAndImgTag();
+
+  let pdfAttachment: Attachment | undefined;
+  try {
+    const logoPng = readLogoPngBytesForPdf();
+    const pdfBytes = await buildApplicationPdfBytes({
+      payload,
+      reference: refDisplay,
+      logoPngBytes: logoPng ?? undefined,
+    });
+    const pdfName = `PortfolioGuardian-Application-${safePdfBasename(refDisplay)}.pdf`;
+    pdfAttachment = {
+      filename: pdfName,
+      content: Buffer.from(pdfBytes).toString("base64"),
+      contentType: "application/pdf",
+    };
+  } catch (err) {
+    console.error("Applicant confirmation: could not build PDF attachment.", err);
+  }
+
+  const attachments: Attachment[] = [...logoAttachments, ...(pdfAttachment ? [pdfAttachment] : [])];
 
   const html = `
 <!DOCTYPE html>
@@ -245,6 +286,11 @@ export async function buildApplicantConfirmationEmail(params: {
               <p style="margin:10px 0 0 0;font-size:14px;color:#475569;line-height:1.5;">
                 Thank you for choosing PortfolioGuardian for your investment portfolio administration needs.
               </p>
+              ${
+                pdfAttachment
+                  ? `<p style="margin:12px 0 0 0;font-size:13px;color:#475569;line-height:1.5;">A PDF summary of your application is attached to this email for your records.</p>`
+                  : `<p style="margin:12px 0 0 0;font-size:13px;color:#64748b;line-height:1.5;">We could not attach a PDF automatically. If you need a copy, contact applications@portfolioguardian.com.au.</p>`
+              }
             </td>
           </tr>
           <tr>
@@ -329,6 +375,10 @@ export async function buildApplicantConfirmationEmail(params: {
     `Hello ${name},`,
     "",
     "Thank you for choosing PortfolioGuardian for your investment portfolio administration needs.",
+    "",
+    pdfAttachment
+      ? "A PDF summary of your application is attached to this email for your records."
+      : "We could not attach a PDF copy automatically; if you need one, contact applications@portfolioguardian.com.au.",
     "",
     `Reference number: ${refDisplay}`,
     "Please save this reference number for your records.",
