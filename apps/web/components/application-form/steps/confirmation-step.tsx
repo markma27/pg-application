@@ -31,10 +31,14 @@ export function ConfirmationStep() {
     setIsDownloadingPdf(true);
     try {
       const ref = result.reference?.trim() || formatReferenceFallback(result.applicationId);
+      const entityPortfolioFileNames = state.entities
+        .slice(0, state.entityCount)
+        .map((e) => (e.existingPortfolioReportFiles ?? []).map((f) => f.name));
       await downloadApplicationPdf({
         payload,
         reference: ref,
         filenameBase: ref,
+        entityPortfolioFileNames,
       });
     } catch (e) {
       console.error(e);

@@ -7,6 +7,8 @@ export async function downloadApplicationPdf(params: {
   reference: string;
   /** Used for the downloaded filename (sanitized). */
   filenameBase: string;
+  /** Uploaded portfolio document filenames, aligned to `payload.entities` by index. */
+  entityPortfolioFileNames?: string[][];
 }): Promise<void> {
   const safe = params.filenameBase.trim().replace(/[^\w.-]+/g, "_") || "application";
   const fetchBytes = async (url: string): Promise<Uint8Array | undefined> => {
@@ -29,6 +31,7 @@ export async function downloadApplicationPdf(params: {
     logoPngBytes,
     montserratRegularBytes,
     montserratBoldBytes,
+    entityPortfolioFileNames: params.entityPortfolioFileNames,
   });
   const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);

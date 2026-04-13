@@ -1,14 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApplicationForm } from "@/lib/application-form";
-import { formStateToPayload } from "@/lib/application-form/types";
-import { downloadApplicationPdf } from "@/lib/application-pdf-download";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ArrowLeft, ArrowRight, Download, FileText, RotateCcw } from "lucide-react";
-
-const PREVIEW_PDF_REFERENCE = "TBA";
+import { ArrowLeft, ArrowRight, FileText, RotateCcw } from "lucide-react";
 
 type StepNavVariant = "header" | "panel";
 
@@ -33,24 +29,6 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
   const isReview = state.step === reviewStepIndex;
   const isConfirmation = state.step >= confirmationStepIndex;
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
-  const [isPdfLoading, setIsPdfLoading] = useState(false);
-  const previewPayload = useMemo(() => (isReview ? formStateToPayload(state) : null), [isReview, state]);
-
-  const handleDownloadPdf = useCallback(async () => {
-    if (!previewPayload) return;
-    setIsPdfLoading(true);
-    try {
-      await downloadApplicationPdf({
-        payload: previewPayload,
-        reference: PREVIEW_PDF_REFERENCE,
-        filenameBase: PREVIEW_PDF_REFERENCE,
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsPdfLoading(false);
-    }
-  }, [previewPayload]);
 
   if (isConfirmation) return null;
 
@@ -150,22 +128,6 @@ export function StepNav({ variant = "panel", showIcon }: { variant?: StepNavVari
             className="inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-lg border border-white/40 bg-transparent text-sm font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Back
-          </button>
-        )}
-        {isReview && (
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={!previewPayload || isPdfLoading || isSubmitting}
-            title={
-              !previewPayload
-                ? "Complete all required fields so the application can be validated before generating a PDF."
-                : undefined
-            }
-            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/40 bg-transparent text-sm font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Download className="h-4 w-4 shrink-0" aria-hidden />
-            {isPdfLoading ? "Preparing…" : "Download PDF"}
           </button>
         )}
       </div>
