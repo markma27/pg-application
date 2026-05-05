@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
+    "dev:tls": "node --use-system-ca ../../node_modules/next/dist/bin/next dev --webpack",
     "build": "cd ../.. && npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build:next -w @pg/web",
     "build:next": "next build --webpack && node ./scripts/prune-nft-trace.mjs",
     "start": "next start",

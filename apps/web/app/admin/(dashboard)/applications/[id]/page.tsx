@@ -13,6 +13,7 @@ import {
   AdminApplicationAuditSection,
   type ApplicationAuditEventRow,
 } from "@/components/admin-application-audit-section";
+import { AdminDownloadApplicationPdfButton } from "@/components/admin-download-application-pdf-button";
 import { AdminApplicationDeleteRow } from "@/components/admin-application-delete-row";
 import { ApplicationStatusBadges } from "@/components/admin-application-status-badges";
 import { AdminApplicationStatusFlow } from "@/components/admin-application-status-flow";
@@ -96,6 +97,15 @@ function portfolioDocumentsByFormEntityId(rows: EntityRow[]): Record<string, Por
   return map;
 }
 
+/** Aligns with applicant email / PDF when DB reference is missing. */
+function referenceDisplayForPdf(reference: string | null | undefined, applicationId: string): string {
+  const r = reference?.trim();
+  if (r) return r;
+  const hex = applicationId.replace(/-/g, "").slice(-8);
+  const num = Number.parseInt(hex, 16) % 1_000_000;
+  return `PG-${String(num).padStart(6, "0")}`;
+}
+
 function outcomeLabel(outcome: string) {
   switch (outcome) {
     case "pg_fit":
@@ -131,6 +141,10 @@ export default async function AdminApplicationDetailPage({
   }
 
   const submission = fullApplicationSubmissionSchema.safeParse(app.form_submission);
+  const referenceForPdf = referenceDisplayForPdf(
+    typeof app.reference === "string" ? app.reference : null,
+    id,
+  );
 
   const { data: entities } = await supabase
     .from("application_entities")
@@ -241,6 +255,9 @@ export default async function AdminApplicationDetailPage({
                 status={typeof app.status === "string" ? app.status : "pending"}
                 deletedAt={app.deleted_at as string | null}
               />
+              {submission.success ? (
+                <AdminDownloadApplicationPdfButton payload={submission.data} referenceDisplay={referenceForPdf} />
+              ) : null}
             </div>
             <p className="mt-1 text-base text-slate-700">{app.primary_contact_name}</p>
             {app.created_at ? (

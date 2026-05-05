@@ -77,6 +77,45 @@ function safePdfBasename(reference: string): string {
   return t || "application";
 }
 
+function referenceDisplayForEmail(reference: string | null | undefined, applicationId: string): string {
+  const r = reference?.trim();
+  if (r) return r;
+  const hex = applicationId.replace(/-/g, "").slice(-8);
+  const num = Number.parseInt(hex, 16) % 1_000_000;
+  const suffix = String(num).padStart(6, "0");
+  return `PG-${suffix}`;
+}
+
+/** Same bytes/filename as applicant confirmation — omits optional portfolio filename lists so PDF matches email attachment. */
+async function tryBuildApplicationPdfAttachment(params: {
+  payload: FullApplicationSubmission;
+  referenceDisplay: string;
+  logContext: string;
+}): Promise<Attachment | undefined> {
+  const { payload, referenceDisplay, logContext } = params;
+  try {
+    const logoPng = readLogoPngBytesForPdf();
+    const montserratRegular = readFontBytesForPdf("fonts/Montserrat-Regular.ttf");
+    const montserratBold = readFontBytesForPdf("fonts/Montserrat-Bold.ttf");
+    const pdfBytes = await buildApplicationPdfBytes({
+      payload,
+      reference: referenceDisplay,
+      logoPngBytes: logoPng ?? undefined,
+      montserratRegularBytes: montserratRegular ?? undefined,
+      montserratBoldBytes: montserratBold ?? undefined,
+    });
+    const pdfName = `PortfolioGuardian-Application-${safePdfBasename(referenceDisplay)}.pdf`;
+    return {
+      filename: pdfName,
+      content: Buffer.from(pdfBytes).toString("base64"),
+      contentType: "application/pdf",
+    };
+  } catch (err) {
+    console.error(`${logContext}: could not build PDF attachment.`, err);
+    return undefined;
+  }
+}
+
 function resolveEmailLogoAsset(): EmailLogoAsset | null {
   const pngPath = findPublicFile(LOGO_PNG);
   if (pngPath) {
@@ -141,9 +180,16 @@ export async function buildApplicationNotificationEmail(params: {
   const { applicationId, reference, adminAppUrl, payload } = params;
 
   const refLine = reference?.trim();
+  const refDisplay = referenceDisplayForEmail(reference, applicationId);
   const portalUrl = `${adminAppUrl.replace(/\/$/, "")}/applications/${applicationId}`;
 
-  const { attachments, imgHtml } = await buildLogoAttachmentAndImgTag();
+  const { attachments: logoAttachments, imgHtml } = await buildLogoAttachmentAndImgTag();
+  const pdfAttachment = await tryBuildApplicationPdfAttachment({
+    payload,
+    referenceDisplay: refDisplay,
+    logContext: "Staff notification",
+  });
+  const attachments: Attachment[] = [...logoAttachments, ...(pdfAttachment ? [pdfAttachment] : [])];
 
   const repAuthorityConfirmed =
     payload.applicantRole === APPLICANT_ROLE_ADVISER_REPRESENTATIVE && payload.representativeAuthorityConfirmed === true;
@@ -190,6 +236,11 @@ export async function buildApplicationNotificationEmail(params: {
             <td style="padding:8px 28px 4px 28px;">
               <h2 style="margin:0 0 8px 0;font-size:15px;color:#1e4a7a;">Primary contact</h2>
               <table role="presentation" width="100%" cellspacing="0">${contactRows}</table>
+              ${
+                pdfAttachment
+                  ? `<p style="margin:14px 0 0 0;font-size:13px;color:#475569;line-height:1.5;text-align:center;">The same PDF summary sent to the applicant is attached for your records.</p>`
+                  : `<p style="margin:14px 0 0 0;font-size:13px;color:#64748b;line-height:1.5;text-align:center;">PDF attachment could not be generated automatically.</p>`
+              }
             </td>
           </tr>
           <tr>
@@ -223,21 +274,16 @@ export async function buildApplicationNotificationEmail(params: {
     payload.groupName?.trim() ? `Group / account name: ${payload.groupName}` : null,
     payload.adviserDetails?.trim() ? `Adviser details: ${payload.adviserDetails}` : null,
     "",
+    pdfAttachment
+      ? "A PDF summary of the application (same as sent to the applicant) is attached."
+      : "PDF attachment could not be generated automatically.",
+    "",
     `Admin Portal: ${portalUrl}`,
   ]
     .filter((x): x is string => x != null && x !== "")
     .join("\n");
 
   return { html, text: textLines, attachments };
-}
-
-function referenceDisplayForEmail(reference: string | null | undefined, applicationId: string): string {
-  const r = reference?.trim();
-  if (r) return r;
-  const hex = applicationId.replace(/-/g, "").slice(-8);
-  const num = Number.parseInt(hex, 16) % 1_000_000;
-  const suffix = String(num).padStart(6, "0");
-  return `PG-${suffix}`;
 }
 
 /**
@@ -257,27 +303,11 @@ export async function buildApplicantConfirmationEmail(params: {
 
   const { attachments: logoAttachments, imgHtml } = await buildLogoAttachmentAndImgTag();
 
-  let pdfAttachment: Attachment | undefined;
-  try {
-    const logoPng = readLogoPngBytesForPdf();
-    const montserratRegular = readFontBytesForPdf("fonts/Montserrat-Regular.ttf");
-    const montserratBold = readFontBytesForPdf("fonts/Montserrat-Bold.ttf");
-    const pdfBytes = await buildApplicationPdfBytes({
-      payload,
-      reference: refDisplay,
-      logoPngBytes: logoPng ?? undefined,
-      montserratRegularBytes: montserratRegular ?? undefined,
-      montserratBoldBytes: montserratBold ?? undefined,
-    });
-    const pdfName = `PortfolioGuardian-Application-${safePdfBasename(refDisplay)}.pdf`;
-    pdfAttachment = {
-      filename: pdfName,
-      content: Buffer.from(pdfBytes).toString("base64"),
-      contentType: "application/pdf",
-    };
-  } catch (err) {
-    console.error("Applicant confirmation: could not build PDF attachment.", err);
-  }
+  const pdfAttachment = await tryBuildApplicationPdfAttachment({
+    payload,
+    referenceDisplay: refDisplay,
+    logContext: "Applicant confirmation",
+  });
 
   const attachments: Attachment[] = [...logoAttachments, ...(pdfAttachment ? [pdfAttachment] : [])];
 

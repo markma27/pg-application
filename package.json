@@ -8,8 +8,11 @@
   ],
   "scripts": {
     "dev:web": "npm run dev -w @pg/web",
+    "dev:web:tls": "npm run dev:tls -w @pg/web",
     "dev:api": "npm run dev -w @pg/api",
+    "dev:api:tls": "npm run dev:tls -w @pg/api",
     "dev": "concurrently -n web,api -c blue,green \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:tls": "concurrently -n web,api -c blue,green \"npm run dev:web:tls\" \"npm run dev:api:tls\"",
     "build": "npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build -w @pg/api && npm run build:next -w @pg/web",
     "build:web": "npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build:next -w @pg/web",
     "typecheck": "npm run typecheck -w @pg/shared && npm run typecheck -w @pg/submission && npm run typecheck -w @pg/api && npm run typecheck -w @pg/web",
