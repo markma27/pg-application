@@ -5,7 +5,7 @@ import {
   buildApplicantConfirmationEmail,
   buildApplicationNotificationEmail,
 } from "./application-notification-email.js";
-import { getNotificationRecipientEmail } from "./portal-settings.service.js";
+import { getNotificationRecipientEmails } from "./portal-settings.service.js";
 
 const DISPLAY_NAME = "PortfolioGuardian";
 
@@ -46,7 +46,7 @@ export async function sendApplicationNotification(params: {
   const from = formatResendFromAddress(env.RESEND_FROM);
 
   const staff = await (async () => {
-    const to = await getNotificationRecipientEmail();
+    const to = await getNotificationRecipientEmails();
     const { html, text, attachments } = await buildApplicationNotificationEmail({
       applicationId,
       reference,
