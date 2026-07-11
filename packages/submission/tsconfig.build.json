@@ -1,14 +1,13 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": false,
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
+    "types": ["node"],
     "paths": {
-      "@pg/shared": ["../shared/dist/index.d.ts"],
-      "@pg/shared/*": ["../shared/dist/*"],
       "@pg/submission": ["./src/index.ts"],
       "@pg/submission/*": ["./src/*"]
     }

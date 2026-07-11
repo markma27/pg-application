@@ -7,5 +7,6 @@ dist
 .env.*.local
 coverage
 *.log
+*.tsbuildinfo
 security-update-report.md
 supabase/.branches
