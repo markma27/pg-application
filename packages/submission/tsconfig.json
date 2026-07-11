@@ -4,8 +4,8 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@pg/shared": ["../shared/dist/index.js"],
-      "@pg/shared/*": ["../shared/dist/*"],
+      "@pg/shared": ["../shared/src/index.ts"],
+      "@pg/shared/*": ["../shared/src/*"],
       "@pg/submission": ["./src/index.ts"],
       "@pg/submission/*": ["./src/*"]
     }

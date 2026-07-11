@@ -135,6 +135,19 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: path.join(__dirname, "../.."),
+    resolveAlias: {
+      "@": __dirname,
+    },
+  },
+  webpack: (config) => {
+    config.resolve ??= {};
+    config.resolve.alias = {
+      ...(typeof config.resolve.alias === "object" && config.resolve.alias !== null
+        ? config.resolve.alias
+        : {}),
+      "@": __dirname,
+    };
+    return config;
   },
   async headers() {
     /**

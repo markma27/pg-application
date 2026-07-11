@@ -14,15 +14,15 @@
   "dependencies": {
     "@pg/shared": "0.1.0",
     "@pg/submission": "0.1.0",
-    "cors": "latest",
-    "express": "latest",
-    "express-rate-limit": "^8.3.1",
-    "tsx": "latest",
-    "zod": "latest"
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "tsx": "^4.23.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/cors": "latest",
-    "@types/express": "latest",
-    "typescript": "latest"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "typescript": "^5.9.3"
   }
 }

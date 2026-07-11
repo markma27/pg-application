@@ -16,11 +16,14 @@
     "build": "npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build -w @pg/api && npm run build:next -w @pg/web",
     "build:web": "npm run build -w @pg/shared && npm run build -w @pg/submission && npm run build:next -w @pg/web",
     "typecheck": "npm run typecheck -w @pg/shared && npm run typecheck -w @pg/submission && npm run typecheck -w @pg/api && npm run typecheck -w @pg/web",
-    "lint": "npm run lint -w @pg/api && npm run lint -w @pg/web"
+    "lint": "npm run lint -w @pg/api && npm run lint -w @pg/web",
+    "security:audit": "npm audit",
+    "security:update": "node scripts/security-update.mjs",
+    "security:update:dry-run": "node scripts/security-update.mjs --dry-run"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "concurrently": "latest",
-    "typescript": "latest"
+    "@types/node": "^26.1.1",
+    "concurrently": "^10.0.3",
+    "typescript": "^5.9.3"
   }
 }

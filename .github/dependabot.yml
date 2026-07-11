@@ -1,0 +1,23 @@
+# Complements the daily workflow with GitHub-native security alerts.
+# Dependabot opens focused PRs for individual advisories between workflow runs.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: daily
+      time: "03:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: typescript
+        versions:
+          - ">=7.0.0"

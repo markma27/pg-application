@@ -30,12 +30,12 @@
   },
   "dependencies": {
     "@pg/shared": "0.1.0",
-    "@supabase/supabase-js": "latest",
-    "dotenv": "latest",
-    "resend": "latest",
-    "zod": "latest"
+    "@supabase/supabase-js": "^2.110.2",
+    "dotenv": "^17.4.2",
+    "resend": "^6.17.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "typescript": "latest"
+    "typescript": "^5.9.3"
   }
 }
