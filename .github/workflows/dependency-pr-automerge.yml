@@ -1,6 +1,7 @@
 name: Dependency PR auto-merge and notify
 
-# Enables auto-merge once CI passes, and emails on open/merge for dependency PRs.
+# Conservative: auto-merge ONLY patch workflow PRs (label `auto-merge`) and
+# Dependabot security PRs (label `security`). All other dependency PRs need manual merge.
 
 on:
   pull_request:
@@ -15,9 +16,12 @@ jobs:
     if: |
       github.event.action != 'closed' &&
       (
-        startsWith(github.head_ref, 'automation/deps-security') ||
-        startsWith(github.head_ref, 'dependabot/') ||
-        github.actor == 'dependabot[bot]'
+        contains(join(github.event.pull_request.labels.*.name, ','), 'auto-merge') ||
+        contains(join(github.event.pull_request.labels.*.name, ','), 'security') ||
+        (
+          github.actor == 'dependabot[bot]' &&
+          contains(join(github.event.pull_request.labels.*.name, ','), 'dependencies')
+        )
       )
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +30,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Email — dependency PR opened
+      - name: Email — dependency PR opened (auto-merge queued)
         if: github.event.action == 'opened'
         uses: dawidd6/action-send-mail@v3
         with:
@@ -35,13 +39,47 @@ jobs:
           secure: true
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "[pg-application] Dependency update PR opened (auto-merge queued)"
+          subject: "[pg-application] Dependency PR opened (auto-merge queued)"
           to: mayinxing@gmail.com
           from: ${{ secrets.MAIL_USERNAME }}
           body: |
-            A dependency update pull request was opened and auto-merge has been queued.
+            A dependency pull request was opened and auto-merge has been queued.
+
+            Only patch updates and security fixes are auto-merged. Minor/major PRs require manual review.
 
             It will merge automatically once all required checks pass.
+
+            PR: ${{ github.event.pull_request.html_url }}
+            Title: ${{ github.event.pull_request.title }}
+            Branch: ${{ github.head_ref }}
+            Labels: ${{ join(github.event.pull_request.labels.*.name, ', ') }}
+
+            Repository: ${{ github.repository }}
+
+  notify-manual-review:
+    if: |
+      github.event.action == 'opened' &&
+      contains(join(github.event.pull_request.labels.*.name, ','), 'dependencies') &&
+      !contains(join(github.event.pull_request.labels.*.name, ','), 'auto-merge') &&
+      !contains(join(github.event.pull_request.labels.*.name, ','), 'security') &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Email — dependency PR needs manual review
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "[pg-application] Dependency PR needs manual review"
+          to: mayinxing@gmail.com
+          from: ${{ secrets.MAIL_USERNAME }}
+          body: |
+            A dependency pull request was opened that is NOT eligible for auto-merge.
+
+            Please review and merge manually when ready.
 
             PR: ${{ github.event.pull_request.html_url }}
             Title: ${{ github.event.pull_request.title }}
@@ -53,11 +91,7 @@ jobs:
     if: |
       github.event.action == 'closed' &&
       github.event.pull_request.merged == true &&
-      (
-        startsWith(github.head_ref, 'automation/deps-security') ||
-        startsWith(github.head_ref, 'dependabot/') ||
-        contains(join(github.event.pull_request.labels.*.name, ','), 'dependencies')
-      )
+      contains(join(github.event.pull_request.labels.*.name, ','), 'dependencies')
     runs-on: ubuntu-latest
     steps:
       - name: Email — dependency PR merged

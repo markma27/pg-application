@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Daily dependency security maintenance for the pg-application monorepo.
+ * Weekly dependency maintenance for the pg-application monorepo.
  *
  * Usage:
- *   node scripts/security-update.mjs              # apply updates
+ *   node scripts/security-update.mjs              # apply patch updates (default)
  *   node scripts/security-update.mjs --dry-run    # audit + report only
- *   node scripts/security-update.mjs --target latest
+ *   node scripts/security-update.mjs --target minor
  *
  * Environment:
- *   UPDATE_TARGET=minor|latest|patch   (default: minor)
+ *   UPDATE_TARGET=patch|minor|latest   (default: patch)
  *   FAIL_ON_VULNS=1                    exit 1 if vulnerabilities remain
  *   USE_SYSTEM_CA=1                    set NODE_OPTIONS=--use-system-ca (Windows/corp proxy)
  */
@@ -26,7 +26,7 @@ const dryRun = args.has("--dry-run");
 const target =
   [...args].find((a) => a.startsWith("--target="))?.split("=")[1] ??
   process.env.UPDATE_TARGET ??
-  "minor";
+  "patch";
 const failOnVulns = process.env.FAIL_ON_VULNS === "1";
 const reportPath = path.join(rootDir, "security-update-report.md");
 

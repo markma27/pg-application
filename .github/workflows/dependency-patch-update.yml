@@ -1,0 +1,168 @@
+name: Dependency patch update
+
+# Conservative weekly patch updates only. Auto-merge is enabled via the `auto-merge` label
+# after CI passes (see dependency-pr-automerge.yml).
+#
+# Required repo secrets: MAIL_USERNAME, MAIL_PASSWORD
+# Required repo setting: Allow auto-merge (enabled)
+
+on:
+  schedule:
+    # Weekly on Monday at 04:00 UTC (after Dependabot at 03:00)
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      update_target:
+        description: "npm-check-updates target (patch recommended)"
+        required: false
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - latest
+      dry_run:
+        description: "Audit only — do not open a PR"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependency-patch-update
+  cancel-in-progress: false
+
+jobs:
+  scan-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run patch update
+        env:
+          UPDATE_TARGET: ${{ github.event.inputs.update_target || 'patch' }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node scripts/security-update.mjs --dry-run
+          else
+            node scripts/security-update.mjs --target=${UPDATE_TARGET}
+          fi
+
+      - name: Verify typecheck
+        if: github.event.inputs.dry_run != true
+        run: npm run typecheck
+
+      - name: Verify build
+        if: github.event.inputs.dry_run != true
+        run: npm run build
+
+      - name: Create pull request (patch — auto-merge)
+        if: github.event.inputs.dry_run != true && (github.event.inputs.update_target || 'patch') == 'patch'
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/deps-patch-${{ github.run_number }}
+          delete-branch: true
+          commit-message: "chore(deps): weekly patch dependency update"
+          title: "chore(deps): weekly patch dependency update"
+          labels: |
+            dependencies
+            patch
+            auto-merge
+          body: |
+            ## Summary
+
+            Conservative weekly **patch-only** dependency maintenance:
+
+            - `npm audit` before and after
+            - `npm-check-updates` (target: patch)
+            - `npm audit fix` + workspace refresh
+            - Verified with `npm run typecheck` and `npm run build`
+
+            See `security-update-report.md` in this PR for the audit summary.
+
+            **Auto-merge** is queued for this patch PR once CI passes.
+
+            Minor/major updates are not included — bump those manually when ready.
+
+            ## Notes
+
+            - TypeScript 7.x is excluded (Next.js 16 requires TypeScript 5.x).
+
+            ---
+            _Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}_
+          add-paths: |
+            package.json
+            package-lock.json
+            apps/**/package.json
+            packages/**/package.json
+            security-update-report.md
+
+      - name: Create pull request (minor/latest — manual review)
+        if: github.event.inputs.dry_run != true && (github.event.inputs.update_target == 'minor' || github.event.inputs.update_target == 'latest')
+        id: cpr-manual
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/deps-manual-${{ github.run_number }}
+          delete-branch: true
+          commit-message: "chore(deps): dependency update (${{ github.event.inputs.update_target }})"
+          title: "chore(deps): dependency update (${{ github.event.inputs.update_target }}) — manual review"
+          labels: |
+            dependencies
+          body: |
+            ## Summary
+
+            Manual dependency update triggered with target `${{ github.event.inputs.update_target }}`.
+
+            **This PR requires manual review** — auto-merge is disabled for minor/major bumps.
+
+            - Verified with `npm run typecheck` and `npm run build`
+            - See `security-update-report.md` for audit summary
+
+            ---
+            _Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}_
+          add-paths: |
+            package.json
+            package-lock.json
+            apps/**/package.json
+            packages/**/package.json
+            security-update-report.md
+
+  notify-failure:
+    needs: scan-and-update
+    if: failure() && github.event.inputs.dry_run != true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Email — patch update workflow failed
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "[pg-application] Weekly patch update workflow FAILED"
+          to: mayinxing@gmail.com
+          from: ${{ secrets.MAIL_USERNAME }}
+          body: |
+            The weekly patch dependency update workflow failed. No PR was created or merged.
+
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Repository: ${{ github.repository }}
+
+            Check the Actions log for details.

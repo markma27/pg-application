@@ -1,0 +1,55 @@
+name: Dependency audit
+
+# Daily vulnerability scan — email only when high/critical issues are found.
+# Does NOT open PRs or change dependencies.
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (high/critical)
+        id: audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Email — high/critical vulnerabilities detected
+        if: steps.audit.outcome == 'failure'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "[pg-application] High/critical npm vulnerabilities detected"
+          to: mayinxing@gmail.com
+          from: ${{ secrets.MAIL_USERNAME }}
+          body: |
+            The daily npm audit found high or critical severity vulnerabilities.
+
+            Review and address manually, or wait for the weekly patch update workflow / Dependabot security PR.
+
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Repository: ${{ github.repository }}
+
+            Run locally: npm audit

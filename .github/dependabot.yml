@@ -1,23 +1,28 @@
-# Complements the daily workflow with GitHub-native security alerts.
-# Dependabot opens focused PRs for individual advisories between workflow runs.
+# Weekly patch-only version updates. Security advisories are handled separately
+# (GitHub Dependabot security updates + daily audit workflow).
+# Minor and major bumps are ignored — update those manually.
 
 version: 2
 updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
+      day: monday
       time: "03:00"
       timezone: "UTC"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     groups:
-      npm-minor-patch:
+      npm-patches:
         patterns:
           - "*"
         update-types:
-          - minor
           - patch
     ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-major
       - dependency-name: typescript
         versions:
           - ">=7.0.0"
