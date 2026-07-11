@@ -3,7 +3,13 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "*": ["./*"]
+      "@pg/shared": ["../../packages/shared/src/index.ts"],
+      "@pg/shared/*": ["../../packages/shared/src/*"],
+      "@pg/submission": ["../../packages/submission/src/index.ts"],
+      "@pg/submission/submit": ["../../packages/submission/src/services/submission.service.ts"],
+      "@pg/submission/portfolio": ["../../packages/submission/src/services/portfolio-upload.service.ts"],
+      "@pg/submission/portfolio-routes": ["../../packages/submission/src/portfolio-routes.ts"],
+      "@pg/submission/*": ["../../packages/submission/src/*"]
     },
     "plugins": [{ "name": "next" }],
     "types": ["node"]
