@@ -141,6 +141,12 @@ const nextConfig: NextConfig = {
   },
   webpack: (config) => {
     config.resolve ??= {};
+    // Workspace packages use Node ESM `.js` import specifiers in TypeScript source;
+    // webpack must map those to `.ts` when transpilePackages compiles from `src/`.
+    config.resolve.extensionAlias = {
+      ".js": [".ts", ".tsx", ".js"],
+      ".jsx": [".tsx", ".jsx"],
+    };
     config.resolve.alias = {
       ...(typeof config.resolve.alias === "object" && config.resolve.alias !== null
         ? config.resolve.alias
