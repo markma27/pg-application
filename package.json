@@ -18,6 +18,7 @@
     "typecheck": "npm run typecheck -w @pg/shared && npm run typecheck -w @pg/submission && npm run typecheck -w @pg/api && npm run typecheck -w @pg/web",
     "lint": "npm run lint -w @pg/api && npm run lint -w @pg/web",
     "security:audit": "npm audit",
+    "security:scan": "node scripts/audit-report.mjs",
     "security:update": "node scripts/security-update.mjs",
     "security:update:dry-run": "node scripts/security-update.mjs --dry-run"
   },
