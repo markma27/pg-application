@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@pg/shared": "0.1.0",
-    "@supabase/supabase-js": "^2.110.2",
+    "@supabase/supabase-js": "^2.110.8",
     "dotenv": "^17.4.2",
     "resend": "^6.17.2",
     "zod": "^4.4.3"
